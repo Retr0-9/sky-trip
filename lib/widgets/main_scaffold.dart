@@ -67,10 +67,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  CircleAvatar(
-                    radius: 30,
-                    child: Icon(Icons.person, size: 30),
-                  ),
+                  CircleAvatar(radius: 30, child: Icon(Icons.person, size: 30)),
                   SizedBox(height: 8),
                   Text(
                     'Welcome, User',
@@ -108,20 +105,14 @@ class _MainScaffoldState extends State<MainScaffold> {
           ],
         ),
       ),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _onTabTapped,
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.cyan,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
             icon: Icon(Icons.flight_takeoff),
             label: 'Book',
@@ -130,10 +121,7 @@ class _MainScaffoldState extends State<MainScaffold> {
             icon: Icon(Icons.confirmation_number),
             label: 'Tickets',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
     );
