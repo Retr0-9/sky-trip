@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/booking_search_model.dart';
 
 class BookingScreen extends StatefulWidget {
   const BookingScreen({super.key});
@@ -262,8 +263,26 @@ class _BookingScreenState extends State<BookingScreen> {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () {
-          // TODO: Validate form in Phase 4
-          Navigator.pushNamed(context, '/available-flights');
+          // TODO: Add form validation in Phase 5
+          // Build search model from current form state
+          final search = BookingSearchModel(
+            fromCode: 'AMM', // TODO: Get from From field
+            fromCity: 'Amman',
+            toCode: 'DXB',   // TODO: Get from To field
+            toCity: 'Dubai',
+            departureDate: DateTime.now(), // TODO: Get from date picker
+            tripType: _selectedTripType,
+            adults: _passengerCount,
+            youth: 0,
+            children: 0,
+            infants: 0,
+            travelClass: _selectedClass,
+          );
+          Navigator.pushNamed(
+            context,
+            '/available-flights',
+            arguments: search,
+          );
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.cyan,

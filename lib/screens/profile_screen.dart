@@ -154,7 +154,9 @@ class ProfileScreen extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: Colors.cyan.shade50),
+      decoration: BoxDecoration(
+        color: Colors.cyan.shade50,
+      ),
       child: Column(
         children: [
           // Avatar
@@ -174,7 +176,11 @@ class ProfileScreen extends StatelessWidget {
                     color: Colors.cyan,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.edit, size: 16, color: Colors.white),
+                  child: const Icon(
+                    Icons.edit,
+                    size: 16,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
@@ -184,14 +190,20 @@ class ProfileScreen extends StatelessWidget {
           // Name
           const Text(
             'John Doe',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 4),
 
           // Email
           Text(
             'john.doe@email.com',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+            ),
           ),
           const SizedBox(height: 16),
 
@@ -225,7 +237,10 @@ class ProfileScreen extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           label,
-          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey.shade600,
+          ),
         ),
       ],
     );
@@ -262,3 +277,4 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 }
+

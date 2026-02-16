@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../models/flight_model.dart';
+import '../models/booking_search_model.dart';
 
 class PassengersFormScreen extends StatefulWidget {
   const PassengersFormScreen({super.key});
@@ -8,42 +10,45 @@ class PassengersFormScreen extends StatefulWidget {
 }
 
 class _PassengersFormScreenState extends State<PassengersFormScreen> {
-  // TODO: Get actual passenger breakdown from booking screen (via arguments)
-  // For now, using dummy values: 2 Adults, 1 Youth, 1 Child, 1 Infant
-  final int _adults = 2;
-  final int _youth = 1;
-  final int _children = 1;
-  final int _infants = 1;
-  
+  FlightModel? _flight;
+  BookingSearchModel? _search;
+  bool _argumentsLoaded = false;
+
   int _currentPassengerIndex = 0;
-  String _selectedDocumentType = 'passport'; // passport, id
-  
-  int get _totalPassengers => _adults + _youth + _children + _infants;
-  
-  // Determine current passenger type based on index
-  String get _currentPassengerType {
-    if (_currentPassengerIndex < _adults) {
-      return 'Adult';
-    } else if (_currentPassengerIndex < _adults + _youth) {
-      return 'Youth';
-    } else if (_currentPassengerIndex < _adults + _youth + _children) {
-      return 'Child';
-    } else {
-      return 'Infant';
+  String _selectedDocumentType = 'passport';
+
+  int get _adults => _search?.adults ?? 1;
+  int get _youth => _search?.youth ?? 0;
+  int get _children => _search?.children ?? 0;
+  int get _infants => _search?.infants ?? 0;
+  int get _totalPassengers => _search?.totalPassengers ?? 1;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_argumentsLoaded) {
+      final args = ModalRoute.of(context)?.settings.arguments as Map?;
+      _flight = args?['flight'] as FlightModel?;
+      _search = args?['search'] as BookingSearchModel?;
+      _argumentsLoaded = true;
     }
   }
-  
-  // Get passenger number within their category
+
+  String get _currentPassengerType {
+    if (_currentPassengerIndex < _adults) return 'Adult';
+    if (_currentPassengerIndex < _adults + _youth) return 'Youth';
+    if (_currentPassengerIndex < _adults + _youth + _children) return 'Child';
+    return 'Infant';
+  }
+
   String get _passengerLabel {
-    if (_currentPassengerIndex < _adults) {
+    if (_currentPassengerIndex < _adults)
       return 'Adult ${_currentPassengerIndex + 1}';
-    } else if (_currentPassengerIndex < _adults + _youth) {
+    if (_currentPassengerIndex < _adults + _youth)
       return 'Youth ${_currentPassengerIndex - _adults + 1}';
-    } else if (_currentPassengerIndex < _adults + _youth + _children) {
+    if (_currentPassengerIndex < _adults + _youth + _children)
       return 'Child ${_currentPassengerIndex - _adults - _youth + 1}';
-    } else {
-      return 'Infant ${_currentPassengerIndex - _adults - _youth - _children + 1}';
-    }
+    return 'Infant ${_currentPassengerIndex - _adults - _youth - _children + 1}';
   }
 
   @override
@@ -577,8 +582,12 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
           width: double.infinity,
           child: ElevatedButton(
             onPressed: () {
-              // TODO: Validate all passenger forms, then navigate
-              Navigator.pushNamed(context, '/services');
+              // TODO: Validate all passenger forms in Phase 5
+              Navigator.pushNamed(
+                context,
+                '/services',
+                arguments: {'flight': _flight, 'search': _search},
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.cyan,

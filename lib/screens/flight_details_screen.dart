@@ -1,64 +1,79 @@
 import 'package:flutter/material.dart';
 import '../widgets/info_row.dart';
 import '../widgets/primary_button.dart';
+import '../models/flight_model.dart';
+import '../models/booking_search_model.dart';
 
 class FlightDetailsScreen extends StatelessWidget {
   const FlightDetailsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // TODO: Receive flight data from previous screen (via arguments)
-    
+    // Receive flight + search data from AvailableFlightsScreen
+    final args = ModalRoute.of(context)?.settings.arguments as Map?;
+    final FlightModel? flight = args?['flight'] as FlightModel?;
+    final BookingSearchModel? search = args?['search'] as BookingSearchModel?;
+
+    // Fallback dummy data if no args
+    final airline = flight?.airline ?? 'Royal Jordanian';
+    final flightNumber = flight?.flightNumber ?? 'RJ 501';
+    final fromCode = flight?.fromCode ?? 'AMM';
+    final toCode = flight?.toCode ?? 'DXB';
+    final fromCity = flight?.fromCity ?? 'Amman';
+    final toCity = flight?.toCity ?? 'Dubai';
+    final departureTime = flight?.departureTime ?? '10:00 AM';
+    final arrivalTime = flight?.arrivalTime ?? '12:30 PM';
+    final duration = flight?.duration ?? '2h 30m';
+    final stops = flight?.stops ?? 'Direct';
+    final price = flight?.price ?? 150.0;
+    final currency = flight?.currency ?? 'JOD';
+    final travelClass = flight?.travelClass ?? 'Economy';
+    final passengers = search?.totalPassengers ?? 1;
+    final baseFare = price * passengers;
+    final taxes = baseFare * 0.15;
+    final total = baseFare + taxes;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Flight Details'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Flight Details'), elevation: 0),
       body: Column(
         children: [
           Expanded(
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  // Flight Summary Card
-                  _buildFlightSummary(),
-                  
+                  _buildFlightSummary(
+                    airline, flightNumber, fromCode, toCode,
+                    departureTime, arrivalTime, duration, stops, travelClass,
+                  ),
                   const SizedBox(height: 8),
-                  
-                  // Route Timeline
-                  _buildRouteTimeline(),
-                  
+                  _buildRouteTimeline(
+                    fromCode, fromCity, toCode, toCity,
+                    departureTime, arrivalTime, duration,
+                  ),
                   const SizedBox(height: 8),
-                  
-                  // Fare Breakdown
-                  _buildFareBreakdown(),
-                  
+                  _buildFareBreakdown(
+                    passengers, price, baseFare, taxes, total, currency,
+                  ),
                   const SizedBox(height: 8),
-                  
-                  // Baggage Allowance
                   _buildBaggageInfo(),
-                  
                   const SizedBox(height: 8),
-                  
-                  // Policies
                   _buildPolicies(),
-                  
-                  const SizedBox(height: 80), // Space for bottom button
+                  const SizedBox(height: 80),
                 ],
               ),
             ),
           ),
-          
-          // Bottom Confirm Button
-          _buildBottomButton(context),
+          _buildBottomButton(context, flight, search),
         ],
       ),
     );
   }
 
-  // ==================== SECTION BUILDERS ====================
-
-  Widget _buildFlightSummary() {
+  Widget _buildFlightSummary(
+    String airline, String flightNumber, String fromCode, String toCode,
+    String departureTime, String arrivalTime, String duration,
+    String stops, String travelClass,
+  ) {
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -70,13 +85,10 @@ class FlightDetailsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Airline Logo and Name
           Row(
             children: [
-              // TODO: Replace with airline logo
               Container(
-                width: 50,
-                height: 50,
+                width: 50, height: 50,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
@@ -84,99 +96,44 @@ class FlightDetailsScreen extends StatelessWidget {
                 child: const Icon(Icons.flight, color: Colors.cyan),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Royal Jordanian',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      'Flight RJ 501 • Economy',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
+                    Text(airline,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text('$flightNumber • $travelClass',
+                        style: const TextStyle(fontSize: 14, color: Colors.grey)),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          
-          // Route Summary
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Departure
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '10:00 AM',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    'AMM',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-              
-              // Duration
-              Column(
-                children: [
-                  const Text(
-                    '2h 30m',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Icon(Icons.arrow_forward, color: Colors.cyan.shade700),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Direct',
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(departureTime,
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                Text(fromCode, style: const TextStyle(fontSize: 16, color: Colors.grey)),
+              ]),
+              Column(children: [
+                Text(duration, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                const SizedBox(height: 4),
+                Icon(Icons.arrow_forward, color: Colors.cyan.shade700),
+                const SizedBox(height: 4),
+                Text(stops,
                     style: TextStyle(
                       fontSize: 10,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-              
-              // Arrival
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '12:30 PM',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    'DXB',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
+                      color: stops == 'Direct' ? Colors.green : Colors.orange,
+                    )),
+              ]),
+              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Text(arrivalTime,
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                Text(toCode, style: const TextStyle(fontSize: 16, color: Colors.grey)),
+              ]),
             ],
           ),
         ],
@@ -184,7 +141,10 @@ class FlightDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRouteTimeline() {
+  Widget _buildRouteTimeline(
+    String fromCode, String fromCity, String toCode, String toCity,
+    String departureTime, String arrivalTime, String duration,
+  ) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
@@ -196,115 +156,54 @@ class FlightDetailsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Route Details',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          const Text('Route Details',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
-          
-          // Departure Details
-          _buildTimelineItem(
-            icon: Icons.flight_takeoff,
-            time: '10:00 AM',
-            location: 'Queen Alia International Airport (AMM)',
-            subtitle: 'Amman, Jordan',
-            isFirst: true,
-          ),
-          
-          // Flight Duration Line
+          _buildTimelineItem(Icons.flight_takeoff, departureTime,
+              '$fromCity ($fromCode) Airport'),
           Padding(
             padding: const EdgeInsets.only(left: 19),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 2,
-                  height: 40,
-                  color: Colors.cyan,
-                ),
-                const Text(
-                  '  Flight duration: 2h 30m',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-                Container(
-                  width: 2,
-                  height: 40,
-                  color: Colors.cyan,
-                ),
-              ],
-            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Container(width: 2, height: 30, color: Colors.cyan),
+              Text('  Duration: $duration',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              Container(width: 2, height: 30, color: Colors.cyan),
+            ]),
           ),
-          
-          // Arrival Details
-          _buildTimelineItem(
-            icon: Icons.flight_land,
-            time: '12:30 PM',
-            location: 'Dubai International Airport (DXB)',
-            subtitle: 'Dubai, UAE',
-            isFirst: false,
-          ),
+          _buildTimelineItem(Icons.flight_land, arrivalTime,
+              '$toCity ($toCode) Airport'),
         ],
       ),
     );
   }
 
-  Widget _buildTimelineItem({
-    required IconData icon,
-    required String time,
-    required String location,
-    required String subtitle,
-    required bool isFirst,
-  }) {
+  Widget _buildTimelineItem(IconData icon, String time, String location) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 40,
-          height: 40,
+          width: 40, height: 40,
           decoration: BoxDecoration(
-            color: Colors.cyan.shade100,
-            shape: BoxShape.circle,
+            color: Colors.cyan.shade100, shape: BoxShape.circle,
           ),
           child: Icon(icon, color: Colors.cyan, size: 20),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                time,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                location,
-                style: const TextStyle(fontSize: 14),
-              ),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
-              ),
-            ],
-          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(time,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(location, style: const TextStyle(fontSize: 13)),
+          ]),
         ),
       ],
     );
   }
 
-  Widget _buildFareBreakdown() {
+  Widget _buildFareBreakdown(
+    int passengers, double price, double baseFare,
+    double taxes, double total, String currency,
+  ) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
@@ -316,53 +215,39 @@ class FlightDetailsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Fare Breakdown',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          const Text('Fare Breakdown',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
-          
-          // TODO: Replace with actual fare calculation
-          _buildFareRow('Base Fare (1 Adult)', 'JOD 120.00'),
+          _fareRow('Base Fare ($passengers pax × $currency ${price.toStringAsFixed(0)})',
+              '$currency ${baseFare.toStringAsFixed(2)}'),
           const SizedBox(height: 8),
-          _buildFareRow('Taxes & Fees', 'JOD 30.00'),
-          const SizedBox(height: 8),
-          const Divider(),
-          const SizedBox(height: 8),
-          _buildFareRow(
-            'Total',
-            'JOD 150.00',
-            isBold: true,
-            isLarge: true,
-          ),
+          _fareRow('Taxes & Fees (15%)',
+              '$currency ${taxes.toStringAsFixed(2)}'),
+          const Divider(height: 24),
+          _fareRow('Total', '$currency ${total.toStringAsFixed(2)}',
+              isBold: true, isLarge: true),
         ],
       ),
     );
   }
 
-  Widget _buildFareRow(String label, String amount, {bool isBold = false, bool isLarge = false}) {
+  Widget _fareRow(String label, String amount,
+      {bool isBold = false, bool isLarge = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: isLarge ? 16 : 14,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            color: isBold ? Colors.black : Colors.grey.shade700,
-          ),
-        ),
-        Text(
-          amount,
-          style: TextStyle(
-            fontSize: isLarge ? 18 : 14,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            color: isBold ? Colors.cyan : Colors.grey.shade700,
-          ),
-        ),
+        Text(label,
+            style: TextStyle(
+              fontSize: isLarge ? 16 : 14,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              color: isBold ? Colors.black : Colors.grey.shade700,
+            )),
+        Text(amount,
+            style: TextStyle(
+              fontSize: isLarge ? 18 : 14,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+              color: isBold ? Colors.cyan : Colors.grey.shade700,
+            )),
       ],
     );
   }
@@ -379,26 +264,12 @@ class FlightDetailsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Baggage Allowance',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          const Text('Baggage Allowance',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
-          
-          _buildInfoRow(
-            icon: Icons.work_outline,
-            label: 'Carry-on',
-            value: '1 bag (7 kg)',
-          ),
+          InfoRow(icon: Icons.work_outline, label: 'Carry-on', value: '1 bag (7 kg)'),
           const SizedBox(height: 12),
-          _buildInfoRow(
-            icon: Icons.luggage,
-            label: 'Checked Baggage',
-            value: '1 bag (23 kg)',
-          ),
+          InfoRow(icon: Icons.luggage, label: 'Checked Baggage', value: '1 bag (23 kg)'),
         ],
       ),
     );
@@ -416,10 +287,8 @@ class FlightDetailsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Policies',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+          const Text('Policies',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           InfoRow(
             icon: Icons.cancel_outlined,
@@ -437,33 +306,29 @@ class FlightDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return InfoRow(icon: icon, label: label, value: value);
-  }
-
-  Widget _buildBottomButton(BuildContext context) {
+  Widget _buildBottomButton(
+    BuildContext context,
+    FlightModel? flight,
+    BookingSearchModel? search,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade300,
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        boxShadow: [BoxShadow(
+          color: Colors.grey.shade300, blurRadius: 8, offset: const Offset(0, -2),
+        )],
       ),
       child: SafeArea(
         child: PrimaryButton(
           label: 'Confirm & Continue',
           icon: Icons.arrow_forward,
           onPressed: () {
-            Navigator.pushNamed(context, '/passengers-form');
+            Navigator.pushNamed(
+              context,
+              '/passengers-form',
+              arguments: {'flight': flight, 'search': search},
+            );
           },
         ),
       ),

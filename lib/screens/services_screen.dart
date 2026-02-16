@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../models/flight_model.dart';
+import '../models/booking_search_model.dart';
 
 class ServicesScreen extends StatefulWidget {
   const ServicesScreen({super.key});
@@ -8,11 +10,40 @@ class ServicesScreen extends StatefulWidget {
 }
 
 class _ServicesScreenState extends State<ServicesScreen> {
-  // TODO: Track selected services (will be managed in state in Phase 4)
+  FlightModel? _flight;
+  BookingSearchModel? _search;
+  bool _argumentsLoaded = false;
+
   int _mealCount = 0;
   bool _wheelchairSelected = false;
   bool _specialAssistanceSelected = false;
   bool _seatSelectionSelected = false;
+
+  static const double _mealPrice = 15.0;
+  static const double _seatPrice = 10.0;
+  static const double _specialPrice = 25.0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_argumentsLoaded) {
+      final args = ModalRoute.of(context)?.settings.arguments as Map?;
+      _flight = args?['flight'] as FlightModel?;
+      _search = args?['search'] as BookingSearchModel?;
+      _argumentsLoaded = true;
+    }
+  }
+
+  Map<String, dynamic> get _routeArgs => {
+    'flight': _flight,
+    'search': _search,
+    'services': {
+      'meals': _mealCount,
+      'wheelchair': _wheelchairSelected,
+      'specialAssistance': _specialAssistanceSelected,
+      'seatSelection': _seatSelectionSelected,
+    },
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -281,13 +312,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
           width: double.infinity,
           child: ElevatedButton(
             onPressed: () {
-              // Check if seat selection is enabled
               if (_seatSelectionSelected) {
-                // Go to seat map
-                Navigator.pushNamed(context, '/seat-map');
+                Navigator.pushNamed(context, '/seat-map', arguments: _routeArgs);
               } else {
-                // Skip seat map, go directly to payment
-                Navigator.pushNamed(context, '/payment');
+                Navigator.pushNamed(context, '/payment', arguments: _routeArgs);
               }
             },
             style: ElevatedButton.styleFrom(

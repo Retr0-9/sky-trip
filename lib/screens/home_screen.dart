@@ -2,9 +2,26 @@ import 'package:flutter/material.dart';
 import '../widgets/offer_card.dart';
 import '../widgets/recent_search_card.dart';
 import '../widgets/section_header.dart';
+import '../data/dummy_offers.dart';
+import '../data/dummy_recent_searches.dart';
+import '../models/booking_search_model.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
+
+  IconData _getGreetingIcon() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return Icons.wb_sunny;
+    if (hour < 17) return Icons.wb_sunny_outlined;
+    return Icons.nights_stay_outlined;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,39 +29,27 @@ class HomeScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Greeting Header
           _buildGreetingHeader(),
-
-          // Body Content
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Recent Searches Section
                 SectionHeader(
                   title: 'Recent Searches',
                   icon: Icons.history,
-                  onSeeAll: () {
-                    // TODO: Navigate to full search history in Phase 4
-                  },
+                  onSeeAll: () {},
                 ),
                 const SizedBox(height: 12),
                 _buildRecentSearches(context),
-
                 const SizedBox(height: 24),
-
-                // Latest Offers Section
                 SectionHeader(
                   title: 'Latest Offers',
                   icon: Icons.trending_up,
-                  onSeeAll: () {
-                    // TODO: Navigate to all offers in Phase 4
-                  },
+                  onSeeAll: () {},
                 ),
                 const SizedBox(height: 12),
-                _buildOffers(context),
-
+                _buildOffers(),
                 const SizedBox(height: 16),
               ],
             ),
@@ -54,27 +59,20 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // ==================== SECTION BUILDERS ====================
-
   Widget _buildGreetingHeader() {
-    // TODO: Get actual time of day and user name in Phase 4
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      decoration: BoxDecoration(color: Colors.grey.shade100),
+      color: Colors.grey.shade100,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.wb_sunny_outlined,
-                color: Colors.orange,
-                size: 20,
-              ),
+              Icon(_getGreetingIcon(), color: Colors.orange, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Good Evening, User',
+                '${_getGreeting()}, User', // TODO: Replace 'User' with real name
                 style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
               ),
             ],
@@ -90,66 +88,56 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildRecentSearches(BuildContext context) {
-    // TODO: Replace with actual search history from local storage in Phase 4
+    final searches = DummyRecentSearches.searches;
+
+    if (searches.isEmpty) {
+      return Center(
+        child: Text(
+          'No recent searches',
+          style: TextStyle(color: Colors.grey.shade500),
+        ),
+      );
+    }
+
     return Column(
-      children: [
-        RecentSearchCard(
-          from: 'AMM',
-          to: 'DXB',
-          passengers: 1,
-          onTap: () {
-            // TODO: Pre-fill booking form with this search in Phase 4
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Re-search: TODO in Phase 4')),
-            );
-          },
-        ),
-        const SizedBox(height: 10),
-        RecentSearchCard(
-          from: 'AMM',
-          to: 'LHR',
-          passengers: 2,
-          onTap: () {
-            // TODO: Pre-fill booking form with this search in Phase 4
-          },
-        ),
-      ],
+      children: searches.map((search) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: RecentSearchCard(
+            from: search.fromCode,
+            to: search.toCode,
+            passengers: search.totalPassengers,
+            onTap: () {
+              // TODO: Pre-fill booking form with this search in Phase 5
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                      'Re-search ${search.fromCode}→${search.toCode}: TODO Phase 5'),
+                ),
+              );
+            },
+          ),
+        );
+      }).toList(),
     );
   }
 
-  Widget _buildOffers(BuildContext context) {
-    // TODO: Replace with actual offers from API in Phase 4
+  Widget _buildOffers() {
+    final offers = DummyOffers.offers;
     return Column(
-      children: [
-        OfferCard(
-          title: 'Summer Sale',
-          subtitle: 'Book flights to Europe',
-          discount: '30% OFF',
-          validUntil: 'Dec 31, 2025',
-          color: Colors.orange.shade400,
-          onTap: () {
-            // TODO: Navigate to offer details or booking
-          },
-        ),
-        const SizedBox(height: 12),
-        OfferCard(
-          title: 'Weekend Getaway',
-          subtitle: 'Domestic flights',
-          discount: '20% OFF',
-          validUntil: 'Dec 20, 2025',
-          color: Colors.lightBlue.shade300,
-          onTap: () {},
-        ),
-        const SizedBox(height: 12),
-        OfferCard(
-          title: 'Business Class Upgrade',
-          subtitle: 'Selected routes',
-          discount: '40% OFF',
-          validUntil: 'Dec 15, 2025',
-          color: Colors.brown.shade300,
-          onTap: () {},
-        ),
-      ],
+      children: offers.map((offer) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: OfferCard(
+            title: offer.title,
+            subtitle: offer.subtitle,
+            discount: offer.discount,
+            validUntil: offer.validUntil,
+            color: offer.color,
+            onTap: () {},
+          ),
+        );
+      }).toList(),
     );
   }
 }

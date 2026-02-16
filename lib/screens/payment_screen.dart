@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../models/flight_model.dart';
+import '../models/booking_search_model.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -8,7 +10,37 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  String _selectedPaymentMethod = 'card'; // card, paypal, apple_pay
+  FlightModel? _flight;
+  BookingSearchModel? _search;
+  Map? _services;
+  bool _argumentsLoaded = false;
+  String _selectedPaymentMethod = 'card';
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_argumentsLoaded) {
+      final args = ModalRoute.of(context)?.settings.arguments as Map?;
+      _flight = args?['flight'] as FlightModel?;
+      _search = args?['search'] as BookingSearchModel?;
+      _services = args?['services'] as Map?;
+      _argumentsLoaded = true;
+    }
+  }
+
+  // Price calculations
+  double get _flightPrice => _flight?.price ?? 150.0;
+  String get _currency => _flight?.currency ?? 'JOD';
+  int get _passengers => _search?.totalPassengers ?? 1;
+  double get _baseFare => _flightPrice * _passengers;
+  double get _taxes => _baseFare * 0.15;
+  int get _mealCount => (_services?['meals'] as int?) ?? 0;
+  bool get _hasSeat => (_services?['seatSelection'] as bool?) ?? false;
+  bool get _hasSpecial => (_services?['specialAssistance'] as bool?) ?? false;
+  double get _mealsTotal => _mealCount * 15.0;
+  double get _seatTotal => _hasSeat ? 10.0 : 0.0;
+  double get _specialTotal => _hasSpecial ? 25.0 : 0.0;
+  double get _grandTotal => _baseFare + _taxes + _mealsTotal + _seatTotal + _specialTotal;
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +82,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Widget _buildBookingSummary() {
+    final fromCode = _flight?.fromCode ?? 'AMM';
+    final toCode = _flight?.toCode ?? 'DXB';
+    final airline = _flight?.airline ?? 'Royal Jordanian';
+    final flightNumber = _flight?.flightNumber ?? 'RJ 501';
+    final travelClass = _flight?.travelClass ?? 'Economy';
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -61,57 +99,38 @@ class _PaymentScreenState extends State<PaymentScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Booking Summary',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          const Text('Booking Summary',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
-          
-          // Flight Route
           Row(
             children: [
               const Icon(Icons.flight_takeoff, color: Colors.cyan, size: 20),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'AMM → DXB',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      'Royal Jordanian • Flight RJ 501',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
+                    Text('$fromCode → $toCode',
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600)),
+                    Text('$airline • $flightNumber',
+                        style: const TextStyle(fontSize: 12, color: Colors.grey)),
                   ],
                 ),
               ),
             ],
           ),
           const Divider(height: 24),
-          
-          // Date & Time
-          _buildSummaryRow(Icons.calendar_today, 'Date', 'Mar 15, 2025'),
+          _buildSummaryRow(Icons.calendar_today, 'Date',
+              '${_search?.departureDate.day ?? '--'}/${_search?.departureDate.month ?? '--'}/${_search?.departureDate.year ?? '--'}'),
           const SizedBox(height: 8),
-          _buildSummaryRow(Icons.access_time, 'Time', '10:00 AM - 12:30 PM'),
+          _buildSummaryRow(Icons.access_time, 'Time',
+              '${_flight?.departureTime ?? '--'} - ${_flight?.arrivalTime ?? '--'}'),
           const SizedBox(height: 8),
-          
-          // Passengers
-          _buildSummaryRow(Icons.person, 'Passengers', '2 Adults, 1 Child'),
+          _buildSummaryRow(Icons.person, 'Passengers',
+              '$_passengers passenger${_passengers > 1 ? 's' : ''}'),
           const SizedBox(height: 8),
-          
-          // Class
-          _buildSummaryRow(Icons.airline_seat_recline_normal, 'Class', 'Economy'),
+          _buildSummaryRow(Icons.airline_seat_recline_normal, 'Class', travelClass),
         ],
       ),
     );
@@ -122,22 +141,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
       children: [
         Icon(icon, color: Colors.cyan, size: 18),
         const SizedBox(width: 12),
-        Text(
-          '$label: ',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey.shade700,
-          ),
-        ),
+        Text('$label: ',
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade700)),
         Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-            textAlign: TextAlign.right,
-          ),
+          child: Text(value,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              textAlign: TextAlign.right),
         ),
       ],
     );
@@ -155,48 +164,42 @@ class _PaymentScreenState extends State<PaymentScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Price Breakdown',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          const Text('Price Breakdown',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
-          
-          // Base Fare
-          _buildPriceRow('Flight Fare (3 passengers)', 'JOD 450.00'),
-          const SizedBox(height: 8),
-          
-          // Taxes
-          _buildPriceRow('Taxes & Fees', 'JOD 90.00'),
-          const SizedBox(height: 8),
-          
-          // Services
-          const Text(
-            'Optional Services:',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey,
-            ),
-          ),
-          const SizedBox(height: 8),
-          _buildPriceRow('  In-Flight Meals (2x)', 'JOD 30.00', isOptional: true),
-          const SizedBox(height: 8),
-          _buildPriceRow('  Seat Selection', 'JOD 10.00', isOptional: true),
-          const SizedBox(height: 8),
-          _buildPriceRow('  Special Assistance', 'JOD 25.00', isOptional: true),
-          
-          const Divider(height: 24),
-          
-          // Total
           _buildPriceRow(
-            'Total Amount',
-            'JOD 605.00',
-            isBold: true,
-            isLarge: true,
-          ),
+              'Flight Fare ($_passengers pax × $_currency ${_flightPrice.toStringAsFixed(0)})',
+              '$_currency ${_baseFare.toStringAsFixed(2)}'),
+          const SizedBox(height: 8),
+          _buildPriceRow('Taxes & Fees (15%)',
+              '$_currency ${_taxes.toStringAsFixed(2)}'),
+          if (_mealCount > 0 || _hasSeat || _hasSpecial) ...[
+            const SizedBox(height: 8),
+            const Text('Optional Services:',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey)),
+          ],
+          if (_mealCount > 0) ...[
+            const SizedBox(height: 8),
+            _buildPriceRow('  In-Flight Meals (${_mealCount}x × \$15)',
+                '$_currency ${_mealsTotal.toStringAsFixed(2)}',
+                isOptional: true),
+          ],
+          if (_hasSeat) ...[
+            const SizedBox(height: 8),
+            _buildPriceRow('  Seat Selection',
+                '$_currency ${_seatTotal.toStringAsFixed(2)}',
+                isOptional: true),
+          ],
+          if (_hasSpecial) ...[
+            const SizedBox(height: 8),
+            _buildPriceRow('  Special Assistance',
+                '$_currency ${_specialTotal.toStringAsFixed(2)}',
+                isOptional: true),
+          ],
+          const Divider(height: 24),
+          _buildPriceRow('Total Amount',
+              '$_currency ${_grandTotal.toStringAsFixed(2)}',
+              isBold: true, isLarge: true),
         ],
       ),
     );
@@ -443,8 +446,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text(
-              'Pay JOD 605.00',
+            child: Text(
+              'Pay $_currency ${_grandTotal.toStringAsFixed(2)}',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
