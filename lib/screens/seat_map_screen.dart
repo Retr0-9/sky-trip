@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/booking_provider.dart';
 
 class SeatMapScreen extends StatefulWidget {
   const SeatMapScreen({super.key});
@@ -322,7 +324,8 @@ class _SeatMapScreenState extends State<SeatMapScreen> {
               child: ElevatedButton(
                 onPressed: _selectedSeat != null
                     ? () {
-                        // TODO: Save selected seat, then navigate
+                        // Save seat to provider
+                        context.read<BookingProvider>().selectSeat(_selectedSeat!);
                         Navigator.pushNamed(context, '/payment');
                       }
                     : null,

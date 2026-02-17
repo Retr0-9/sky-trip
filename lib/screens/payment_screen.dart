@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/flight_model.dart';
-import '../models/booking_search_model.dart';
+import 'package:provider/provider.dart';
+import '../providers/booking_provider.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -10,84 +10,38 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  FlightModel? _flight;
-  BookingSearchModel? _search;
-  Map? _services;
-  bool _argumentsLoaded = false;
   String _selectedPaymentMethod = 'card';
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_argumentsLoaded) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map?;
-      _flight = args?['flight'] as FlightModel?;
-      _search = args?['search'] as BookingSearchModel?;
-      _services = args?['services'] as Map?;
-      _argumentsLoaded = true;
-    }
-  }
-
-  // Price calculations
-  double get _flightPrice => _flight?.price ?? 150.0;
-  String get _currency => _flight?.currency ?? 'JOD';
-  int get _passengers => _search?.totalPassengers ?? 1;
-  double get _baseFare => _flightPrice * _passengers;
-  double get _taxes => _baseFare * 0.15;
-  int get _mealCount => (_services?['meals'] as int?) ?? 0;
-  bool get _hasSeat => (_services?['seatSelection'] as bool?) ?? false;
-  bool get _hasSpecial => (_services?['specialAssistance'] as bool?) ?? false;
-  double get _mealsTotal => _mealCount * 15.0;
-  double get _seatTotal => _hasSeat ? 10.0 : 0.0;
-  double get _specialTotal => _hasSpecial ? 25.0 : 0.0;
-  double get _grandTotal => _baseFare + _taxes + _mealsTotal + _seatTotal + _specialTotal;
-
-  @override
   Widget build(BuildContext context) {
+    final booking = context.watch<BookingProvider>();
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Payment'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Payment'), elevation: 0),
       body: Column(
         children: [
           Expanded(
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  // Booking Summary
-                  _buildBookingSummary(),
-                  
+                  _buildBookingSummary(booking),
                   const SizedBox(height: 8),
-                  
-                  // Price Breakdown
-                  _buildPriceBreakdown(),
-                  
+                  _buildPriceBreakdown(booking),
                   const SizedBox(height: 8),
-                  
-                  // Payment Methods
                   _buildPaymentMethods(),
-                  
-                  const SizedBox(height: 80), // Space for bottom button
+                  const SizedBox(height: 80),
                 ],
               ),
             ),
           ),
-          
-          // Bottom Pay Button
-          _buildBottomButton(),
+          _buildBottomButton(booking),
         ],
       ),
     );
   }
 
-  Widget _buildBookingSummary() {
-    final fromCode = _flight?.fromCode ?? 'AMM';
-    final toCode = _flight?.toCode ?? 'DXB';
-    final airline = _flight?.airline ?? 'Royal Jordanian';
-    final flightNumber = _flight?.flightNumber ?? 'RJ 501';
-    final travelClass = _flight?.travelClass ?? 'Economy';
-
+  Widget _buildBookingSummary(BookingProvider booking) {
+    final flight = booking.selectedFlight;
+    final search = booking.search;
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -102,47 +56,47 @@ class _PaymentScreenState extends State<PaymentScreen> {
           const Text('Booking Summary',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              const Icon(Icons.flight_takeoff, color: Colors.cyan, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('$fromCode → $toCode',
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600)),
-                    Text('$airline • $flightNumber',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                  ],
-                ),
+          Row(children: [
+            const Icon(Icons.flight_takeoff, color: Colors.cyan, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${flight?.fromCode ?? '--'} → ${flight?.toCode ?? '--'}',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  Text('${flight?.airline ?? '--'} • ${flight?.flightNumber ?? '--'}',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                ],
               ),
-            ],
-          ),
+            ),
+          ]),
           const Divider(height: 24),
-          _buildSummaryRow(Icons.calendar_today, 'Date',
-              '${_search?.departureDate.day ?? '--'}/${_search?.departureDate.month ?? '--'}/${_search?.departureDate.year ?? '--'}'),
+          _summaryRow(Icons.calendar_today, 'Date',
+              search != null ? '${search.departureDate.day}/${search.departureDate.month}/${search.departureDate.year}' : '--'),
           const SizedBox(height: 8),
-          _buildSummaryRow(Icons.access_time, 'Time',
-              '${_flight?.departureTime ?? '--'} - ${_flight?.arrivalTime ?? '--'}'),
+          _summaryRow(Icons.access_time, 'Time',
+              '${flight?.departureTime ?? '--'} - ${flight?.arrivalTime ?? '--'}'),
           const SizedBox(height: 8),
-          _buildSummaryRow(Icons.person, 'Passengers',
-              '$_passengers passenger${_passengers > 1 ? 's' : ''}'),
+          _summaryRow(Icons.person, 'Passengers',
+              '${booking.passengerCount} passenger${booking.passengerCount != 1 ? 's' : ''}'),
           const SizedBox(height: 8),
-          _buildSummaryRow(Icons.airline_seat_recline_normal, 'Class', travelClass),
+          _summaryRow(Icons.airline_seat_recline_normal, 'Class', flight?.travelClass ?? 'Economy'),
+          if (booking.selectedSeat != null) ...[
+            const SizedBox(height: 8),
+            _summaryRow(Icons.event_seat, 'Seat', booking.selectedSeat!),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildSummaryRow(IconData icon, String label, String value) {
+  Widget _summaryRow(IconData icon, String label, String value) {
     return Row(
       children: [
         Icon(icon, color: Colors.cyan, size: 18),
         const SizedBox(width: 12),
-        Text('$label: ',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade700)),
+        Text('$label: ', style: TextStyle(fontSize: 14, color: Colors.grey.shade700)),
         Expanded(
           child: Text(value,
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
@@ -152,7 +106,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  Widget _buildPriceBreakdown() {
+  Widget _buildPriceBreakdown(BookingProvider booking) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
@@ -167,70 +121,65 @@ class _PaymentScreenState extends State<PaymentScreen> {
           const Text('Price Breakdown',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
-          _buildPriceRow(
-              'Flight Fare ($_passengers pax × $_currency ${_flightPrice.toStringAsFixed(0)})',
-              '$_currency ${_baseFare.toStringAsFixed(2)}'),
+          _priceRow(
+              'Flight Fare (${booking.passengerCount} pax × ${booking.currency} ${booking.flightPrice.toStringAsFixed(0)})',
+              '${booking.currency} ${booking.baseFare.toStringAsFixed(2)}'),
           const SizedBox(height: 8),
-          _buildPriceRow('Taxes & Fees (15%)',
-              '$_currency ${_taxes.toStringAsFixed(2)}'),
-          if (_mealCount > 0 || _hasSeat || _hasSpecial) ...[
+          _priceRow('Taxes & Fees (15%)', '${booking.currency} ${booking.taxes.toStringAsFixed(2)}'),
+          if (booking.mealCount > 0 || booking.seatSelectionSelected ||
+              booking.specialAssistanceSelected || booking.wheelchairSelected) ...[
+            const SizedBox(height: 12),
+            Text('Optional Services:',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey.shade600)),
             const SizedBox(height: 8),
-            const Text('Optional Services:',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey)),
           ],
-          if (_mealCount > 0) ...[
-            const SizedBox(height: 8),
-            _buildPriceRow('  In-Flight Meals (${_mealCount}x × \$15)',
-                '$_currency ${_mealsTotal.toStringAsFixed(2)}',
-                isOptional: true),
+          if (booking.mealCount > 0) ...[
+            _priceRow('  Meals (${booking.mealCount}× \$15)',
+                '${booking.currency} ${booking.mealsTotal.toStringAsFixed(2)}', isOptional: true),
+            const SizedBox(height: 6),
           ],
-          if (_hasSeat) ...[
-            const SizedBox(height: 8),
-            _buildPriceRow('  Seat Selection',
-                '$_currency ${_seatTotal.toStringAsFixed(2)}',
-                isOptional: true),
+          if (booking.seatSelectionSelected) ...[
+            _priceRow('  Seat Selection',
+                '${booking.currency} ${booking.seatTotal.toStringAsFixed(2)}', isOptional: true),
+            const SizedBox(height: 6),
           ],
-          if (_hasSpecial) ...[
-            const SizedBox(height: 8),
-            _buildPriceRow('  Special Assistance',
-                '$_currency ${_specialTotal.toStringAsFixed(2)}',
-                isOptional: true),
+          if (booking.specialAssistanceSelected) ...[
+            _priceRow('  Special Assistance',
+                '${booking.currency} ${booking.specialTotal.toStringAsFixed(2)}', isOptional: true),
+            const SizedBox(height: 6),
+          ],
+          if (booking.wheelchairSelected) ...[
+            _priceRow('  Wheelchair Assistance', 'Free', isOptional: true),
+            const SizedBox(height: 6),
           ],
           const Divider(height: 24),
-          _buildPriceRow('Total Amount',
-              '$_currency ${_grandTotal.toStringAsFixed(2)}',
+          _priceRow('Total Amount',
+              '${booking.currency} ${booking.grandTotal.toStringAsFixed(2)}',
               isBold: true, isLarge: true),
         ],
       ),
     );
   }
 
-  Widget _buildPriceRow(
-    String label,
-    String amount, {
-    bool isBold = false,
-    bool isLarge = false,
-    bool isOptional = false,
-  }) {
+  Widget _priceRow(String label, String amount,
+      {bool isBold = false, bool isLarge = false, bool isOptional = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: isLarge ? 16 : 14,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            color: isOptional ? Colors.grey.shade600 : Colors.black87,
-          ),
+        Expanded(
+          child: Text(label,
+              style: TextStyle(
+                fontSize: isLarge ? 16 : 14,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+                color: isOptional ? Colors.grey.shade600 : Colors.black87,
+              )),
         ),
-        Text(
-          amount,
-          style: TextStyle(
-            fontSize: isLarge ? 18 : 14,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-            color: isBold ? Colors.cyan : Colors.grey.shade700,
-          ),
-        ),
+        Text(amount,
+            style: TextStyle(
+              fontSize: isLarge ? 18 : 14,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+              color: isBold ? Colors.cyan : Colors.grey.shade700,
+            )),
       ],
     );
   }
@@ -247,59 +196,29 @@ class _PaymentScreenState extends State<PaymentScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Payment Method',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          const Text('Payment Method',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
-          
-          // Credit/Debit Card
-          _buildPaymentOption(
-            'card',
-            Icons.credit_card,
-            'Credit / Debit Card',
-          ),
+          _paymentOption('card', Icons.credit_card, 'Credit / Debit Card'),
           const SizedBox(height: 12),
-          
-          // PayPal
-          _buildPaymentOption(
-            'paypal',
-            Icons.payment,
-            'PayPal',
-          ),
+          _paymentOption('paypal', Icons.payment, 'PayPal'),
           const SizedBox(height: 12),
-          
-          // Apple Pay
-          _buildPaymentOption(
-            'apple_pay',
-            Icons.apple,
-            'Apple Pay',
-          ),
-          
-          // Card Details (if card selected)
+          _paymentOption('apple_pay', Icons.apple, 'Apple Pay'),
           if (_selectedPaymentMethod == 'card') ...[
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 16),
-            _buildCardDetailsForm(),
+            _buildCardForm(),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildPaymentOption(String value, IconData icon, String label) {
+  Widget _paymentOption(String value, IconData icon, String label) {
     final isSelected = _selectedPaymentMethod == value;
-    
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedPaymentMethod = value;
-        });
-      },
+      onTap: () => setState(() => _selectedPaymentMethod = value),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -312,71 +231,48 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ),
         child: Row(
           children: [
-            Icon(
-              icon,
-              color: isSelected ? Colors.cyan : Colors.grey.shade600,
-            ),
+            Icon(icon, color: isSelected ? Colors.cyan : Colors.grey.shade600),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  color: isSelected ? Colors.cyan.shade700 : Colors.black87,
-                ),
-              ),
+              child: Text(label,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    color: isSelected ? Colors.cyan.shade700 : Colors.black87,
+                  )),
             ),
-            if (isSelected)
-              Icon(Icons.check_circle, color: Colors.cyan),
+            if (isSelected) const Icon(Icons.check_circle, color: Colors.cyan),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildCardDetailsForm() {
-    // TODO: Replace with actual form fields in Phase 3
+  Widget _buildCardForm() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Card Details',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        const Text('Card Details',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
         const SizedBox(height: 12),
-        
-        _buildTextField('Card Number', '1234 5678 9012 3456'),
+        _cardField('Card Number', '1234 5678 9012 3456'),
         const SizedBox(height: 12),
-        
-        Row(
-          children: [
-            Expanded(child: _buildTextField('Expiry', 'MM/YY')),
-            const SizedBox(width: 12),
-            Expanded(child: _buildTextField('CVV', '123')),
-          ],
-        ),
+        Row(children: [
+          Expanded(child: _cardField('Expiry', 'MM/YY')),
+          const SizedBox(width: 12),
+          Expanded(child: _cardField('CVV', '•••')),
+        ]),
         const SizedBox(height: 12),
-        
-        _buildTextField('Cardholder Name', 'John Doe'),
+        _cardField('Cardholder Name', 'John Doe'),
       ],
     );
   }
 
-  Widget _buildTextField(String label, String hint) {
+  Widget _cardField(String label, String hint) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
         const SizedBox(height: 4),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -385,73 +281,88 @@ class _PaymentScreenState extends State<PaymentScreen> {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: Colors.grey.shade300),
           ),
-          child: Text(
-            hint,
-            style: TextStyle(color: Colors.grey.shade500),
-          ),
+          child: Text(hint, style: TextStyle(color: Colors.grey.shade500)),
         ),
       ],
     );
   }
 
-  Widget _buildBottomButton() {
+  Widget _buildBottomButton(BookingProvider booking) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade300,
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 8, offset: const Offset(0, -2))],
       ),
       child: SafeArea(
         child: SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: () {
-              // TODO: Process payment
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Payment Successful'),
-                  content: const Text('Your booking has been confirmed!'),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        // Go back to home
-                        Navigator.popUntil(context, (route) => route.isFirst);
-                      },
-                      child: const Text('Go to Home'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        // Go to tickets
-                        Navigator.popUntil(context, (route) => route.isFirst);
-                        // TODO: Navigate to tickets tab
-                      },
-                      child: const Text('View Ticket'),
-                    ),
-                  ],
-                ),
-              );
-            },
+            onPressed: () => _confirmPayment(booking),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.cyan,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: Text(
-              'Pay $_currency ${_grandTotal.toStringAsFixed(2)}',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              'Pay ${booking.currency} ${booking.grandTotal.toStringAsFixed(2)}',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _confirmPayment(BookingProvider booking) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green, size: 28),
+            SizedBox(width: 8),
+            Text('Booking Confirmed!'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${booking.selectedFlight?.fromCode ?? ''} → ${booking.selectedFlight?.toCode ?? ''}',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Total paid: ${booking.currency} ${booking.grandTotal.toStringAsFixed(2)}',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              booking.resetBooking();
+              Navigator.popUntil(context, (route) => route.isFirst);
+            },
+            child: const Text('Home'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              booking.resetBooking();
+              Navigator.popUntil(context, (route) => route.isFirst);
+              // TODO: Switch to Tickets tab in Phase 7
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.cyan),
+            child: const Text('View Ticket', style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }

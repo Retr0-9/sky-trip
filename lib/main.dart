@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'providers/booking_provider.dart';
+import 'providers/user_provider.dart';
 import 'widgets/main_scaffold.dart';
 import 'screens/available_flights_screen.dart';
 import 'screens/flight_details_screen.dart';
@@ -20,26 +23,32 @@ class SkyTripApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Sky Trip',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.cyan),
-        useMaterial3: true,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => BookingProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+      ],
+      child: MaterialApp(
+        title: 'Sky Trip',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.cyan),
+          useMaterial3: true,
+        ),
+        home: const MainScaffold(),
+        routes: {
+          '/available-flights': (context) => const AvailableFlightsScreen(),
+          '/flight-details': (context) => const FlightDetailsScreen(),
+          '/passengers-form': (context) => const PassengersFormScreen(),
+          '/services': (context) => const ServicesScreen(),
+          '/seat-map': (context) => const SeatMapScreen(),
+          '/payment': (context) => const PaymentScreen(),
+          '/hotel-booking': (context) => const HotelBookingScreen(),
+          '/van-rental': (context) => const VanRentalScreen(),
+          '/settings': (context) => const SettingsScreen(),
+          '/contact-us': (context) => const ContactUsScreen(),
+        },
       ),
-      home: const MainScaffold(),
-      routes: {
-        '/available-flights': (context) => const AvailableFlightsScreen(),
-        '/flight-details': (context) => const FlightDetailsScreen(),
-        '/passengers-form': (context) => const PassengersFormScreen(),
-        '/services': (context) => const ServicesScreen(),
-        '/seat-map': (context) => const SeatMapScreen(),
-        '/payment': (context) => const PaymentScreen(),
-        '/hotel-booking': (context) => const HotelBookingScreen(),
-        '/van-rental': (context) => const VanRentalScreen(),
-        '/settings': (context) => const SettingsScreen(),
-        '/contact-us': (context) => const ContactUsScreen(),
-      },
     );
   }
 }

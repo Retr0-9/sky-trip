@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/booking_search_model.dart';
+import '../providers/booking_provider.dart';
+import '../providers/user_provider.dart';
 
 class BookingScreen extends StatefulWidget {
   const BookingScreen({super.key});
@@ -263,14 +266,13 @@ class _BookingScreenState extends State<BookingScreen> {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () {
-          // TODO: Add form validation in Phase 5
-          // Build search model from current form state
+          // TODO: Add form validation in Phase 7
           final search = BookingSearchModel(
-            fromCode: 'AMM', // TODO: Get from From field
+            fromCode: 'AMM', // TODO: Get from field widget
             fromCity: 'Amman',
-            toCode: 'DXB',   // TODO: Get from To field
+            toCode: 'DXB',
             toCity: 'Dubai',
-            departureDate: DateTime.now(), // TODO: Get from date picker
+            departureDate: DateTime.now(),
             tripType: _selectedTripType,
             adults: _passengerCount,
             youth: 0,
@@ -278,11 +280,9 @@ class _BookingScreenState extends State<BookingScreen> {
             infants: 0,
             travelClass: _selectedClass,
           );
-          Navigator.pushNamed(
-            context,
-            '/available-flights',
-            arguments: search,
-          );
+          // Save to provider
+          context.read<BookingProvider>().setSearch(search);
+          Navigator.pushNamed(context, '/available-flights', arguments: search);
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.cyan,
@@ -295,10 +295,8 @@ class _BookingScreenState extends State<BookingScreen> {
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'Search Flights',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
+            Text('Search Flights',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             SizedBox(width: 8),
             Icon(Icons.arrow_forward, size: 20),
           ],

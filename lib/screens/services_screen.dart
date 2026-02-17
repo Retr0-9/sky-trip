@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/flight_model.dart';
 import '../models/booking_search_model.dart';
+import '../providers/booking_provider.dart';
 
 class ServicesScreen extends StatefulWidget {
   const ServicesScreen({super.key});
@@ -30,6 +32,12 @@ class _ServicesScreenState extends State<ServicesScreen> {
       final args = ModalRoute.of(context)?.settings.arguments as Map?;
       _flight = args?['flight'] as FlightModel?;
       _search = args?['search'] as BookingSearchModel?;
+      // Sync local state with provider
+      final provider = context.read<BookingProvider>();
+      _mealCount = provider.mealCount;
+      _wheelchairSelected = provider.wheelchairSelected;
+      _specialAssistanceSelected = provider.specialAssistanceSelected;
+      _seatSelectionSelected = provider.seatSelectionSelected;
       _argumentsLoaded = true;
     }
   }
@@ -94,15 +102,13 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   hasCounter: true,
                   count: _mealCount,
                   onIncrement: () {
-                    setState(() {
-                      _mealCount++;
-                    });
+                    setState(() => _mealCount++);
+                    context.read<BookingProvider>().setMealCount(_mealCount);
                   },
                   onDecrement: () {
                     if (_mealCount > 0) {
-                      setState(() {
-                        _mealCount--;
-                      });
+                      setState(() => _mealCount--);
+                      context.read<BookingProvider>().setMealCount(_mealCount);
                     }
                   },
                 ),
@@ -313,9 +319,9 @@ class _ServicesScreenState extends State<ServicesScreen> {
           child: ElevatedButton(
             onPressed: () {
               if (_seatSelectionSelected) {
-                Navigator.pushNamed(context, '/seat-map', arguments: _routeArgs);
+                Navigator.pushNamed(context, '/seat-map');
               } else {
-                Navigator.pushNamed(context, '/payment', arguments: _routeArgs);
+                Navigator.pushNamed(context, '/payment');
               }
             },
             style: ElevatedButton.styleFrom(

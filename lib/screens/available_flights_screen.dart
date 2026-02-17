@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/flight_card.dart';
 import '../models/booking_search_model.dart';
 import '../models/flight_model.dart';
 import '../data/dummy_flights.dart';
+import '../providers/booking_provider.dart';
 
 class AvailableFlightsScreen extends StatefulWidget {
   const AvailableFlightsScreen({super.key});
@@ -24,6 +26,10 @@ class _AvailableFlightsScreenState extends State<AvailableFlightsScreen> {
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is BookingSearchModel) {
         _search = args;
+        // Persist to provider in case it wasn't already set
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          context.read<BookingProvider>().setSearch(args);
+        });
       } else {
         // Fallback dummy search if no args passed
         _search = BookingSearchModel(
@@ -81,7 +87,8 @@ class _AvailableFlightsScreenState extends State<AvailableFlightsScreen> {
               children: [
                 Text(
                   _search.fromCode,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 8),
@@ -89,7 +96,8 @@ class _AvailableFlightsScreenState extends State<AvailableFlightsScreen> {
                 ),
                 Text(
                   _search.toCode,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -175,7 +183,7 @@ class _AvailableFlightsScreenState extends State<AvailableFlightsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.flight_off, size: 64, color: Colors.grey.shade300),
+            Icon(Icons.flight_takeoff, size: 64, color: Colors.grey.shade300),
             const SizedBox(height: 16),
             Text(
               'No flights found',
@@ -205,6 +213,8 @@ class _AvailableFlightsScreenState extends State<AvailableFlightsScreen> {
             price: flight.price.toStringAsFixed(0),
             currency: flight.currency,
             onTap: () {
+              // Save to provider
+              context.read<BookingProvider>().selectFlight(flight);
               Navigator.pushNamed(
                 context,
                 '/flight-details',

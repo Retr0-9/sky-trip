@@ -1,27 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../widgets/offer_card.dart';
 import '../widgets/recent_search_card.dart';
 import '../widgets/section_header.dart';
 import '../data/dummy_offers.dart';
 import '../data/dummy_recent_searches.dart';
-import '../models/booking_search_model.dart';
+import '../providers/user_provider.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
-  }
-
-  IconData _getGreetingIcon() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return Icons.wb_sunny;
-    if (hour < 17) return Icons.wb_sunny_outlined;
-    return Icons.nights_stay_outlined;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +16,7 @@ class HomeScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildGreetingHeader(),
+          _buildGreetingHeader(context),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -59,7 +46,11 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildGreetingHeader() {
+  Widget _buildGreetingHeader(BuildContext context) {
+    final user = context.watch<UserProvider>();
+    final hour = DateTime.now().hour;
+    final icon = hour < 12 ? Icons.wb_sunny : hour < 17 ? Icons.wb_sunny_outlined : Icons.nights_stay_outlined;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -69,10 +60,10 @@ class HomeScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(_getGreetingIcon(), color: Colors.orange, size: 20),
+              Icon(icon, color: Colors.orange, size: 20),
               const SizedBox(width: 8),
               Text(
-                '${_getGreeting()}, User', // TODO: Replace 'User' with real name
+                '${user.greeting}, ${user.firstName}',
                 style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
               ),
             ],
