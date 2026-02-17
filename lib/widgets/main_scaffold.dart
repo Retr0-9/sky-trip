@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/booking_provider.dart';
 import '../providers/user_provider.dart';
+import '../theme/app_theme.dart';
 import '../screens/home_screen.dart';
 import '../screens/booking_screen.dart';
 import '../screens/tickets_screen.dart';
@@ -85,34 +86,86 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   void _onLogout() {
-    Navigator.pop(context);
-    context.read<UserProvider>().logout();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Logged out successfully')),
+    Navigator.pop(context); // close drawer
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Log Out'),
+        content: const Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<UserProvider>().logout();
+              Navigator.pushReplacementNamed(context, '/auth');
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Log Out', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Watch providers for reactive drawer header
-    final user = context.watch<UserProvider>();
+    final user    = context.watch<UserProvider>();
     final booking = context.watch<BookingProvider>();
 
-    return Scaffold(
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu, color: AppColors.textPrimary),
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
+          ),
+        ),
         title: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.flight, color: Colors.cyan),
-            const SizedBox(width: 8),
-            const Text('Sky Trip'),
-            // Show booking-in-progress indicator
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.cyan, AppColors.cyanDark],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: AppRadius.sm,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.cyan.withOpacity(0.3),
+                    blurRadius: 8, offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.flight, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'Sky Trip',
+              style: TextStyle(
+                fontWeight: FontWeight.w800, fontSize: 20,
+                color: AppColors.textPrimary, letterSpacing: -0.3,
+              ),
+            ),
+            // Booking in-progress badge
             if (booking.isInBookingFlow) ...[
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: Colors.orange.shade100,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: AppRadius.full,
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
@@ -127,6 +180,7 @@ class _MainScaffoldState extends State<MainScaffold> {
             ],
           ],
         ),
+        centerTitle: true,
       ),
       drawer: Drawer(
         child: ListView(
@@ -201,6 +255,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
-    );
+    ), // Scaffold
+    ); // GradientBackground
   }
 }

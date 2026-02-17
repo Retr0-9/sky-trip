@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../providers/booking_provider.dart';
 
@@ -53,7 +54,7 @@ class _SeatMapScreenState extends State<SeatMapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GradientBackground(child: Scaffold(backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Select Your Seat'),
         elevation: 0,
@@ -95,6 +96,7 @@ class _SeatMapScreenState extends State<SeatMapScreen> {
           _buildBottomButton(),
         ],
       ),
+    )
     );
   }
 

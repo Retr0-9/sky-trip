@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import '../widgets/info_row.dart';
 import '../widgets/primary_button.dart';
 import '../models/flight_model.dart';
@@ -33,7 +34,7 @@ class FlightDetailsScreen extends StatelessWidget {
     final taxes = baseFare * 0.15;
     final total = baseFare + taxes;
 
-    return Scaffold(
+    return GradientBackground(child: Scaffold(backgroundColor: Colors.transparent,
       appBar: AppBar(title: const Text('Flight Details'), elevation: 0),
       body: Column(
         children: [
@@ -66,6 +67,7 @@ class FlightDetailsScreen extends StatelessWidget {
           _buildBottomButton(context, flight, search),
         ],
       ),
+    )
     );
   }
 

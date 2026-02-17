@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../widgets/flight_card.dart';
 import '../models/booking_search_model.dart';
@@ -60,7 +61,9 @@ class _AvailableFlightsScreenState extends State<AvailableFlightsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return GradientBackground(
+        child: Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Available Flights'),
         elevation: 0,
@@ -73,7 +76,7 @@ class _AvailableFlightsScreenState extends State<AvailableFlightsScreen> {
           Expanded(child: _buildFlightList()),
         ],
       ),
-    );
+    ));
   }
 
   Widget _buildSearchSummary() {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../providers/booking_provider.dart';
 
@@ -15,7 +16,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   @override
   Widget build(BuildContext context) {
     final booking = context.watch<BookingProvider>();
-    return Scaffold(
+    return GradientBackground(child: Scaffold(backgroundColor: Colors.transparent,
       appBar: AppBar(title: const Text('Payment'), elevation: 0),
       body: Column(
         children: [
@@ -36,6 +37,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           _buildBottomButton(booking),
         ],
       ),
+    )
     );
   }
 

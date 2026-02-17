@@ -6,129 +6,161 @@ import '../widgets/section_header.dart';
 import '../data/dummy_offers.dart';
 import '../data/dummy_recent_searches.dart';
 import '../providers/user_provider.dart';
+import '../theme/app_theme.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildGreetingHeader(context),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SectionHeader(
-                  title: 'Recent Searches',
-                  icon: Icons.history,
-                  onSeeAll: () {},
-                ),
-                const SizedBox(height: 12),
-                _buildRecentSearches(context),
-                const SizedBox(height: 24),
-                SectionHeader(
-                  title: 'Latest Offers',
-                  icon: Icons.trending_up,
-                  onSeeAll: () {},
-                ),
-                const SizedBox(height: 12),
-                _buildOffers(),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGreetingHeader(BuildContext context) {
     final user = context.watch<UserProvider>();
     final hour = DateTime.now().hour;
     final icon = hour < 12 ? Icons.wb_sunny : hour < 17 ? Icons.wb_sunny_outlined : Icons.nights_stay_outlined;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      color: Colors.grey.shade100,
+    return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(icon, color: Colors.orange, size: 20),
+          // ── Greeting ────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+            child: Row(children: [
+              Icon(icon, color: AppColors.orange, size: 20),
               const SizedBox(width: 8),
               Text(
                 '${user.greeting}, ${user.firstName}',
-                style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
-            ],
+            ]),
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Ready for your next adventure?',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: Text(
+              'Ready for your next adventure?',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
           ),
+
+          // ── Recent Searches ──────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SectionHeader(
+              title: 'Recent Searches',
+              icon: Icons.history,
+              onSeeAll: () {},
+            ),
+          ),
+          const SizedBox(height: 10),
+          ...DummyRecentSearches.searches.map((search) => Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            child: RecentSearchCard(
+              from: search.fromCode,
+              to: search.toCode,
+              passengers: search.totalPassengers,
+              onTap: () {},
+            ),
+          )),
+
+          const SizedBox(height: 8),
+
+          // ── Latest Offers ───────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SectionHeader(
+              title: 'Latest Offers',
+              icon: Icons.trending_up,
+              onSeeAll: () {},
+            ),
+          ),
+          const SizedBox(height: 10),
+          ...DummyOffers.offers.map((offer) => Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: OfferCard(
+              title: offer.title,
+              subtitle: offer.subtitle,
+              discount: offer.discount,
+              validUntil: offer.validUntil,
+              color: offer.color,
+              onTap: () {},
+            ),
+          )),
+
+          const SizedBox(height: 8),
+
+          // ── Featured Destinations ───────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SectionHeader(
+              title: 'Featured Destinations',
+              icon: Icons.star_border,
+              onSeeAll: () {},
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 130,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: const [
+                _DestCard(city: 'Dubai', emoji: '🏙️', color: Color(0xFF5BB8C8)),
+                _DestCard(city: 'London', emoji: '🎡', color: Color(0xFF7C9CBF)),
+                _DestCard(city: 'Paris', emoji: '🗼', color: Color(0xFF9B8EA8)),
+                _DestCard(city: 'Cairo', emoji: '🏛️', color: Color(0xFFC4956A)),
+                _DestCard(city: 'Istanbul', emoji: '🕌', color: Color(0xFF7EB5A0)),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 32),
         ],
       ),
     );
   }
+}
 
-  Widget _buildRecentSearches(BuildContext context) {
-    final searches = DummyRecentSearches.searches;
+class _DestCard extends StatelessWidget {
+  final String city;
+  final String emoji;
+  final Color color;
 
-    if (searches.isEmpty) {
-      return Center(
-        child: Text(
-          'No recent searches',
-          style: TextStyle(color: Colors.grey.shade500),
+  const _DestCard({required this.city, required this.emoji, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 110,
+      margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        borderRadius: AppRadius.md,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [color, color.withOpacity(0.7)],
         ),
-      );
-    }
-
-    return Column(
-      children: searches.map((search) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: RecentSearchCard(
-            from: search.fromCode,
-            to: search.toCode,
-            passengers: search.totalPassengers,
-            onTap: () {
-              // TODO: Pre-fill booking form with this search in Phase 5
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                      'Re-search ${search.fromCode}→${search.toCode}: TODO Phase 5'),
-                ),
-              );
-            },
+        boxShadow: AppShadows.sm,
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: 10, right: 10,
+            child: Text(emoji, style: const TextStyle(fontSize: 36)),
           ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildOffers() {
-    final offers = DummyOffers.offers;
-    return Column(
-      children: offers.map((offer) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: OfferCard(
-            title: offer.title,
-            subtitle: offer.subtitle,
-            discount: offer.discount,
-            validUntil: offer.validUntil,
-            color: offer.color,
-            onTap: () {},
+          Positioned(
+            bottom: 12, left: 12,
+            child: Text(
+              city,
+              style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14,
+              ),
+            ),
           ),
-        );
-      }).toList(),
+        ],
+      ),
     );
   }
 }
