@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../providers/user_provider.dart';
+import '../services/auth_service.dart';
 
 enum _AuthMode { signIn, signUp }
 
@@ -63,41 +64,77 @@ class _AuthScreenState extends State<AuthScreen>
     _animCtrl.forward();
   }
 
-  Future<void> _submit() async {
-    setState(() => _isLoading = true);
-    // Simulate network delay — replace with real auth in Phase 6
-    await Future.delayed(const Duration(milliseconds: 900));
-
+  void _showError(String message) {
     if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 
-    final user = context.read<UserProvider>();
+  Future<void> _submit() async {
+    // ── Basic validation ──────────────────────────────────
+    final email    = _emailCtrl.text.trim();
+    final password = _passwordCtrl.text;
 
     if (_isStaffMode) {
-      user.login(
-        firstName: 'Staff',
-        lastName: 'Member',
-        email: 'staff@skytrip.com',
-      );
+      if (email.isEmpty || password.isEmpty) {
+        _showError('Enter your email and password.');
+        return;
+      }
     } else if (_mode == _AuthMode.signIn) {
-      // TODO: Replace with Firebase Auth in Phase 6
-      user.login(
-        firstName: 'John',
-        lastName: 'Doe',
-        email: _emailCtrl.text.isEmpty ? 'john.doe@email.com' : _emailCtrl.text,
-      );
+      if (email.isEmpty || !email.contains('@')) {
+        _showError('Enter a valid email address.');
+        return;
+      }
+      if (password.length < 6) {
+        _showError('Password must be at least 6 characters.');
+        return;
+      }
     } else {
-      user.login(
-        firstName: _firstNameCtrl.text.isEmpty ? 'New' : _firstNameCtrl.text,
-        lastName: _lastNameCtrl.text.isEmpty ? 'User' : _lastNameCtrl.text,
-        email: _emailCtrl.text.isEmpty ? 'user@email.com' : _emailCtrl.text,
-      );
+      // Sign-up — register not wired yet
+      _showError('Registration coming soon. Please sign in.');
+      return;
     }
 
-    setState(() => _isLoading = false);
+    setState(() => _isLoading = true);
 
-    // Navigate to main app, clearing the auth screen from stack
-    if (mounted) {
+    try {
+      final result = await AuthService.login(email, password);
+
+      if (!mounted) return;
+
+      // Derive a display name from the email (e.g. "ali@gmail.com" → "Ali")
+      final namePart  = result.email.split('@').first;
+      final firstName = namePart.isNotEmpty
+          ? namePart[0].toUpperCase() + namePart.substring(1)
+          : 'User';
+
+      final user = context.read<UserProvider>();
+      user.login(
+        firstName: firstName,
+        lastName:  '',
+        email:     result.email,
+        token:     result.token,
+        userId:    result.userId,
+        personId:  result.personId,
+        clientId:  result.clientId,
+        role:      result.role,
+      );
+
+      // Fire-and-forget: fetch full profile in the background
+      user.loadProfile();
+
       Navigator.pushReplacementNamed(context, '/home');
+    } on AuthException catch (e) {
+      _showError(e.message);
+    } catch (_) {
+      _showError('Something went wrong. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

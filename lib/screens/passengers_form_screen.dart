@@ -1,6 +1,16 @@
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import '../models/flight_model.dart';
+import 'package:provider/provider.dart';
+import '../models/flight_schedule_model.dart';
 import '../models/booking_search_model.dart';
+import '../models/country_model.dart';
+import '../providers/booking_provider.dart';
+import '../providers/user_provider.dart';
+import '../services/auth_service.dart';
+import '../services/booking_service.dart';
+import '../services/country_service.dart';
+import '../theme/app_theme.dart';
 
 class PassengersFormScreen extends StatefulWidget {
   const PassengersFormScreen({super.key});
@@ -10,600 +20,603 @@ class PassengersFormScreen extends StatefulWidget {
 }
 
 class _PassengersFormScreenState extends State<PassengersFormScreen> {
-  FlightModel? _flight;
-  BookingSearchModel? _search;
-  bool _argumentsLoaded = false;
+  // ── Route args ───────────────────────────────────────────────
+  FlightScheduleModel? _schedule;
+  BookingSearchModel?  _search;
+  bool _argsLoaded = false;
 
-  int _currentPassengerIndex = 0;
-  String _selectedDocumentType = 'passport';
+  // ── Passenger navigation ──────────────────────────────────────
+  int _currentIndex = 0;
 
-  int get _adults => _search?.adults ?? 1;
-  int get _youth => _search?.youth ?? 0;
+  int get _adults   => _search?.adults   ?? 1;
+  int get _youth    => _search?.youth    ?? 0;
   int get _children => _search?.children ?? 0;
-  int get _infants => _search?.infants ?? 0;
-  int get _totalPassengers => _search?.totalPassengers ?? 1;
+  int get _total    => _search?.totalPassengers ?? 1;
+
+  // ── Per-passenger form data store ─────────────────────────────
+  // Each entry mirrors one passenger's filled values.
+  late List<Map<String, dynamic>> _data;
+
+  // ── Current-passenger form controllers ───────────────────────
+  final _firstNameCtrl = TextEditingController();
+  final _lastNameCtrl  = TextEditingController();
+  final _emailCtrl     = TextEditingController();
+  final _phoneCtrl     = TextEditingController();
+
+  DateTime?    _dob;
+  String       _gender       = '';
+  CountryModel? _issueCountry;
+  String       _docType      = 'Passport';
+  DateTime?    _expiryDate;
+  File?        _docFile;
+
+  // ── Countries ─────────────────────────────────────────────────
+  List<CountryModel> _countries      = [];
+  bool               _loadingCountries = true;
+
+  // ── Submission ────────────────────────────────────────────────
+  bool _submitting = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_argumentsLoaded) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map?;
-      _flight = args?['flight'] as FlightModel?;
-      _search = args?['search'] as BookingSearchModel?;
-      _argumentsLoaded = true;
-    }
-  }
-
-  String get _currentPassengerType {
-    if (_currentPassengerIndex < _adults) return 'Adult';
-    if (_currentPassengerIndex < _adults + _youth) return 'Youth';
-    if (_currentPassengerIndex < _adults + _youth + _children) return 'Child';
-    return 'Infant';
-  }
-
-  String get _passengerLabel {
-    if (_currentPassengerIndex < _adults)
-      return 'Adult ${_currentPassengerIndex + 1}';
-    if (_currentPassengerIndex < _adults + _youth)
-      return 'Youth ${_currentPassengerIndex - _adults + 1}';
-    if (_currentPassengerIndex < _adults + _youth + _children)
-      return 'Child ${_currentPassengerIndex - _adults - _youth + 1}';
-    return 'Infant ${_currentPassengerIndex - _adults - _youth - _children + 1}';
+    if (_argsLoaded) return;
+    final args = ModalRoute.of(context)?.settings.arguments as Map?;
+    _schedule = args?['schedule'] as FlightScheduleModel?;
+    _search   = args?['search']   as BookingSearchModel?;
+    _data     = List.generate(_total, (_) => {});
+    _argsLoaded = true;
+    _loadCountries();
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Passenger Information'),
-        elevation: 0,
+  void dispose() {
+    _firstNameCtrl.dispose();
+    _lastNameCtrl.dispose();
+    _emailCtrl.dispose();
+    _phoneCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadCountries() async {
+    try {
+      final countries = await CountryService.getAllCountries(
+          context.read<UserProvider>().token);
+      if (mounted) setState(() { _countries = countries; _loadingCountries = false; });
+    } catch (_) {
+      if (mounted) setState(() => _loadingCountries = false);
+    }
+  }
+
+  // ── Save / restore form state per passenger ───────────────────
+  void _saveCurrentToData() {
+    _data[_currentIndex] = {
+      'firstName':   _firstNameCtrl.text.trim(),
+      'lastName':    _lastNameCtrl.text.trim(),
+      'email':       _emailCtrl.text.trim(),
+      'phone':       _phoneCtrl.text.trim(),
+      'dob':         _dob?.toIso8601String(),
+      'gender':      _gender,
+      'countryId':   _issueCountry?.countryId,
+      'countryName': _issueCountry?.countryName,
+      'docType':     _docType,
+      'expiry':      _expiryDate?.toIso8601String(),
+      'docFile':     _docFile?.path,
+    };
+  }
+
+  void _loadDataIntoForm(int index) {
+    final d = _data[index];
+    _firstNameCtrl.text = d['firstName'] ?? '';
+    _lastNameCtrl.text  = d['lastName']  ?? '';
+    _emailCtrl.text     = d['email']     ?? '';
+    _phoneCtrl.text     = d['phone']     ?? '';
+    _dob          = d['dob']    != null ? DateTime.tryParse(d['dob']!)    : null;
+    _gender       = d['gender'] ?? '';
+    _docType      = d['docType'] ?? 'Passport';
+    _expiryDate   = d['expiry'] != null ? DateTime.tryParse(d['expiry']!) : null;
+    _docFile      = d['docFile'] != null ? File(d['docFile']!) : null;
+    final cId     = d['countryId'] as int?;
+    final cName   = d['countryName'] as String?;
+    _issueCountry = (cId != null && cName != null)
+        ? CountryModel(countryId: cId, countryName: cName)
+        : null;
+  }
+
+  void _goTo(int index) {
+    _saveCurrentToData();
+    setState(() {
+      _currentIndex = index;
+      _loadDataIntoForm(index);
+    });
+  }
+
+  // ── Date pickers ──────────────────────────────────────────────
+  Future<void> _pickDob() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime(2000),
+      firstDate:   DateTime(1920),
+      lastDate:    DateTime.now(),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+            colorScheme: const ColorScheme.light(primary: AppColors.cyan)),
+        child: child!,
       ),
-      body: Column(
-        children: [
-          // Progress Indicator
-          _buildProgressHeader(),
-          
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Passenger Type Label
-                  _buildPassengerTypeLabel(),
-                  const SizedBox(height: 24),
-                  
-                  // Form Fields
-                  _buildFormFields(),
-                  const SizedBox(height: 24),
-                  
-                  // Navigation Buttons (if multiple passengers)
-                  if (_totalPassengers > 1) _buildPassengerNavigation(),
-                ],
+    );
+    if (picked != null) setState(() => _dob = picked);
+  }
+
+  Future<void> _pickExpiry() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: now.add(const Duration(days: 365)),
+      firstDate:   now,
+      lastDate:    now.add(const Duration(days: 365 * 20)),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+            colorScheme: const ColorScheme.light(primary: AppColors.cyan)),
+        child: child!,
+      ),
+    );
+    if (picked != null) setState(() => _expiryDate = picked);
+  }
+
+  // ── Country picker ────────────────────────────────────────────
+  void _pickCountry() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) {
+        String q = '';
+        return StatefulBuilder(builder: (ctx, setS) {
+          final filtered = _countries
+              .where((c) => c.countryName.toLowerCase().contains(q.toLowerCase()))
+              .toList();
+          return DraggableScrollableSheet(
+            expand: false,
+            initialChildSize: 0.55,
+            maxChildSize: 0.9,
+            builder: (_, ctrl) => Column(children: [
+              const SizedBox(height: 12),
+              Container(width: 40, height: 4,
+                  decoration: BoxDecoration(color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2))),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: TextField(
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: 'Search country…',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  onChanged: (v) => setS(() => q = v),
+                ),
               ),
-            ),
-          ),
-          
-          // Bottom Continue Button
-          _buildBottomButton(),
-        ],
-      ),
+              Expanded(
+                child: ListView.builder(
+                  controller: ctrl,
+                  itemCount: filtered.length,
+                  itemBuilder: (_, i) => ListTile(
+                    leading: const Icon(Icons.flag_outlined, color: AppColors.cyan),
+                    title: Text(filtered[i].countryName),
+                    trailing: _issueCountry?.countryId == filtered[i].countryId
+                        ? const Icon(Icons.check, color: AppColors.cyan) : null,
+                    onTap: () {
+                      setState(() => _issueCountry = filtered[i]);
+                      Navigator.pop(ctx);
+                    },
+                  ),
+                ),
+              ),
+            ]),
+          );
+        });
+      },
     );
   }
 
-  // ==================== SECTION BUILDERS ====================
+  // ── File picker ───────────────────────────────────────────────
+  Future<void> _pickDocument() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+    );
+    if (result != null && result.files.single.path != null) {
+      setState(() => _docFile = File(result.files.single.path!));
+    }
+  }
 
-  Widget _buildProgressHeader() {
+  // ── Validation ────────────────────────────────────────────────
+  String? _validateCurrent() {
+    if (_firstNameCtrl.text.trim().isEmpty) return 'First name is required.';
+    if (_lastNameCtrl.text.trim().isEmpty)  return 'Last name is required.';
+    if (_emailCtrl.text.trim().isEmpty || !_emailCtrl.text.contains('@')) {
+      return 'Enter a valid email.';
+    }
+    if (_phoneCtrl.text.trim().isEmpty)  return 'Phone is required.';
+    if (_dob == null)                    return 'Date of birth is required.';
+    if (_gender.isEmpty)                 return 'Gender is required.';
+    if (_issueCountry == null)           return 'Issue country is required.';
+    if (_expiryDate == null)             return 'Document expiry date is required.';
+    return null;
+  }
+
+  // ── Submit all passengers ─────────────────────────────────────
+  Future<void> _submitAll() async {
+    _saveCurrentToData();
+
+    // Validate all passengers
+    for (int i = 0; i < _total; i++) {
+      final d = _data[i];
+      if ((d['firstName'] ?? '').isEmpty || (d['lastName'] ?? '').isEmpty ||
+          (d['email'] ?? '').isEmpty     || (d['gender']    ?? '').isEmpty ||
+          d['dob'] == null               || d['countryId']  == null) {
+        _snack('Please complete passenger ${i + 1} details.');
+        _goTo(i);
+        return;
+      }
+    }
+
+    setState(() => _submitting = true);
+    final user    = context.read<UserProvider>();
+    final booking = context.read<BookingProvider>();
+    final bookId  = booking.bookId ?? 0;
+
+    try {
+      for (int i = 0; i < _total; i++) {
+        final d = _data[i];
+        await BookingService.addPassenger(
+          bookId: bookId,
+          data: PassengerFormData(
+            firstName:       d['firstName'],
+            lastName:        d['lastName'],
+            email:           d['email'],
+            phone:           d['phone'] ?? '',
+            birthDate:       DateTime.parse(d['dob']),
+            gender:          d['gender'],
+            issueCountryId:  d['countryId'] as int,
+            documentationType: d['docType'] ?? 'Passport',
+            expirationDate:  d['expiry'] != null
+                ? DateTime.parse(d['expiry'])
+                : DateTime.now().add(const Duration(days: 365 * 5)),
+            documentFile:    d['docFile'] != null ? File(d['docFile']!) : null,
+          ),
+          token: user.token,
+        );
+      }
+
+      if (!mounted) return;
+      Navigator.pushNamed(context, '/services',
+          arguments: {'schedule': _schedule, 'search': _search});
+    } on AuthException catch (e) {
+      _snack(e.message, isError: true);
+    } catch (_) {
+      _snack('Failed to submit passenger info. Please try again.', isError: true);
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  void _snack(String msg, {bool isError = false}) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(msg),
+        backgroundColor: isError ? AppColors.error : AppColors.cyan,
+        behavior: SnackBarBehavior.floating,
+      ));
+
+  // ── Passenger type label ──────────────────────────────────────
+  String get _typeLabel {
+    if (_currentIndex < _adults) return 'Adult ${_currentIndex + 1}';
+    if (_currentIndex < _adults + _youth) return 'Youth ${_currentIndex - _adults + 1}';
+    if (_currentIndex < _adults + _youth + _children) {
+      return 'Child ${_currentIndex - _adults - _youth + 1}';
+    }
+    return 'Infant ${_currentIndex - _adults - _youth - _children + 1}';
+  }
+
+  // ── UI ────────────────────────────────────────────────────────
+  @override
+  Widget build(BuildContext context) {
+    final isLast = _currentIndex == _total - 1;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Passenger Information'), elevation: 0),
+      body: Column(children: [
+        _buildProgressHeader(),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              _buildTypeLabel(),
+              const SizedBox(height: 24),
+              _buildForm(),
+              const SizedBox(height: 24),
+              if (_total > 1) _buildNavButtons(),
+              const SizedBox(height: 80),
+            ]),
+          ),
+        ),
+        if (isLast) _buildBottomBar(),
+      ]),
+    );
+  }
+
+  Widget _buildProgressHeader() => Container(
+    padding: const EdgeInsets.all(16),
+    color: AppColors.cyanLight,
+    child: Column(children: [
+      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Text('Passenger ${_currentIndex + 1} of $_total',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        Text('${((_currentIndex + 1) / _total * 100).toInt()}%',
+            style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+      ]),
+      const SizedBox(height: 8),
+      LinearProgressIndicator(
+        value: (_currentIndex + 1) / _total,
+        backgroundColor: Colors.grey.shade200,
+        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.cyan),
+      ),
+    ]),
+  );
+
+  Widget _buildTypeLabel() {
+    const colors = {
+      'Adult': AppColors.cyan, 'Youth': Colors.blue,
+      'Child': Colors.orange,  'Infant': Colors.purple,
+    };
+    final key   = _typeLabel.split(' ').first;
+    final color = colors[key] ?? AppColors.cyan;
     return Container(
       padding: const EdgeInsets.all(16),
-      color: Colors.cyan.shade50,
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Passenger ${_currentPassengerIndex + 1} of $_totalPassengers',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                '${((_currentPassengerIndex + 1) / _totalPassengers * 100).toInt()}%',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ],
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(children: [
+        CircleAvatar(backgroundColor: color.withValues(alpha: 0.15), radius: 22,
+            child: Icon(Icons.person, color: color)),
+        const SizedBox(width: 12),
+        Text(_typeLabel,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      ]),
+    );
+  }
+
+  Widget _buildForm() => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    // Name row
+    Row(children: [
+      Expanded(child: _field('First Name *', _firstNameCtrl, Icons.person_outline)),
+      const SizedBox(width: 12),
+      Expanded(child: _field('Last Name *',  _lastNameCtrl,  Icons.person_outline)),
+    ]),
+    const SizedBox(height: 16),
+
+    _field('Email *', _emailCtrl, Icons.email_outlined,
+        keyboard: TextInputType.emailAddress),
+    const SizedBox(height: 16),
+
+    _field('Phone *', _phoneCtrl, Icons.phone_outlined,
+        keyboard: TextInputType.phone),
+    const SizedBox(height: 16),
+
+    // DOB + Gender
+    Row(children: [
+      Expanded(child: _pickerTile('Date of Birth *',
+          _dob != null ? _fmt(_dob!) : null,
+          Icons.calendar_today_outlined, _pickDob)),
+      const SizedBox(width: 12),
+      Expanded(child: _dropdownTile('Gender *', _gender.isEmpty ? null : _gender,
+          Icons.wc, _showGenderPicker)),
+    ]),
+    const SizedBox(height: 16),
+
+    // Issue country
+    _pickerTile(
+      'Issue Country *',
+      _loadingCountries ? 'Loading…' : _issueCountry?.countryName,
+      Icons.public,
+      _loadingCountries ? null : _pickCountry,
+    ),
+    const SizedBox(height: 16),
+
+    // Document type
+    _label('Document Type *'),
+    const SizedBox(height: 8),
+    RadioGroup<String>(
+      groupValue: _docType,
+      onChanged: (v) { if (v != null) setState(() => _docType = v); },
+      child: Row(children: [
+        for (final t in ['Passport', 'ID'])
+          Expanded(child: GestureDetector(
+            onTap: () => setState(() => _docType = t),
+            child: Row(children: [
+              Radio<String>(value: t, activeColor: AppColors.cyan),
+              Text(t),
+            ]),
+          )),
+      ]),
+    ),
+    const SizedBox(height: 16),
+
+    // Expiry date
+    _pickerTile('Document Expiry Date *',
+        _expiryDate != null ? _fmt(_expiryDate!) : null,
+        Icons.event_outlined, _pickExpiry),
+    const SizedBox(height: 16),
+
+    // Document file
+    _label('Upload Document (PDF / Photo)'),
+    const SizedBox(height: 8),
+    GestureDetector(
+      onTap: _pickDocument,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _docFile != null ? AppColors.cyan : Colors.grey.shade300,
+          ),
+        ),
+        child: Column(children: [
+          Icon(
+            _docFile != null ? Icons.check_circle : Icons.upload_file,
+            color: _docFile != null ? AppColors.cyan : Colors.grey.shade400,
+            size: 32,
           ),
           const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: (_currentPassengerIndex + 1) / _totalPassengers,
-            backgroundColor: Colors.grey.shade300,
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.cyan),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPassengerTypeLabel() {
-    IconData icon;
-    Color color;
-    String ageRange;
-    
-    switch (_currentPassengerType) {
-      case 'Adult':
-        icon = Icons.person;
-        color = Colors.cyan;
-        ageRange = '12+ years';
-        break;
-      case 'Youth':
-        icon = Icons.person_outline;
-        color = Colors.blue;
-        ageRange = '12-16 years';
-        break;
-      case 'Child':
-        icon = Icons.child_care;
-        color = Colors.orange;
-        ageRange = '2-12 years';
-        break;
-      case 'Infant':
-        icon = Icons.baby_changing_station;
-        color = Colors.purple;
-        ageRange = '0-2 years (1 per adult)';
-        break;
-      default:
-        icon = Icons.person;
-        color = Colors.cyan;
-        ageRange = '';
-    }
-    
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _passengerLabel,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                ageRange,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFormFields() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // First Name + Last Name (Row)
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSectionLabel('First Name *'),
-                  const SizedBox(height: 8),
-                  _buildTextField(hint: '', icon: Icons.person_outline),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSectionLabel('Last Name *'),
-                  const SizedBox(height: 8),
-                  _buildTextField(hint: '', icon: Icons.person_outline),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        
-        // Email
-        _buildSectionLabel('Email *'),
-        const SizedBox(height: 8),
-        _buildTextField(hint: '', icon: Icons.email_outlined),
-        const SizedBox(height: 16),
-        
-        // Phone
-        _buildSectionLabel('Phone *'),
-        const SizedBox(height: 8),
-        _buildTextField(hint: '', icon: Icons.phone_outlined),
-        const SizedBox(height: 16),
-        
-        // Date of Birth + Gender (Row)
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSectionLabel('Date of Birth *'),
-                  const SizedBox(height: 8),
-                  _buildDateField(hint: 'mm/dd/yyyy'),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSectionLabel('Gender *'),
-                  const SizedBox(height: 8),
-                  _buildDropdownField(hint: 'Select Gender', icon: Icons.person_outline),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        
-        // Issued Country
-        _buildSectionLabel('Issued Country *'),
-        const SizedBox(height: 8),
-        _buildDropdownField(hint: 'Select Country', icon: Icons.public),
-        const SizedBox(height: 16),
-        
-        // Document Type
-        _buildSectionLabel('Document Type *'),
-        const SizedBox(height: 8),
-        _buildDocumentTypeSelector(),
-        const SizedBox(height: 16),
-        
-        // Upload Document
-        _buildSectionLabel('Upload Document * (PDF or Photo)'),
-        const SizedBox(height: 8),
-        _buildUploadButtons(),
-      ],
-    );
-  }
-
-  Widget _buildSectionLabel(String label) {
-    return Text(
-      label,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: Colors.black87,
-      ),
-    );
-  }
-
-  Widget _buildTextField({required String hint, required IconData icon}) {
-    // TODO: Replace with actual TextFormField in Phase 3
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.cyan.shade300, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              hint,
-              style: TextStyle(color: Colors.grey.shade400),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDateField({required String hint}) {
-    // TODO: Replace with actual date picker in Phase 3
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.calendar_today_outlined, color: Colors.cyan.shade300, size: 20),
-          const SizedBox(width: 12),
           Text(
-            hint,
-            style: TextStyle(color: Colors.grey.shade400),
+            _docFile != null
+                ? _docFile!.path.split('/').last
+                : 'Tap to upload PDF or photo',
+            style: TextStyle(
+              color: _docFile != null ? AppColors.textPrimary : Colors.grey.shade500,
+              fontSize: 13,
+            ),
+            textAlign: TextAlign.center,
           ),
-        ],
+        ]),
       ),
+    ),
+  ]);
+
+  void _showGenderPicker() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Column(mainAxisSize: MainAxisSize.min, children: [
+        const SizedBox(height: 16),
+        const Text('Select Gender',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const Divider(height: 24),
+        for (final g in ['Male', 'Female'])
+          ListTile(
+            title: Text(g),
+            trailing: _gender == g
+                ? const Icon(Icons.check, color: AppColors.cyan) : null,
+            onTap: () { setState(() => _gender = g); Navigator.pop(ctx); },
+          ),
+        const SizedBox(height: 16),
+      ]),
     );
   }
 
-  Widget _buildDropdownField({required String hint, required IconData icon}) {
-    // TODO: Replace with actual dropdown in Phase 3
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
+  Widget _buildNavButtons() => Row(children: [
+    Expanded(child: OutlinedButton.icon(
+      onPressed: _currentIndex > 0 ? () => _goTo(_currentIndex - 1) : null,
+      icon: const Icon(Icons.arrow_back, size: 18),
+      label: const Text('Previous'),
+      style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          side: BorderSide(color: Colors.grey.shade300)),
+    )),
+    const SizedBox(width: 16),
+    Expanded(child: ElevatedButton(
+      onPressed: _currentIndex < _total - 1 ? () {
+        final err = _validateCurrent();
+        if (err != null) { _snack(err); return; }
+        _goTo(_currentIndex + 1);
+      } : null,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.cyan, foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.cyan.shade300, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              hint,
-              style: TextStyle(color: Colors.grey.shade400),
-            ),
-          ),
-          Icon(Icons.arrow_drop_down, color: Colors.grey.shade400),
-        ],
-      ),
-    );
-  }
+      child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Text('Next'), SizedBox(width: 8), Icon(Icons.arrow_forward, size: 18),
+      ]),
+    )),
+  ]);
 
-  Widget _buildDocumentTypeSelector() {
-    return Row(
-      children: [
-        Expanded(
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedDocumentType = 'passport';
-              });
-            },
-            child: Row(
-              children: [
-                Radio<String>(
-                  value: 'passport',
-                  groupValue: _selectedDocumentType,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedDocumentType = value!;
-                    });
-                  },
-                  activeColor: Colors.cyan,
-                ),
-                const Text('Passport'),
-              ],
-            ),
+  Widget _buildBottomBar() => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: const BoxDecoration(color: Colors.white, boxShadow: AppShadows.sm),
+    child: SafeArea(
+      child: SizedBox(width: double.infinity,
+        child: ElevatedButton(
+          onPressed: _submitting ? null : _submitAll,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.cyan, foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
+          child: _submitting
+              ? const SizedBox(height: 20, width: 20,
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+              : const Text('Continue to Services',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         ),
-        Expanded(
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedDocumentType = 'id';
-              });
-            },
-            child: Row(
-              children: [
-                Radio<String>(
-                  value: 'id',
-                  groupValue: _selectedDocumentType,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedDocumentType = value!;
-                    });
-                  },
-                  activeColor: Colors.cyan,
-                ),
-                const Text('ID'),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+      ),
+    ),
+  );
 
-  Widget _buildUploadButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: GestureDetector(
-            onTap: () {
-              // TODO: Implement PDF picker in Phase 4
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Upload PDF: TODO in Phase 4')),
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              decoration: BoxDecoration(
-                color: Colors.white,
+  // ── Small helpers ─────────────────────────────────────────────
+
+  Widget _label(String t) => Text(t,
+      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87));
+
+  Widget _field(String label, TextEditingController ctrl, IconData icon,
+      {TextInputType? keyboard}) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _label(label),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: ctrl,
+          keyboardType: keyboard,
+          decoration: InputDecoration(
+            prefixIcon: Icon(icon, color: AppColors.cyan, size: 20),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
-              ),
-              child: Column(
-                children: [
-                  Icon(Icons.upload_file, color: Colors.cyan.shade300, size: 32),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Upload PDF',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                borderSide: BorderSide(color: Colors.grey.shade300)),
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: GestureDetector(
-            onTap: () {
-              // TODO: Implement camera in Phase 4
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Take Photo: TODO in Phase 4')),
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
-              ),
-              child: Column(
-                children: [
-                  Icon(Icons.camera_alt_outlined, color: Colors.cyan.shade300, size: 32),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Take Photo',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+      ]);
 
-  Widget _buildPassengerNavigation() {
-    return Row(
-      children: [
-        // Previous Button
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: _currentPassengerIndex > 0
-                ? () {
-                    setState(() {
-                      _currentPassengerIndex--;
-                    });
-                  }
-                : null,
-            icon: const Icon(Icons.arrow_back, size: 18),
-            label: const Text('Previous'),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              side: BorderSide(color: Colors.grey.shade300),
+  Widget _pickerTile(String label, String? value, IconData icon, VoidCallback? onTap) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _label(label),
+        const SizedBox(height: 6),
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                  color: value != null ? AppColors.cyan : Colors.grey.shade300),
             ),
+            child: Row(children: [
+              Icon(icon,
+                  color: value != null ? AppColors.cyan : Colors.grey.shade400, size: 20),
+              const SizedBox(width: 12),
+              Expanded(child: Text(value ?? 'Select…',
+                  style: TextStyle(
+                      color: value != null ? Colors.black87 : Colors.grey.shade400))),
+              Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade400, size: 18),
+            ]),
           ),
         ),
-        const SizedBox(width: 16),
-        
-        // Next Button
-        Expanded(
-          child: ElevatedButton(
-            onPressed: _currentPassengerIndex < _totalPassengers - 1
-                ? () {
-                    setState(() {
-                      _currentPassengerIndex++;
-                    });
-                  }
-                : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.cyan,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Next'),
-                SizedBox(width: 8),
-                Icon(Icons.arrow_forward, size: 18),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+      ]);
 
-  Widget _buildBottomButton() {
-    // Only show Continue button if on last passenger or single passenger
-    final isLastPassenger = _currentPassengerIndex == _totalPassengers - 1;
-    
-    if (!isLastPassenger) {
-      return const SizedBox.shrink(); // Hide if not last passenger
-    }
-    
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade300,
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () {
-              // TODO: Validate all passenger forms in Phase 5
-              Navigator.pushNamed(
-                context,
-                '/services',
-                arguments: {'flight': _flight, 'search': _search},
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.cyan,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text(
-              'Continue to Services',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ),
-      ),
-    );
+  Widget _dropdownTile(String label, String? value, IconData icon, VoidCallback onTap) =>
+      _pickerTile(label, value, icon, onTap);
+
+  String _fmt(DateTime d) {
+    const m = ['','Jan','Feb','Mar','Apr','May','Jun',
+                'Jul','Aug','Sep','Oct','Nov','Dec'];
+    return '${m[d.month]} ${d.day}, ${d.year}';
   }
 }

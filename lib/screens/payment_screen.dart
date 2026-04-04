@@ -1,7 +1,15 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../theme/app_theme.dart';
+import '../models/flight_schedule_model.dart';
+import '../models/booking_search_model.dart';
 import '../providers/booking_provider.dart';
+import '../providers/user_provider.dart';
+import '../services/payment_service.dart';
+import '../services/booking_service.dart';
+import '../services/auth_service.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -11,361 +19,366 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  String _selectedPaymentMethod = 'card';
+  FlightScheduleModel? _schedule;
+  BookingSearchModel?  _search;
+  bool _loaded = false;
+
+  bool _launching  = false;
+  bool _polling    = false;
+  bool _confirmed  = false;
+  String _status   = '';   // 'waiting' | 'paid' | 'failed'
+  Timer? _pollTimer;
 
   @override
-  Widget build(BuildContext context) {
-    final booking = context.watch<BookingProvider>();
-    return GradientBackground(child: Scaffold(backgroundColor: Colors.transparent,
-      appBar: AppBar(title: const Text('Payment'), elevation: 0),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildBookingSummary(booking),
-                  const SizedBox(height: 8),
-                  _buildPriceBreakdown(booking),
-                  const SizedBox(height: 8),
-                  _buildPaymentMethods(),
-                  const SizedBox(height: 80),
-                ],
-              ),
-            ),
-          ),
-          _buildBottomButton(booking),
-        ],
-      ),
-    )
-    );
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_loaded) return;
+    final args = ModalRoute.of(context)?.settings.arguments as Map?;
+    _schedule = args?['schedule'] as FlightScheduleModel?;
+    _search   = args?['search']   as BookingSearchModel?;
+    _loaded = true;
   }
 
-  Widget _buildBookingSummary(BookingProvider booking) {
-    final flight = booking.selectedFlight;
-    final search = booking.search;
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.cyan.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.cyan.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Booking Summary',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          Row(children: [
-            const Icon(Icons.flight_takeoff, color: Colors.cyan, size: 20),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('${flight?.fromCode ?? '--'} → ${flight?.toCode ?? '--'}',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                  Text('${flight?.airline ?? '--'} • ${flight?.flightNumber ?? '--'}',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                ],
-              ),
-            ),
-          ]),
-          const Divider(height: 24),
-          _summaryRow(Icons.calendar_today, 'Date',
-              search != null ? '${search.departureDate.day}/${search.departureDate.month}/${search.departureDate.year}' : '--'),
-          const SizedBox(height: 8),
-          _summaryRow(Icons.access_time, 'Time',
-              '${flight?.departureTime ?? '--'} - ${flight?.arrivalTime ?? '--'}'),
-          const SizedBox(height: 8),
-          _summaryRow(Icons.person, 'Passengers',
-              '${booking.passengerCount} passenger${booking.passengerCount != 1 ? 's' : ''}'),
-          const SizedBox(height: 8),
-          _summaryRow(Icons.airline_seat_recline_normal, 'Class', flight?.travelClass ?? 'Economy'),
-          if (booking.selectedSeat != null) ...[
-            const SizedBox(height: 8),
-            _summaryRow(Icons.event_seat, 'Seat', booking.selectedSeat!),
-          ],
-        ],
-      ),
-    );
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
-  Widget _summaryRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, color: Colors.cyan, size: 18),
-        const SizedBox(width: 12),
-        Text('$label: ', style: TextStyle(fontSize: 14, color: Colors.grey.shade700)),
-        Expanded(
-          child: Text(value,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-              textAlign: TextAlign.right),
-        ),
-      ],
-    );
+  Future<void> _startPayment() async {
+    final booking  = context.read<BookingProvider>();
+    final token    = context.read<UserProvider>().token;
+    final ticketId = booking.ticketId;
+
+    if (ticketId == null) {
+      _snack('Ticket ID missing — please restart booking.', isError: true);
+      return;
+    }
+
+    setState(() => _launching = true);
+
+    try {
+      final url = await PaymentService.createCheckoutSession(
+          ticketId: ticketId, token: token);
+
+      final uri = Uri.parse(url);
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        _snack('Could not open payment page.', isError: true);
+        setState(() => _launching = false);
+        return;
+      }
+
+      setState(() { _launching = false; _status = 'waiting'; _polling = true; });
+      _startPolling(ticketId, token);
+    } on AuthException catch (e) {
+      _snack(e.message, isError: true);
+      setState(() => _launching = false);
+    } catch (_) {
+      _snack('Could not create payment session. Please try again.', isError: true);
+      setState(() => _launching = false);
+    }
   }
 
-  Widget _buildPriceBreakdown(BookingProvider booking) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Price Breakdown',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          _priceRow(
-              'Flight Fare (${booking.passengerCount} pax × ${booking.currency} ${booking.flightPrice.toStringAsFixed(0)})',
-              '${booking.currency} ${booking.baseFare.toStringAsFixed(2)}'),
-          const SizedBox(height: 8),
-          _priceRow('Taxes & Fees (15%)', '${booking.currency} ${booking.taxes.toStringAsFixed(2)}'),
-          if (booking.mealCount > 0 || booking.seatSelectionSelected ||
-              booking.specialAssistanceSelected || booking.wheelchairSelected) ...[
-            const SizedBox(height: 12),
-            Text('Optional Services:',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey.shade600)),
-            const SizedBox(height: 8),
-          ],
-          if (booking.mealCount > 0) ...[
-            _priceRow('  Meals (${booking.mealCount}× \$15)',
-                '${booking.currency} ${booking.mealsTotal.toStringAsFixed(2)}', isOptional: true),
-            const SizedBox(height: 6),
-          ],
-          if (booking.seatSelectionSelected) ...[
-            _priceRow('  Seat Selection',
-                '${booking.currency} ${booking.seatTotal.toStringAsFixed(2)}', isOptional: true),
-            const SizedBox(height: 6),
-          ],
-          if (booking.specialAssistanceSelected) ...[
-            _priceRow('  Special Assistance',
-                '${booking.currency} ${booking.specialTotal.toStringAsFixed(2)}', isOptional: true),
-            const SizedBox(height: 6),
-          ],
-          if (booking.wheelchairSelected) ...[
-            _priceRow('  Wheelchair Assistance', 'Free', isOptional: true),
-            const SizedBox(height: 6),
-          ],
-          const Divider(height: 24),
-          _priceRow('Total Amount',
-              '${booking.currency} ${booking.grandTotal.toStringAsFixed(2)}',
-              isBold: true, isLarge: true),
-        ],
-      ),
-    );
+  void _startPolling(int ticketId, String token) {
+    int tries = 0;
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+      tries++;
+      try {
+        final status = await PaymentService.getPaymentStatus(
+            ticketId: ticketId, token: token);
+        if (!mounted) { timer.cancel(); return; }
+        if (status.toLowerCase() == 'paid') {
+          timer.cancel();
+          await _onPaymentConfirmed();
+        } else if (tries >= 40) {
+          // ~2 min timeout
+          timer.cancel();
+          if (mounted) setState(() { _polling = false; _status = 'timeout'; });
+        }
+      } catch (_) {
+        // Keep polling on transient errors
+      }
+    });
   }
 
-  Widget _priceRow(String label, String amount,
-      {bool isBold = false, bool isLarge = false, bool isOptional = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(
-          child: Text(label,
-              style: TextStyle(
-                fontSize: isLarge ? 16 : 14,
-                fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-                color: isOptional ? Colors.grey.shade600 : Colors.black87,
-              )),
-        ),
-        Text(amount,
-            style: TextStyle(
-              fontSize: isLarge ? 18 : 14,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-              color: isBold ? Colors.cyan : Colors.grey.shade700,
-            )),
-      ],
-    );
+  Future<void> _onPaymentConfirmed() async {
+    final booking = context.read<BookingProvider>();
+    final token   = context.read<UserProvider>().token;
+    final bookId  = booking.bookId;
+
+    try {
+      if (bookId != null) {
+        await BookingService.confirmBooking(bookId: bookId, token: token);
+      }
+    } catch (_) {
+      // Confirm failure is non-fatal — payment already went through
+    }
+
+    if (!mounted) return;
+    setState(() { _polling = false; _status = 'paid'; _confirmed = true; });
+    booking.resetBooking();
+    _showSuccessDialog();
   }
 
-  Widget _buildPaymentMethods() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Payment Method',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          _paymentOption('card', Icons.credit_card, 'Credit / Debit Card'),
-          const SizedBox(height: 12),
-          _paymentOption('paypal', Icons.payment, 'PayPal'),
-          const SizedBox(height: 12),
-          _paymentOption('apple_pay', Icons.apple, 'Apple Pay'),
-          if (_selectedPaymentMethod == 'card') ...[
-            const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 16),
-            _buildCardForm(),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _paymentOption(String value, IconData icon, String label) {
-    final isSelected = _selectedPaymentMethod == value;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedPaymentMethod = value),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.cyan.shade50 : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? Colors.cyan : Colors.grey.shade300,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: isSelected ? Colors.cyan : Colors.grey.shade600),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(label,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                    color: isSelected ? Colors.cyan.shade700 : Colors.black87,
-                  )),
-            ),
-            if (isSelected) const Icon(Icons.check_circle, color: Colors.cyan),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCardForm() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Card Details',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 12),
-        _cardField('Card Number', '1234 5678 9012 3456'),
-        const SizedBox(height: 12),
-        Row(children: [
-          Expanded(child: _cardField('Expiry', 'MM/YY')),
-          const SizedBox(width: 12),
-          Expanded(child: _cardField('CVV', '•••')),
-        ]),
-        const SizedBox(height: 12),
-        _cardField('Cardholder Name', 'John Doe'),
-      ],
-    );
-  }
-
-  Widget _cardField(String label, String hint) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        const SizedBox(height: 4),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.shade300),
-          ),
-          child: Text(hint, style: TextStyle(color: Colors.grey.shade500)),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBottomButton(BookingProvider booking) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.grey.shade300, blurRadius: 8, offset: const Offset(0, -2))],
-      ),
-      child: SafeArea(
-        child: SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () => _confirmPayment(booking),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.cyan,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: Text(
-              'Pay ${booking.currency} ${booking.grandTotal.toStringAsFixed(2)}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _confirmPayment(BookingProvider booking) {
+  void _showSuccessDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 28),
-            SizedBox(width: 8),
-            Text('Booking Confirmed!'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${booking.selectedFlight?.fromCode ?? ''} → ${booking.selectedFlight?.toCode ?? ''}',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Total paid: ${booking.currency} ${booking.grandTotal.toStringAsFixed(2)}',
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-          ],
-        ),
+        title: const Row(children: [
+          Icon(Icons.check_circle, color: Colors.green, size: 28),
+          SizedBox(width: 8),
+          Text('Booking Confirmed!'),
+        ]),
+        content: const Text(
+            'Your payment was successful and your booking is confirmed. '
+            'View your ticket in the Tickets tab.'),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
-              booking.resetBooking();
-              Navigator.popUntil(context, (route) => route.isFirst);
+              Navigator.popUntil(context, (r) => r.isFirst);
             },
-            child: const Text('Home'),
+            child: const Text('Go Home'),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(ctx).pop();
-              booking.resetBooking();
-              Navigator.popUntil(context, (route) => route.isFirst);
-              // TODO: Switch to Tickets tab in Phase 7
+              Navigator.popUntil(context, (r) => r.isFirst);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.cyan),
-            child: const Text('View Ticket', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.cyan),
+            child: const Text('View Tickets', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
+  }
+
+  void _snack(String msg, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: isError ? AppColors.error : AppColors.cyan,
+      behavior: SnackBarBehavior.floating,
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final booking    = context.watch<BookingProvider>();
+    final passengers = _search?.totalPassengers ?? booking.passengerCount;
+    final schedule   = _schedule ?? booking.selectedSchedule;
+    final price      = schedule?.totalPrice ?? 0.0;
+    final baseFare   = price * passengers;
+    final taxes      = baseFare * 0.15;
+    final servicesFee = _servicesTotal(booking);
+    final total      = baseFare + taxes + servicesFee;
+
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(title: const Text('Payment'), elevation: 0),
+        body: Column(children: [
+          Expanded(child: SingleChildScrollView(child: Column(children: [
+            _buildSummaryCard(schedule, booking, passengers),
+            const SizedBox(height: 8),
+            _buildPriceCard(passengers, price, baseFare, taxes, servicesFee, total, booking),
+            const SizedBox(height: 8),
+            _buildStripeInfo(),
+            const SizedBox(height: 80),
+          ]))),
+          _buildBottomBar(total),
+        ]),
+      ),
+    );
+  }
+
+  double _servicesTotal(BookingProvider booking) {
+    double t = 0;
+    for (final entry in booking.selectedServices.entries) {
+      final svc = booking.availableServices
+          .where((s) => s.serviceId == entry.key)
+          .firstOrNull;
+      if (svc != null) t += svc.fees * entry.value;
+    }
+    return t;
+  }
+
+  Widget _buildSummaryCard(
+      FlightScheduleModel? s, BookingProvider booking, int passengers) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cyanLight,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.cyan.withValues(alpha: 0.3)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Booking Summary',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 14),
+        _summaryRow(Icons.flight_takeoff,
+            '${s?.departureCity ?? '--'} → ${s?.arrivalCity ?? '--'}',
+            '${s?.departureDisplay ?? '--'} → ${s?.arrivalDisplay ?? '--'}'),
+        const SizedBox(height: 10),
+        _summaryRow(Icons.calendar_today, 'Date',
+            s != null ? _fmtDate(s.flightDate) : '--'),
+        const SizedBox(height: 10),
+        _summaryRow(Icons.people, 'Passengers', '$passengers pax'),
+        const SizedBox(height: 10),
+        _summaryRow(Icons.star_border,
+            'Class', booking.search?.travelClass ?? 'Economy'),
+        if (booking.selectedServices.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          _summaryRow(Icons.room_service, 'Services',
+              '${booking.selectedServices.values.fold(0, (a, b) => a + b)} item(s) added'),
+        ],
+      ]),
+    );
+  }
+
+  Widget _summaryRow(IconData icon, String label, String value) =>
+      Row(children: [
+        Icon(icon, color: AppColors.cyan, size: 18),
+        const SizedBox(width: 10),
+        Text('$label: ',
+            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+        Expanded(child: Text(value,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            textAlign: TextAlign.right)),
+      ]);
+
+  Widget _buildPriceCard(int passengers, double price, double baseFare,
+      double taxes, double servicesFee, double total, BookingProvider booking) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Price Breakdown',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 14),
+        _priceRow('Base Fare ($passengers pax × JOD ${price.toStringAsFixed(2)})',
+            'JOD ${baseFare.toStringAsFixed(2)}'),
+        const SizedBox(height: 8),
+        _priceRow('Taxes & Fees (15%)', 'JOD ${taxes.toStringAsFixed(2)}'),
+        if (servicesFee > 0) ...[
+          const SizedBox(height: 8),
+          _priceRow('Optional Services', 'JOD ${servicesFee.toStringAsFixed(2)}'),
+        ],
+        const Divider(height: 24),
+        _priceRow('Total', 'JOD ${total.toStringAsFixed(2)}',
+            isBold: true, isLarge: true),
+      ]),
+    );
+  }
+
+  Widget _priceRow(String label, String amount,
+      {bool isBold = false, bool isLarge = false}) =>
+      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Expanded(child: Text(label,
+            style: TextStyle(
+                fontSize: isLarge ? 16 : 13,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+                color: isBold ? Colors.black : AppColors.textSecondary))),
+        Text(amount, style: TextStyle(
+            fontSize: isLarge ? 18 : 13,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+            color: isBold ? AppColors.cyan : AppColors.textSecondary)),
+      ]);
+
+  Widget _buildStripeInfo() => Container(
+    margin: const EdgeInsets.symmetric(horizontal: 16),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.grey.shade200),
+    ),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const Text('Secure Payment',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      const SizedBox(height: 12),
+      Row(children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFF635BFF).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: const Text('stripe',
+              style: TextStyle(
+                  color: Color(0xFF635BFF),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14)),
+        ),
+        const SizedBox(width: 10),
+        const Expanded(child: Text(
+            'You will be redirected to Stripe\'s secure checkout page to complete your payment.',
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary))),
+      ]),
+      if (_status == 'waiting') ...[
+        const SizedBox(height: 14),
+        const Row(children: [
+          SizedBox(width: 18, height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.cyan)),
+          SizedBox(width: 10),
+          Expanded(child: Text('Waiting for payment confirmation…',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary))),
+        ]),
+      ],
+      if (_status == 'timeout') ...[
+        const SizedBox(height: 14),
+        const Text('Payment confirmation timed out. If you completed payment, '
+            'please check your tickets.',
+            style: TextStyle(fontSize: 12, color: AppColors.error)),
+      ],
+    ]),
+  );
+
+  Widget _buildBottomBar(double total) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      boxShadow: [BoxShadow(
+          color: Colors.grey.shade200, blurRadius: 8, offset: const Offset(0, -2))],
+    ),
+    child: SafeArea(child: SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: (_launching || _polling || _confirmed) ? null : _startPayment,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF635BFF),
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: Colors.grey.shade300,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        child: _launching
+            ? const SizedBox(height: 20, width: 20,
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+            : _polling
+                ? const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    SizedBox(width: 18, height: 18,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                    SizedBox(width: 10),
+                    Text('Awaiting Payment…',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  ])
+                : Text('Pay JOD ${total.toStringAsFixed(2)} with Stripe',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+      ),
+    )),
+  );
+
+  String _fmtDate(DateTime d) {
+    const m = ['','Jan','Feb','Mar','Apr','May','Jun',
+                'Jul','Aug','Sep','Oct','Nov','Dec'];
+    return '${m[d.month]} ${d.day}, ${d.year}';
   }
 }
