@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:skytrip/generated/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../providers/user_provider.dart';
 
@@ -18,71 +19,118 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _promotions       = false;
   bool _smsAlerts        = false;
 
-  // Display
-  String _language       = 'English';
-  String _currency       = 'JOD – Jordanian Dinar';
-  bool   _darkMode       = false;
-
-  // Privacy
+  // Display settings (with codes for backend)
+  late String _languageCode;
+  late String _currencyCode;
   bool _shareData        = false;
-  bool _locationServices = true;
+
+  // Language and Currency mappings
+  final Map<String, String> _languageCodes = {
+    'English': 'en',
+    'Arabic': 'ar',
+    'French': 'fr',
+    'German': 'de',
+    'Spanish': 'es',
+  };
+
+  final Map<String, String> _currencyCodes = {
+    'JOD – Jordanian Dinar': 'JOD',
+    'USD – US Dollar': 'USD',
+    'EUR – Euro': 'EUR',
+    'GBP – British Pound': 'GBP',
+    'AED – UAE Dirham': 'AED',
+  };
+
+  // Reverse mappings for display
+  late Map<String, String> _codeToLanguage;
+  late Map<String, String> _codeToCurrency;
 
   final List<String> _languages = [
     'English', 'Arabic', 'French', 'German', 'Spanish',
   ];
+  
   final List<String> _currencies = [
     'JOD – Jordanian Dinar', 'USD – US Dollar',
     'EUR – Euro', 'GBP – British Pound', 'AED – UAE Dirham',
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _initializeReverseMappings();
+    _loadCurrentSettings();
+  }
+
+  void _initializeReverseMappings() {
+    _codeToLanguage = _languageCodes.map((k, v) => MapEntry(v, k));
+    _codeToCurrency = _currencyCodes.map((k, v) => MapEntry(v, k));
+  }
+
+  void _loadCurrentSettings() {
+    final userProvider = context.read<UserProvider>();
+    
+    _languageCode = userProvider.locale.languageCode;
+    _currencyCode = userProvider.currency;
+    
+    // Set default selected items for display
+    setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context); 
+    final isDark = context.watch<UserProvider>().themeMode == ThemeMode.dark;
+    final l10n = AppLocalizations.of(context)!;
+
+    String languageDisplay = _codeToLanguage[_languageCode] ?? 'English';
+    String currencyDisplay = _codeToCurrency[_currencyCode] ?? 'JOD – Jordanian Dinar';
+
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: AppColors.surface,
+        title: Text(l10n.settingsTitle),
+        backgroundColor: theme.appBarTheme.backgroundColor,
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
           // ── Notifications ─────────────────────────────
-          const AppSectionLabel(label: 'Notifications'),
+          AppSectionLabel(label: l10n.settingsNotifications),
           AppCard(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(children: [
               SettingsTile(
                 icon: Icons.flight_takeoff,
-                title: 'Flight Updates',
-                subtitle: 'Gate changes, delays & cancellations',
+                title: l10n.settingsFlightUpdates,
+                subtitle: l10n.settingsFlightUpdatesDesc,
                 trailing: _toggle(_flightUpdates, (v) => setState(() => _flightUpdates = v)),
               ),
               SettingsTile(
                 icon: Icons.trending_down,
                 iconColor: AppColors.green,
-                title: 'Price Alerts',
-                subtitle: 'Get notified when prices drop',
+                title: l10n.settingsPriceAlerts,
+                subtitle: l10n.settingsPriceAlertsDesc,
                 trailing: _toggle(_priceAlerts, (v) => setState(() => _priceAlerts = v)),
               ),
               SettingsTile(
                 icon: Icons.notifications_active_outlined,
                 iconColor: AppColors.orange,
-                title: 'Booking Reminders',
-                subtitle: '24h before departure',
+                title: l10n.settingsBookingReminders,
+                subtitle: l10n.settingsBookingRemindersDesc,
                 trailing: _toggle(_bookingReminders, (v) => setState(() => _bookingReminders = v)),
               ),
               SettingsTile(
                 icon: Icons.local_offer_outlined,
                 iconColor: AppColors.purple,
-                title: 'Promotions & Offers',
-                subtitle: 'Deals, discounts and seasonal offers',
+                title: l10n.settingsPromotions,
+                subtitle: l10n.settingsPromotionsDesc,
                 trailing: _toggle(_promotions, (v) => setState(() => _promotions = v)),
               ),
               SettingsTile(
                 icon: Icons.sms_outlined,
                 iconColor: AppColors.gold,
-                title: 'SMS Alerts',
-                subtitle: 'Receive alerts via text message',
+                title: l10n.settingsSmsAlerts,
+                subtitle: l10n.settingsSmsAlertsDesc,
                 trailing: _toggle(_smsAlerts, (v) => setState(() => _smsAlerts = v)),
                 showDivider: false,
               ),
@@ -90,117 +138,95 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
 
           // ── Display ───────────────────────────────────
-          const AppSectionLabel(label: 'Display & Language'),
+          AppSectionLabel(label: l10n.settingsDisplay),
           AppCard(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(children: [
               SettingsTile(
                 icon: Icons.language,
-                title: 'Language',
-                subtitle: _language,
-                onTap: () => _showPickerSheet(
-                  title: 'Select Language',
-                  options: _languages,
-                  selected: _language,
-                  onSelect: (v) => setState(() => _language = v),
-                ),
+                title: l10n.settingsLanguage,
+                subtitle: languageDisplay,
+                onTap: () => _showLanguagePicker(context),
               ),
               SettingsTile(
                 icon: Icons.attach_money,
                 iconColor: AppColors.green,
-                title: 'Currency',
-                subtitle: _currency,
-                onTap: () => _showPickerSheet(
-                  title: 'Select Currency',
-                  options: _currencies,
-                  selected: _currency,
-                  onSelect: (v) => setState(() => _currency = v),
-                ),
+                title: l10n.settingsCurrency,
+                subtitle: currencyDisplay,
+                onTap: () => _showCurrencyPicker(context),
               ),
               SettingsTile(
                 icon: Icons.dark_mode_outlined,
                 iconColor: AppColors.purple,
-                title: 'Dark Mode',
-                subtitle: 'Switch to dark theme',
-                trailing: _toggle(_darkMode, (v) => setState(() => _darkMode = v)),
+                title: l10n.settingsDarkMode,
+                subtitle: l10n.settingsDarkModeDesc,
+                trailing: Switch(
+                  value: isDark,
+                  onChanged: (v) => context.read<UserProvider>().toggleTheme(v),
+                  activeColor: AppColors.cyan,
+                ),
                 showDivider: false,
               ),
             ]),
           ),
 
           // ── Privacy ───────────────────────────────────
-          const AppSectionLabel(label: 'Privacy & Security'),
+          AppSectionLabel(label: l10n.settingsPrivacy),
           AppCard(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(children: [
               SettingsTile(
                 icon: Icons.lock_outline,
-                title: 'Change Password',
-                onTap: () => _showComingSoon(context, 'Change Password'),
+                title: l10n.settingsChangePassword,
+                onTap: () => _showComingSoon(context, l10n.settingsChangePassword),
               ),
               SettingsTile(
                 icon: Icons.fingerprint,
                 iconColor: AppColors.green,
-                title: 'Biometric Login',
-                subtitle: 'Use fingerprint or Face ID',
-                onTap: () => _showComingSoon(context, 'Biometric Login'),
+                title: l10n.settingsBiometric,
+                subtitle: l10n.settingsBiometricDesc,
+                onTap: () => _showComingSoon(context, l10n.settingsBiometric),
               ),
               SettingsTile(
                 icon: Icons.share_outlined,
                 iconColor: AppColors.orange,
-                title: 'Share Usage Data',
-                subtitle: 'Help us improve the app',
+                title: l10n.settingsShareData,
+                subtitle: l10n.settingsShareDataDesc,
                 trailing: _toggle(_shareData, (v) => setState(() => _shareData = v)),
-              ),
-              SettingsTile(
-                icon: Icons.location_on_outlined,
-                iconColor: AppColors.error,
-                title: 'Location Services',
-                subtitle: 'Used for nearby airports',
-                trailing: _toggle(_locationServices, (v) => setState(() => _locationServices = v)),
                 showDivider: false,
               ),
             ]),
           ),
 
           // ── Account ───────────────────────────────────
-          const AppSectionLabel(label: 'Account'),
+          AppSectionLabel(label: l10n.settingsAccount),
           AppCard(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(children: [
               SettingsTile(
                 icon: Icons.delete_outline,
                 iconColor: AppColors.error,
-                title: 'Delete Account',
-                subtitle: 'Permanently remove your data',
+                title: l10n.settingsDeleteAccount,
+                subtitle: l10n.settingsDeleteAccountDesc,
                 onTap: () => _showDeleteAccountDialog(context),
               ),
               SettingsTile(
                 icon: Icons.info_outline,
-                iconColor: AppColors.textSecondary,
-                title: 'App Version',
-                subtitle: 'SkyTrip v1.0.0',
+                iconColor: theme.iconTheme.color,
+                title: l10n.settingsAppVersion,
+                subtitle: l10n.appVersion,
                 trailing: const SizedBox.shrink(),
                 showDivider: false,
               ),
             ]),
           ),
 
-          // Save button
           const SizedBox(height: 24),
           Padding(
             padding: const EdgeInsets.only(bottom: 32),
             child: ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Settings saved'),
-                    backgroundColor: AppColors.green,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              child: const Text('Save Settings'),
+              onPressed: () => _saveAllSettings(context),
+              child: Text(AppLocalizations.of(context)!.settingsSave),
             ),
           ),
         ],
@@ -208,14 +234,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ── Helpers ────────────────────────────────────────────
-
-  Widget _toggle(bool value, ValueChanged<bool> onChanged) {
-    return Switch(
-      value: value,
-      onChanged: onChanged,
-      activeColor: AppColors.cyan,
-    );
+  Future<void> _saveAllSettings(BuildContext context) async {
+    final userProvider = context.read<UserProvider>();
+    
+    try {
+      // Save language
+      await userProvider.changeLanguage(_languageCode);
+      
+      // Save currency
+      await userProvider.setCurrency(_currencyCode);
+      
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.settingsSaved),
+          backgroundColor: AppColors.green,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.settingsErrorSaving(e.toString())),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   void _showPickerSheet({
@@ -224,9 +273,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required String selected,
     required ValueChanged<String> onSelect,
   }) {
+    final theme = Theme.of(context);
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: theme.cardColor,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => Column(
@@ -236,19 +286,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Container(
             width: 36, height: 4,
             decoration: BoxDecoration(
-              color: AppColors.border,
+              color: theme.dividerColor,
               borderRadius: AppRadius.full,
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text(title, style: AppTextStyles.titleMedium),
+            child: Text(title, style: theme.textTheme.titleMedium),
           ),
           const Divider(height: 1),
           ...options.map((opt) => ListTile(
-            title: Text(opt),
+            title: Text(opt, style: theme.textTheme.bodyMedium),
             trailing: opt == selected
-                ? const Icon(Icons.check, color: AppColors.cyan)
+                ? Icon(Icons.check, color: AppColors.cyan)
                 : null,
             onTap: () {
               onSelect(opt);
@@ -261,45 +311,83 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showLanguagePicker(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final selected = _codeToLanguage[_languageCode] ?? 'English';
+    _showPickerSheet(
+      title: l10n.settingsSelectLanguage,
+      options: _languages,
+      selected: selected,
+      onSelect: (value) {
+        setState(() => _languageCode = _languageCodes[value] ?? 'en');
+      },
+    );
+  }
+
+  void _showCurrencyPicker(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final selected = _codeToCurrency[_currencyCode] ?? 'JOD – Jordanian Dinar';
+    _showPickerSheet(
+      title: l10n.settingsSelectCurrency,
+      options: _currencies,
+      selected: selected,
+      onSelect: (value) {
+        setState(() => _currencyCode = _currencyCodes[value] ?? 'JOD');
+      },
+    );
+  }
+
+  Widget _toggle(bool value, ValueChanged<bool> onChanged) {
+    return Switch(
+      value: value,
+      onChanged: onChanged,
+      activeColor: AppColors.cyan,
+    );
+  }
+
   void _showComingSoon(BuildContext context, String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$feature: Coming in Phase 6'),
+        content: Text(AppLocalizations.of(context)!.settingsFeatureComing(feature)),
         behavior: SnackBarBehavior.floating,
       ),
     );
   }
 
   void _showDeleteAccountDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(children: [
-          Icon(Icons.warning_rounded, color: AppColors.error),
-          SizedBox(width: 8),
-          Text('Delete Account'),
+        backgroundColor: theme.cardColor,
+        title: Row(children: [
+          const Icon(Icons.warning_rounded, color: AppColors.error),
+          const SizedBox(width: 8),
+          Text(l10n.settingsDeleteAccount, style: theme.textTheme.titleMedium),
         ]),
-        content: const Text(
-          'This will permanently delete your account and all associated data. This action cannot be undone.',
+        content: Text(
+          l10n.settingsDeleteAccountDesc,
+          style: theme.textTheme.bodyMedium,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(l10n.dialogCancel, style: theme.textTheme.labelLarge),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Account deletion: TODO in Phase 6'),
+                SnackBar(
+                  content: Text(l10n.settingsAccountDeletion),
                   behavior: SnackBarBehavior.floating,
                 ),
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+            child: Text(l10n.dialogDeleteAccount, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),

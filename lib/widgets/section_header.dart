@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:skytrip/generated/l10n/app_localizations.dart';
 
 /// A section title with an optional "See All" action.
 /// Usage: SectionHeader(title: 'Latest Offers')
@@ -17,21 +18,27 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final titleColor = isDark ? Colors.white : Colors.black87;
+    final iconColor = isDark ? Colors.grey[400] : Colors.grey.shade700;
+    const seeAllColor = Colors.cyan;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 18, color: Colors.grey.shade700),
+              Icon(icon, size: 18, color: iconColor),
               const SizedBox(width: 8),
             ],
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: titleColor,
               ),
             ),
           ],
@@ -40,14 +47,14 @@ class SectionHeader extends StatelessWidget {
           TextButton(
             onPressed: onSeeAll,
             style: TextButton.styleFrom(
-              foregroundColor: Colors.cyan,
+              foregroundColor: seeAllColor,
               padding: EdgeInsets.zero,
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: const Text(
-              'See All',
-              style: TextStyle(fontSize: 13),
+            child: Text(
+              AppLocalizations.of(context)!.homeSeeAll ,
+              style: const TextStyle(fontSize: 13),
             ),
           ),
       ],

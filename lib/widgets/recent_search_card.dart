@@ -18,17 +18,25 @@ class RecentSearchCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = isDark ? Colors.grey[850] : Colors.white;
+    final borderColor = isDark ? Colors.grey[700] : Colors.grey.shade200;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.grey[400] : Colors.grey.shade600;
+    final iconBackground = isDark ? Colors.cyan.shade700.withOpacity(0.2) : Colors.cyan.shade50;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: borderColor!),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.shade100,
+              color: isDark ? Colors.black26 : Colors.grey.shade100,
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -41,10 +49,10 @@ class RecentSearchCard extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Colors.cyan.shade50,
+                color: iconBackground,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.flight, color: Colors.cyan, size: 22),
+              child: Icon(Icons.flight, color: Colors.cyan, size: 22),
             ),
             const SizedBox(width: 14),
 
@@ -58,9 +66,10 @@ class RecentSearchCard extends StatelessWidget {
                     children: [
                       Text(
                         from,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
+                          color: textColor,
                         ),
                       ),
                       const Padding(
@@ -69,9 +78,10 @@ class RecentSearchCard extends StatelessWidget {
                       ),
                       Text(
                         to,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
+                          color: textColor,
                         ),
                       ),
                     ],
@@ -83,7 +93,7 @@ class RecentSearchCard extends StatelessWidget {
                     '• $passengers passenger${passengers > 1 ? 's' : ''}',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey.shade600,
+                      color: subTextColor,
                     ),
                   ),
                 ],
@@ -91,7 +101,7 @@ class RecentSearchCard extends StatelessWidget {
             ),
 
             // Arrow
-            Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey.shade400),
+            Icon(Icons.arrow_forward_ios, size: 14, color: subTextColor),
           ],
         ),
       ),

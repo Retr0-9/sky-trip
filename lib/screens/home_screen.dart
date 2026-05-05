@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:skytrip/generated/l10n/app_localizations.dart';
 import '../widgets/offer_card.dart';
 import '../widgets/recent_search_card.dart';
 import '../widgets/section_header.dart';
@@ -14,6 +15,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<UserProvider>();
+    final l10n = AppLocalizations.of(context)!;
     final hour = DateTime.now().hour;
     final icon = hour < 12 ? Icons.wb_sunny : hour < 17 ? Icons.wb_sunny_outlined : Icons.nights_stay_outlined;
 
@@ -28,7 +30,7 @@ class HomeScreen extends StatelessWidget {
               Icon(icon, color: AppColors.orange, size: 20),
               const SizedBox(width: 8),
               Text(
-                '${user.greeting}, ${user.firstName}',
+                l10n.homeGreeting(user.greeting, user.firstName),
                 style: AppTextStyles.bodyLarge.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -38,7 +40,7 @@ class HomeScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
             child: Text(
-              'Ready for your next adventure?',
+              l10n.homeReady,
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -49,7 +51,7 @@ class HomeScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: SectionHeader(
-              title: 'Recent Searches',
+              title: l10n.homeRecentSearches,
               icon: Icons.history,
               onSeeAll: () {},
             ),
@@ -71,7 +73,7 @@ class HomeScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: SectionHeader(
-              title: 'Latest Offers',
+              title: l10n.homeLatestOffers,
               icon: Icons.trending_up,
               onSeeAll: () {},
             ),
@@ -95,7 +97,7 @@ class HomeScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: SectionHeader(
-              title: 'Featured Destinations',
+              title: l10n.homeFeaturedDestinations,
               icon: Icons.star_border,
               onSeeAll: () {},
             ),

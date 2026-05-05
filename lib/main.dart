@@ -1,23 +1,57 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
-import 'providers/booking_provider.dart';
-import 'providers/user_provider.dart';
-import 'theme/app_theme.dart';
-import 'screens/auth_screen.dart';
-import 'widgets/main_scaffold.dart';
-import 'screens/available_flights_screen.dart';
-import 'screens/flight_details_screen.dart';
-import 'screens/passengers_form_screen.dart';
-import 'screens/services_screen.dart';
-import 'screens/seat_map_screen.dart';
-import 'screens/payment_screen.dart';
-import 'screens/hotel_booking_screen.dart';
-import 'screens/van_rental_screen.dart';
-import 'screens/settings_screen.dart';
-import 'screens/contact_us_screen.dart';
+// ❌ تم حذف import 'package:hive_flutter/hive_flutter.dart';
+import 'package:skytrip/generated/l10n/app_localizations.dart';
+import 'package:skytrip/theme/app_theme.dart';
+import 'package:skytrip/providers/user_provider.dart';
+import 'package:skytrip/providers/booking_provider.dart';
+import 'package:skytrip/providers/vehicle_provider.dart';
+import 'package:skytrip/providers/hotel_booking_provider.dart';
+import 'package:skytrip/screens/auth_screen.dart';
+import 'package:skytrip/widgets/main_scaffold.dart';
+import 'package:skytrip/screens/booking_screen.dart';
+import 'package:skytrip/screens/available_flights_screen.dart';
+import 'package:skytrip/screens/flight_details_screen.dart';
+import 'package:skytrip/screens/passengers_form_screen.dart';
+import 'package:skytrip/screens/services_screen.dart';
+import 'package:skytrip/screens/seat_map_screen.dart';
+import 'package:skytrip/screens/payment_screen.dart';
+import 'package:skytrip/screens/hotel_booking_screen.dart';
+import 'package:skytrip/screens/van_rental_screen.dart';
+import 'package:skytrip/screens/settings_screen.dart';
+import 'package:skytrip/screens/contact_us_screen.dart';
 
-void main() {
-  runApp(const SkyTripApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+
+  final userProvider = UserProvider();
+  await Future.wait([
+    userProvider.loadTheme(),
+    userProvider.loadLanguage(),
+    userProvider.loadCurrency(),
+  ]);
+
+  final vehicleProvider = VehicleProvider();
+  await vehicleProvider.init();
+
+  final hotelProvider = HotelBookingProvider();
+  await hotelProvider.init();
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: userProvider),
+        ChangeNotifierProvider.value(value: vehicleProvider),
+        ChangeNotifierProvider.value(value: hotelProvider),
+        
+        // BookingProvider
+        ChangeNotifierProvider(create: (_) => BookingProvider()),
+      ],
+      child: const SkyTripApp(),
+    ),
+  );
 }
 
 class SkyTripApp extends StatelessWidget {
@@ -25,32 +59,49 @@ class SkyTripApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => BookingProvider()),
-        ChangeNotifierProvider(create: (_) => UserProvider()),
+    final userProvider = context.watch<UserProvider>();
+
+    return MaterialApp(
+      title: 'SkyTrip',
+      debugShowCheckedModeBanner: false,
+
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: userProvider.themeMode,
+
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
       ],
-      child: MaterialApp(
-        title: 'Sky Trip',
-        debugShowCheckedModeBanner: false,
-        theme: buildAppTheme(),
-        // Start at auth — it will navigate to MainScaffold on login
-        home: const AuthScreen(),
-        routes: {
-          '/auth':              (context) => const AuthScreen(),
-          '/home':              (context) => const MainScaffold(),
-          '/available-flights': (context) => const AvailableFlightsScreen(),
-          '/flight-details':    (context) => const FlightDetailsScreen(),
-          '/passengers-form':   (context) => const PassengersFormScreen(),
-          '/services':          (context) => const ServicesScreen(),
-          '/seat-map':          (context) => const SeatMapScreen(),
-          '/payment':           (context) => const PaymentScreen(),
-          '/hotel-booking':     (context) => const HotelBookingScreen(),
-          '/van-rental':        (context) => const VanRentalScreen(),
-          '/settings':          (context) => const SettingsScreen(),
-          '/contact-us':        (context) => const ContactUsScreen(),
-        },
-      ),
+      supportedLocales: const [
+        Locale('en'),
+        Locale('ar'),
+      ],
+      locale: userProvider.locale,
+
+      initialRoute: '/',
+      routes: {
+        '/': (context) => userProvider.isLoggedIn ? const MainScaffold() : const AuthScreen(),
+        '/auth': (context) => const AuthScreen(),
+        '/home': (context) => const MainScaffold(),
+        
+        // Booking Flow
+        '/booking': (context) => const BookingScreen(),
+        '/available-flights': (context) => const AvailableFlightsScreen(),
+        '/flight-details': (context) => const FlightDetailsScreen(),
+        '/passengers-form': (context) => const PassengersFormScreen(),
+        '/services': (context) => const ServicesScreen(),
+        '/seat-map': (context) => const SeatMapScreen(),
+        '/payment': (context) => const PaymentScreen(),
+        
+        // Extras
+        '/hotel-booking': (context) => const HotelBookingScreen(),
+        '/van-rental': (context) => const VanRentalScreen(),
+        '/settings': (context) => const SettingsScreen(),
+        '/contact-us': (context) => const ContactUsScreen(),
+      },
     );
   }
 }

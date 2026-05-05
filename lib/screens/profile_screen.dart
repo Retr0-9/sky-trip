@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:skytrip/generated/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../providers/user_provider.dart';
 
@@ -9,6 +10,7 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<UserProvider>();
+    final l10n = AppLocalizations.of(context)!;
 
     return SingleChildScrollView(
       child: Column(children: [
@@ -17,7 +19,7 @@ class ProfileScreen extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(children: [
             // Personal Information
-            const AppSectionLabel(label: 'Personal Information'),
+            AppSectionLabel(label: l10n.profilePersonalInfo),
             AppCard(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(children: [
@@ -61,7 +63,7 @@ class ProfileScreen extends StatelessWidget {
             ),
 
             // Travel Documents
-            const AppSectionLabel(label: 'Travel Documents'),
+            AppSectionLabel(label: l10n.profileTravelDocs),
             AppCard(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(children: [
@@ -85,11 +87,11 @@ class ProfileScreen extends StatelessWidget {
             ),
 
             // Loyalty Program
-            const AppSectionLabel(label: 'Frequent Flyer'),
-            _buildLoyaltyCard(user),
+            AppSectionLabel(label: l10n.profileLoyalty),
+            _buildLoyaltyCard(context, user),
 
             // Stats
-            const AppSectionLabel(label: 'Travel Stats'),
+            AppSectionLabel(label: l10n.profileStats),
             _buildStatsGrid(),
 
             const SizedBox(height: 24),
@@ -178,7 +180,10 @@ class ProfileScreen extends StatelessWidget {
   }
 
   // ── Loyalty Card ────────────────────────────────────────
-  Widget _buildLoyaltyCard(UserProvider user) {
+  // ── Dynamic context added as parameter ──
+  Widget _buildLoyaltyCard(BuildContext context, UserProvider user) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     final tierColors = {
       'Silver': [const Color(0xFF78909C), const Color(0xFF546E7A)],
       'Gold':   [AppColors.gold, const Color(0xFFFF8F00)],
@@ -225,7 +230,8 @@ class ProfileScreen extends StatelessWidget {
           borderRadius: AppRadius.full,
           child: LinearProgressIndicator(
             value: user.milesBalance / _tierTargetNum(user.loyaltyTier),
-            backgroundColor: AppColors.border,
+            // ── Dynamic: use theme outline variant instead of hardcoded border ──
+            backgroundColor: colorScheme.outlineVariant,   // was: AppColors.border
             color: colors[0],
             minHeight: 8,
           ),
@@ -277,28 +283,30 @@ class ProfileScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        // ── Dynamic: background follows theme surface ──
+        backgroundColor: Theme.of(ctx).colorScheme.surface,  // was: implicit white
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Edit $label'),
+        title: Text(AppLocalizations.of(ctx)!.profileEditLabel(label)),
         content: TextField(
           controller: ctrl,
           autofocus: true,
           decoration: InputDecoration(labelText: label),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(AppLocalizations.of(context)!.dialogCancel)),
           ElevatedButton(
             onPressed: () {
               if (ctrl.text.trim().isNotEmpty) {
                 onSave(ctrl.text.trim());
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('$label updated'),
+                  content: Text(AppLocalizations.of(context)!.profileLabelUpdated(label)),
                   backgroundColor: AppColors.green,
                   behavior: SnackBarBehavior.floating,
                 ));
               }
             },
-            child: const Text('Save'),
+            child: Text(AppLocalizations.of(ctx)!.profileSave),
           ),
         ],
       ),
@@ -309,15 +317,22 @@ class ProfileScreen extends StatelessWidget {
     const nationalities = ['Jordanian', 'Emirati', 'Saudi', 'British', 'American', 'German', 'French'];
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      // ── Dynamic: sheet background follows theme surface ──
+      backgroundColor: Theme.of(context).colorScheme.surface,  // was: AppColors.surface
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: 12),
-          Container(width: 36, height: 4,
-              decoration: BoxDecoration(color: AppColors.border, borderRadius: AppRadius.full)),
+          Container(
+            width: 36, height: 4,
+            decoration: BoxDecoration(
+              // ── Dynamic: drag handle follows theme outline ──
+              color: Theme.of(ctx).colorScheme.outlineVariant,  // was: AppColors.border
+              borderRadius: AppRadius.full,
+            ),
+          ),
           const Padding(padding: EdgeInsets.all(16),
               child: Text('Select Nationality', style: AppTextStyles.titleMedium)),
           const Divider(height: 1),
@@ -339,15 +354,22 @@ class ProfileScreen extends StatelessWidget {
     const classes = ['Economy', 'Business', 'First Class'];
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      // ── Dynamic: sheet background follows theme surface ──
+      backgroundColor: Theme.of(context).colorScheme.surface,  // was: AppColors.surface
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: 12),
-          Container(width: 36, height: 4,
-              decoration: BoxDecoration(color: AppColors.border, borderRadius: AppRadius.full)),
+          Container(
+            width: 36, height: 4,
+            decoration: BoxDecoration(
+              // ── Dynamic: drag handle follows theme outline ──
+              color: Theme.of(ctx).colorScheme.outlineVariant,  // was: AppColors.border
+              borderRadius: AppRadius.full,
+            ),
+          ),
           const Padding(padding: EdgeInsets.all(16),
               child: Text('Preferred Class', style: AppTextStyles.titleMedium)),
           const Divider(height: 1),

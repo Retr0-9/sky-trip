@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/profile_service.dart';
 
-/// Manages user session and profile data.
-class UserProvider extends ChangeNotifier {
+ class UserProvider extends ChangeNotifier {
   // ─────────────────────────────────────────────
   // USER STATE
   // ─────────────────────────────────────────────
@@ -25,6 +26,83 @@ class UserProvider extends ChangeNotifier {
   int _personId = 0;
   int _clientId = 0;
   String _role = '';
+
+  // ─────────────────────────────────────────────
+  // THEME & LOCALIZATION STATE
+  // ─────────────────────────────────────────────
+  ThemeMode _themeMode = ThemeMode.light;
+  Locale _locale = const Locale('en');
+  String _currency = 'JOD';
+
+  ThemeMode get themeMode => _themeMode;
+  Locale get locale => _locale;
+  String get currency => _currency;
+
+  /// Currency conversion rates (from JOD)
+  static const Map<String, double> _conversionRates = {
+    'JOD': 1.0,
+    'USD': 0.71,
+    'EUR': 0.65,
+    'GBP': 0.56,
+    'AED': 2.61,
+  };
+
+  /// Convert price from JOD to current currency
+  double convertPrice(double price) {
+    final rate = _conversionRates[_currency] ?? 1.0;
+    return price * rate;
+  }
+
+  /// Toggle dark/light theme and save preference
+  Future<void> toggleTheme(bool isDark) async {
+    _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+    notifyListeners();
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDarkMode', isDark);
+  }
+
+  /// Load theme preference on app start
+  Future<void> loadTheme() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool isDark = prefs.getBool('isDarkMode') ?? false;
+    _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+    notifyListeners();
+  }
+
+  /// Change language and save preference
+  Future<void> changeLanguage(String code) async {
+    _locale = Locale(code);
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('language', code);
+
+    notifyListeners();
+  }
+
+  /// Load language preference on app start
+  Future<void> loadLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final langCode = prefs.getString('language') ?? 'en';
+    _locale = Locale(langCode);
+    notifyListeners();
+  }
+
+  /// Change currency and save preference
+  Future<void> setCurrency(String currencyCode) async {
+    _currency = currencyCode;
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('currency', currencyCode);
+  }
+
+  /// Load currency preference on app start
+  Future<void> loadCurrency() async {
+    final prefs = await SharedPreferences.getInstance();
+    _currency = prefs.getString('currency') ?? 'JOD';
+    notifyListeners();
+  }
 
   // ─────────────────────────────────────────────
   // GETTERS

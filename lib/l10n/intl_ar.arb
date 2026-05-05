@@ -1,0 +1,427 @@
+{
+  "@@locale": "ar",
+  "appTitle": "سكاي تريب",
+  "appVersion": "SkyTrip v1.0.0",
+
+  "homeGreeting": "{greeting}، {firstName}",
+  "@homeGreeting": {
+    "description": "تحية مخصصة في الشاشة الرئيسية",
+    "placeholders": {
+      "greeting": {"type": "String", "example": "صباح الخير"},
+      "firstName": {"type": "String", "example": "محمد"}
+    }
+  },
+  "homeReady": "جاهز لمغامرتك القادمة؟",
+  "homeRecentSearches": "عمليات البحث الأخيرة",
+  "homeLatestOffers": "أحدث العروض",
+  "homeFeaturedDestinations": "وجهات مميزة",
+  "homeSeeAll": "عرض الكل",
+
+  "bookingTitle": "حجز رحلة طيران",
+  "bookingTripRoundtrip": "ذهاب وعودة",
+  "bookingTripOneWay": "ذهاب فقط",
+  "bookingTripMultiCity": "مدن متعددة",
+  "bookingFromLabel": "من",
+  "bookingToLabel": "إلى",
+  "bookingSearchCity": "ابحث عن مدينة…",
+  "bookingDepartureDate": "تاريخ المغادرة",
+  "bookingReturnDate": "تاريخ العودة",
+  "bookingAdults": "بالغون",
+  "bookingYouth": "شباب",
+  "bookingChildren": "أطفال",
+  "bookingInfants": "رضّع",
+  "bookingClass": "الدرجة",
+  "bookingPassengers": "الركاب",
+  "bookingSearch": "بحث عن رحلات",
+  "bookingNoFlightsFound": "لم يتم العثور على رحلات",
+  "bookingTryAnother": "جرّب بحثًا آخر",
+  "bookingSubtitle": "إلى أي وجهة تريد الذهاب اليوم؟",
+  "bookingDepartureCityHint": "مدينة المغادرة",
+  "bookingArrivalCityHint": "مدينة الوصول",
+  "bookingSelectDate": "اختر التاريخ",
+  "bookingSelectReturnDate": "اختر تاريخ العودة",
+  "bookingSelectClass": "اختر الدرجة",
+
+  "bookingErrorSelectCities": "يرجى تحديد مدينتي المغادرة والوصول.",
+  "bookingErrorDifferentCities": "يجب أن تكون مدينتا المغادرة والوصول مختلفتين.",
+  "bookingErrorSelectDeparture": "يرجى اختيار تاريخ المغادرة.",
+  "bookingErrorSelectReturn": "يرجى اختيار تاريخ العودة.",
+  "bookingErrorSearchFailed": "فشل البحث. حاول مرة أخرى.",
+  "bookingPassengersCount": "{count, plural, one{راكب واحد} other{{count} ركاب}}",
+  "@bookingPassengersCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "bookingAdultSubtext": "12 سنة أو أكثر",
+  "bookingYouthSubtext": "2–11 سنة",
+  "bookingChildrenSubtext": "أقل من سنتين",
+  "bookingInfantsSubtext": "رضيع في حضن الأم",
+  "greetingMorning": "صباح الخير",
+  "greetingAfternoon": "مساء الخير",
+  "greetingEvening": "مساء الخير",
+  "dialogRetry": "إعادة المحاولة",
+
+  "authSignIn": "تسجيل الدخول",
+  "authSignUp": "إنشاء حساب",
+  "authEmail": "البريد الإلكتروني",
+  "authPassword": "كلمة المرور",
+  "authConfirmPassword": "تأكيد كلمة المرور",
+  "authFirstName": "الاسم الأول",
+  "authLastName": "اسم العائلة",
+  "authStaffId": "رقم الموظف",
+  "authErrorEmail": "أدخل بريدًا إلكترونيًا صالحًا.",
+  "authErrorPassword": "يجب أن تكون كلمة المرور 6 أحرف على الأقل.",
+  "authErrorRequired": "أدخل البريد الإلكتروني وكلمة المرور.",
+  "authErrorComingSoon": "التسجيل قريبًا. يرجى تسجيل الدخول.",
+  "authErrorGeneric": "حدث خطأ ما. حاول مرة أخرى.",
+  "authHaveAccount": "لديك حساب بالفعل؟",
+  "authNoAccount": "ليس لديك حساب؟",
+  "authStaffMode": "وضع الموظف",
+
+  "availableFlightsTitle": "الرحلات المتاحة",
+  "availableFlightsPax": "راكب",
+  "availableFlightsEmpty": "لا توجد رحلات متاحة",
+  "availableFlightsNoResults": "لا توجد رحلات مطابقة لبحثك",
+
+  "flightDetailsTitle": "تفاصيل الرحلة",
+  "flightDetailsBaseFare": "السعر الأساسي",
+  "flightDetailsBaseFareDetail": "السعر الأساسي ({pax} راكب × {currency} {price})",
+  "@flightDetailsBaseFareDetail": {
+    "placeholders": {
+      "pax": {"type": "int"},
+      "currency": {"type": "String"},
+      "price": {"type": "String"}
+    }
+  },
+  "flightDetailsTaxes": "الضرائب والرسوم (15%)",
+  "flightDetailsTotal": "السعر الإجمالي",
+  "flightDetailsBaggage": "الأمتعة المسموح بها",
+  "flightDetailsBaggageCarry": "حقيبة يد واحدة",
+  "flightDetailsBaggageChecked": "الأمتعة المسجلة",
+  "flightDetailsBaggageEconomy": "الدرجة الاقتصادية: حقيبة يد (7 كجم) + حقيبة مسجلة (23 كجم)",
+  "flightDetailsBaggageBusiness": "درجة رجال الأعمال: حقيبة يد (10 كجم) + حقيبتان مسجلتان (32 كجم لكل منهما)",
+  "flightDetailsCancellation": "سياسة الإلغاء",
+  "flightDetailsConfirm": "متابعة إلى الركاب",
+  "flightDetailsErrorCreating": "تعذر إنشاء الحجز. يرجى المحاولة مرة أخرى.",
+
+  "passengersFormTitle": "معلومات الركاب",
+  "passengersFormPassenger": "الراكب {number}",
+  "@passengersFormPassenger": {
+    "placeholders": {
+      "number": {"type": "int"}
+    }
+  },
+  "passengersFormFirstName": "الاسم الأول",
+  "passengersFormLastName": "اسم العائلة",
+  "passengersFormEmail": "البريد الإلكتروني",
+  "passengersFormPhone": "رقم الهاتف",
+  "passengersFormDOB": "تاريخ الميلاد",
+  "passengersFormGender": "الجنس",
+  "passengersFormMale": "ذكر",
+  "passengersFormFemale": "أنثى",
+  "passengersFormDocument": "وثيقة السفر",
+  "passengersFormPassport": "جواز السفر",
+  "passengersFormDocumentIssue": "بلد الإصدار",
+  "passengersFormSearchCountry": "ابحث عن دولة…",
+  "passengersFormExpiry": "تاريخ الانتهاء",
+  "passengersFormContinue": "متابعة إلى الخدمات",
+
+  "servicesTitle": "الخدمات الاختيارية",
+  "servicesEnhance": "حسّن رحلتك",
+  "servicesSubtitle": "أضف خدمات إضافية لجعل رحلتك أكثر راحة",
+  "servicesTotal": "إجمالي الخدمات:",
+  "servicesCurrency": "دينار أردني",
+  "servicesSkip": "تخطي الخدمات",
+  "servicesContinue": "متابعة لاختيار المقعد",
+  "servicesNoAvailable": "لا توجد خدمات متاحة.",
+  "servicesLoadError": "تعذر تحميل الخدمات.",
+  "servicesRetry": "إعادة المحاولة",
+  "servicesErrorSaving": "تعذر حفظ الخدمات. حاول مرة أخرى.",
+
+  "seatMapTitle": "اختر مقعدك",
+  "seatMapAvailable": "متاح",
+  "seatMapOccupied": "محجوز",
+  "seatMapSelected": "محدد",
+  "seatMapContinue": "تأكيد اختيار المقعد",
+
+  "paymentTitle": "الدفع",
+  "paymentBookingSummary": "ملخص الحجز",
+  "paymentOrderDetails": "تفاصيل الطلب",
+  "paymentFlightDetails": "تفاصيل الرحلة",
+  "paymentPassengers": "الركاب",
+  "paymentBaseFare": "السعر الأساسي",
+  "paymentTaxes": "الضرائب والرسوم",
+  "paymentServicesFee": "الخدمات",
+  "paymentTotal": "الإجمالي",
+  "paymentGrandTotal": "الإجمالي النهائي",
+  "paymentStripeInfo": "محمي بواسطة Stripe",
+  "paymentProceed": "المتابعة إلى الدفع",
+  "paymentStart": "بدء الدفع",
+  "paymentErrorTicketId": "معرّف التذكرة مفقود — يرجى إعادة الحجز.",
+  "paymentErrorSession": "تعذر إنشاء جلسة الدفع. حاول مرة أخرى.",
+  "paymentErrorOpen": "تعذر فتح صفحة الدفع.",
+  "paymentCurrency": "دينار أردني",
+  "paymentSuccessTitle": "تم تأكيد الحجز!",
+  "paymentSuccessMessage": "تم الدفع بنجاح وتم تأكيد حجزك. يمكنك عرض تذكرتك في تبويب التذاكر.",
+  "paymentSuccessGoHome": "العودة للرئيسية",
+  "paymentSuccessViewTickets": "عرض التذاكر",
+
+  "ticketsUpcoming": "القادمة",
+  "ticketsPast": "السابقة",
+  "ticketsNoUpcoming": "لا توجد رحلات قادمة",
+  "ticketsNoPast": "لا توجد رحلات سابقة",
+  "ticketsCount": "{count, plural, one{{count} {type}} other{{count} {type}s}}",
+  "@ticketsCount": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "type": {"type": "String"}
+    }
+  },
+
+  "profileTitle": "الملف الشخصي",
+  "profilePersonalInfo": "المعلومات الشخصية",
+  "profileFullName": "الاسم الكامل",
+  "profileEmail": "البريد الإلكتروني",
+  "profilePhone": "رقم الهاتف",
+  "profileNationality": "الجنسية",
+  "profileTravelDocs": "وثائق السفر",
+  "profilePassport": "رقم جواز السفر",
+  "profilePreferredClass": "الدرجة المفضلة",
+  "profileLoyalty": "المسافر الدائم",
+  "profileStats": "إحصائيات السفر",
+  "profileFlights": "الرحلات",
+  "profileMiles": "الأميال",
+  "profileTier": "المستوى",
+  "profilePhotoUpload": "رفع الصورة: قريبًا في المرحلة 6",
+
+  "settingsTitle": "الإعدادات",
+  "settingsNotifications": "الإشعارات",
+  "settingsFlightUpdates": "تحديثات الرحلات",
+  "settingsFlightUpdatesDesc": "تغيير البوابة، التأخير والإلغاء",
+  "settingsPriceAlerts": "تنبيهات الأسعار",
+  "settingsPriceAlertsDesc": "احصل على إشعار عند انخفاض الأسعار",
+  "settingsBookingReminders": "تذكيرات الحجز",
+  "settingsBookingRemindersDesc": "قبل 24 ساعة من المغادرة",
+  "settingsPromotions": "العروض والتخفيضات",
+  "settingsPromotionsDesc": "عروض وخصومات موسمية",
+  "settingsSmsAlerts": "تنبيهات الرسائل",
+  "settingsSmsAlertsDesc": "استلام التنبيهات عبر الرسائل النصية",
+  "settingsDisplay": "العرض واللغة",
+  "settingsLanguage": "اللغة",
+  "settingsCurrency": "العملة",
+  "settingsDarkMode": "الوضع الداكن",
+  "settingsDarkModeDesc": "التبديل إلى الوضع الداكن",
+  "settingsPrivacy": "الخصوصية والأمان",
+  "settingsChangePassword": "تغيير كلمة المرور",
+  "settingsBiometric": "تسجيل الدخول بالبصمة",
+  "settingsBiometricDesc": "استخدام البصمة أو Face ID",
+  "settingsShareData": "مشاركة بيانات الاستخدام",
+  "settingsShareDataDesc": "ساعدنا على تحسين التطبيق",
+
+  "settingsAccount": "الحساب",
+  "settingsDeleteAccount": "حذف الحساب",
+  "settingsDeleteAccountDesc": "حذف بياناتك بشكل دائم",
+  "settingsAppVersion": "إصدار التطبيق",
+  "settingsLogout": "تسجيل الخروج",
+  "settingsComingSoon": "قريبًا في المرحلة 6",
+  "settingsSelectLanguage": "اختر اللغة",
+  "settingsSelectCurrency": "اختر العملة",
+"ticketsHotels": "الفنادق",
+  "ticketsVehicles": "المركبات",
+  "ticketsFlightSingular": "رحلة",
+  "ticketsFlightPlural": "رحلات",
+  "ticketsNoHotelBookings": "لا توجد حجوزات فنادق",
+  "ticketsNoVehicleBookings": "لا توجد حجوزات مركبات",
+  "ticketsCheckIn": "تسجيل الوصول",
+  "ticketsCheckOut": "تسجيل المغادرة",
+  "ticketsGuests": "ضيوف",
+  "hotelTitle": "حجز فندق",
+  "hotelSearch": "البحث عن فنادق",
+  "hotelWhere": "إلى أين؟",
+  "hotelDestination": "مدينة الوجهة أو اسم الفندق",
+  "hotelCheckIn": "تسجيل الدخول",
+  "hotelCheckOut": "تسجيل الخروج",
+  "hotelRooms": "الغرف",
+  "hotelGuests": "الضيوف",
+  "hotelEmptyMessage": "اعثر على إقامتك المثالية",
+  "hotelEmptySubtitle": "أدخل وجهة للبحث عن الفنادق",
+  "hotelHotelsIn": "{count} فندق في {destination}",
+  "@hotelHotelsIn": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "destination": {"type": "String"}
+    }
+  },
+  "hotelNights": "{count, plural, one{ليلة واحدة} other{{count} ليال}}",
+  "@hotelNights": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "hotelErrorDestination": "يرجى إدخال وجهة",
+
+  "vanTitle": "تأجير فان",
+  "vanFind": "البحث عن المركبات",
+  "vanPickupLocation": "مكان الاستلام",
+  "vanDropLocation": "مكان التسليم",
+  "vanPickupDate": "تاريخ الاستلام",
+  "vanReturnDate": "تاريخ الإرجاع",
+  "vanEmptyMessage": "اعثر على المركبة المثالية",
+  "vanEmptySubtitle": "حدد المواقع لعرض المركبات المتاحة",
+  "vanVehiclesAvailable": "{count, plural, one{مركبة واحدة متاحة} other{{count} مركبات متاحة}}",
+  "@vanVehiclesAvailable": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "vanNoVehicles": "لا توجد مركبات في هذه الفئة",
+  "vanErrorPickup": "يرجى اختيار مكان الاستلام",
+
+  "contactUsTitle": "اتصل بنا",
+  "contactGetInTouch": "تواصل معنا",
+  "contactCall": "اتصل بنا",
+  "contactCallNumber": "+962 6 510 0000",
+  "contactEmail": "راسلنا عبر البريد",
+  "contactEmailAddress": "support@skytrip.com",
+  "contactChat": "الدردشة المباشرة",
+  "contactChatAvailable": "متاح 24/7",
+  "contactSendMessage": "إرسال رسالة",
+  "contactSubject": "الموضوع",
+  "contactMessage": "الرسالة",
+  "contactSend": "إرسال الرسالة",
+  "contactFaq": "الأسئلة الشائعة",
+  "contactOpening": "جاري فتح {type}…",
+  "@contactOpening": {
+    "placeholders": {
+      "type": {"type": "String"}
+    }
+  },
+  "contactSuccess": "تم إرسال الرسالة! سنرد خلال 24 ساعة.",
+  "contactComing": "الدردشة المباشرة: قريبًا في المرحلة 6",
+
+  "dialogCancel": "إلغاء",
+  "dialogOk": "موافق",
+  "dialogConfirm": "تأكيد",
+  "dialogCannotCancel": "إلغاء الحجز؟",
+  "dialogCancelBookingDesc": "لديك حجز قيد التنفيذ. المغادرة الآن ستفقد جميع اختياراتك.",
+  "dialogKeepGoing": "متابعة",
+  "dialogLogout": "تسجيل الخروج",
+  "dialogLogoutConfirm": "هل أنت متأكد من تسجيل الخروج؟",
+  "dialogDeleteAccount": "حذف الحساب",
+  "dialogDeleteAccountConfirm": "حذف جميع بياناتك بشكل دائم؟ لا يمكن التراجع عن هذا الإجراء.",
+
+  "drawerHotel": "حجز فندق",
+  "drawerVanRental": "تأجير فان",
+  "drawerSettings": "الإعدادات",
+  "drawerContactUs": "اتصل بنا",
+  "drawerAbout": "حول التطبيق",
+  "drawerWelcome": "مرحبًا",
+  "drawerWelcomeName": "مرحبًا، {name}",
+  "@drawerWelcomeName": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "drawerLogout": "تسجيل الخروج",
+  "drawerBooking": "الحجز",
+
+  "dialogDone": "تم",
+  "paymentContinue": "متابعة إلى الدفع",
+  "profileEditLabel": "تعديل {label}",
+  "@profileEditLabel": {
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "profileLabelUpdated": "{label} محدث",
+  "@profileLabelUpdated": {
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "profileSave": "حفظ",
+  "hotelBook": "حجز",
+  "hotelConfirmBooking": "تأكيد الحجز",
+  "hotelBooked": "تم حجز الفندق!",
+  "vanRent": "تأجير",
+  "vanConfirmRental": "تأكيد التأجير",
+  "vanRentalConfirmed": "تم تأكيد التأجير!",
+  "authGoogleSignIn": "تسجيل الدخول بـ Google: قريبًا في المرحلة 6",
+  "settingsSave": "حفظ الإعدادات",
+  "settingsSaved": "تم حفظ الإعدادات بنجاح",
+  "settingsErrorSaving": "خطأ في حفظ الإعدادات: {error}",
+  "@settingsErrorSaving": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "settingsFeatureComing": "{feature}: قريبًا في المرحلة 6",
+  "@settingsFeatureComing": {
+    "placeholders": {
+      "feature": {"type": "String"}
+    }
+  },
+  "settingsAccountDeletion": "حذف الحساب: TODO في المرحلة 6",
+  "ticketDetail": "التذكرة {id}: عرض التفاصيل TODO",
+  "@ticketDetail": {
+    "placeholders": {
+      "id": {"type": "String"}
+    }
+  },
+  "availableFlightsPerPerson": "لكل راكب",
+  "availableFlightsTotal": "الإجمالي: {currency} {price}",
+  "@availableFlightsTotal": {
+    "placeholders": {
+      "currency": {"type": "String"},
+      "price": {"type": "String"}
+    }
+  },
+  "hotelSelectDestination": "اختر الوجهة",
+  "hotelDuration": "المدة",
+  "hotelRoomType": "نوع الغرفة",
+  "hotelRoomsLabel": "{count, plural, one{غرفة واحدة} other{{count} غرف}}",
+  "@hotelRoomsLabel": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "hotelGuestsLabel": "{count, plural, one{ضيف واحد} other{{count} ضيوف}}",
+  "@hotelGuestsLabel": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "vanPricePerDay": "{currency} {price}/يوم",
+  "@vanPricePerDay": {
+    "placeholders": {
+      "currency": {"type": "String"},
+      "price": {"type": "String"}
+    }
+  },
+  "vanDays": "{count, plural, one{يوم واحد} other{{count} أيام}}",
+  "@vanDays": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "vanFeatures": "المميزات",
+  "vanDuration": "المدة",
+  "dialogTotal": "الإجمالي",
+  "servicesFree": "مجاني",
+  "servicesPricePerPerson": "{currency} {price} لكل راكب",
+  "@servicesPricePerPerson": {
+    "placeholders": {
+      "currency": {"type": "String"},
+      "price": {"type": "String"}
+    }
+  },
+  "flightDetailsFareBreakdown": "تفصيل السعر",
+  "flightDetailsBookingCreating": "جاري إنشاء الحجز...",
+  "flightDetailsPolicies": "السياسات",
+  "flightDetailsDateChange": "تغيير التاريخ",
+  "flightDetailsRefundableWithFee": "قابل للاسترداد برسم",
+  "flightDetailsAllowedWithFee": "مسموح برسم",
+  "flightDetailsChangeDate": "تغيير التاريخ",
+  "profilePhotoUpcoming": "رفع الصورة: قريبًا في المرحلة 6"
+}

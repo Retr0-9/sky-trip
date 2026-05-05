@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// A labeled icon + value row used in FlightDetails, Profile, Settings.
-/// Usage: InfoRow(icon: Icons.luggage, label: 'Checked Baggage', value: '23kg')
+/// Automatically adapts to light/dark theme.
 class InfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -20,13 +20,16 @@ class InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return GestureDetector(
       onTap: onTap,
       child: Row(
         children: [
           Icon(
             icon,
-            color: iconColor ?? Colors.cyan,
+            color: iconColor ?? colorScheme.primary,
             size: 20,
           ),
           const SizedBox(width: 12),
@@ -36,18 +39,18 @@ class InfoRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withOpacity(0.6),
                     fontSize: 12,
-                    color: Colors.grey.shade500,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w500,
-                    color: Colors.black87,
+                    color: colorScheme.onSurface,
+                    fontSize: 14,
                   ),
                 ),
               ],
@@ -57,7 +60,7 @@ class InfoRow extends StatelessWidget {
             Icon(
               Icons.arrow_forward_ios,
               size: 14,
-              color: Colors.grey.shade400,
+              color: colorScheme.onSurface.withOpacity(0.5),
             ),
         ],
       ),

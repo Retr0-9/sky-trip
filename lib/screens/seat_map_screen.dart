@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:skytrip/generated/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../providers/booking_provider.dart';
@@ -11,23 +12,18 @@ class SeatMapScreen extends StatefulWidget {
 }
 
 class _SeatMapScreenState extends State<SeatMapScreen> {
-  // TODO: Replace with actual seat data from API
-  // Seat status: available, occupied, selected
   final Map<String, String> _seatStatus = {};
   String? _selectedSeat;
-  
-  // Dummy seat configuration (6 rows, 6 seats per row: A-F)
+
   final int _rows = 12;
   final List<String> _columns = ['A', 'B', 'C', 'D', 'E', 'F'];
-  
+
   @override
   void initState() {
     super.initState();
-    // Initialize dummy seat data
     for (int row = 1; row <= _rows; row++) {
       for (String col in _columns) {
         String seatId = '$row$col';
-        // Randomly mark some seats as occupied (dummy data)
         if ((row + col.codeUnitAt(0)) % 3 == 0) {
           _seatStatus[seatId] = 'occupied';
         } else {
@@ -36,17 +32,13 @@ class _SeatMapScreenState extends State<SeatMapScreen> {
       }
     }
   }
-  
+
   void _selectSeat(String seatId) {
     if (_seatStatus[seatId] == 'occupied') return;
-    
     setState(() {
-      // Deselect previous seat
       if (_selectedSeat != null) {
         _seatStatus[_selectedSeat!] = 'available';
       }
-      
-      // Select new seat
       _seatStatus[seatId] = 'selected';
       _selectedSeat = seatId;
     });
@@ -54,62 +46,55 @@ class _SeatMapScreenState extends State<SeatMapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return GradientBackground(child: Scaffold(backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: const Text('Select Your Seat'),
-        elevation: 0,
-      ),
-      body: Column(
-        children: [
-          // Legend
-          _buildLegend(),
-          
-          // Seat Map
-          Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                // Calculate responsive seat size:
-                // Available width - row numbers (24×2) - aisle (16) - padding (32)
-                // Divided by 6 seats, minus margins (2×2 per seat)
-                final double available = constraints.maxWidth - 24 - 24 - 16 - 32;
-                final double seatMargin = 2.0;
-                final double seatSize = (available / 6) - (seatMargin * 2);
+    final l10n = AppLocalizations.of(context)!;
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text(l10n.seatMapTitle),
+          elevation: 0,
+        ),
+        body: Column(
+          children: [
+            _buildLegend(),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final double available = constraints.maxWidth - 24 - 24 - 16 - 32;
+                  final double seatMargin = 2.0;
+                  final double seatSize = (available / 6) - (seatMargin * 2);
 
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      // Column Headers (A B C - D E F)
-                      _buildColumnHeaders(seatSize, seatMargin),
-                      const SizedBox(height: 8),
-
-                      // Seat Grid
-                      ..._buildSeatRows(seatSize, seatMargin),
-                    ],
-                  ),
-                );
-              },
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        _buildColumnHeaders(seatSize, seatMargin),
+                        const SizedBox(height: 8),
+                        ..._buildSeatRows(seatSize, seatMargin),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-          
-          // Bottom Button
-          _buildBottomButton(),
-        ],
+            _buildBottomButton(),
+          ],
+        ),
       ),
-    )
     );
   }
 
   Widget _buildLegend() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
-      color: Colors.grey.shade100,
+      color: AppColors.surface, // بديل background غير موجود
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildLegendItem(Colors.grey.shade300, 'Available'),
-          _buildLegendItem(Colors.red.shade300, 'Occupied'),
-          _buildLegendItem(Colors.cyan, 'Selected'),
+          _buildLegendItem(_availableColor(context), l10n.seatMapAvailable),
+          _buildLegendItem(AppColors.error, l10n.seatMapOccupied),
+          _buildLegendItem(AppColors.cyan, l10n.seatMapSelected),
         ],
       ),
     );
@@ -127,10 +112,7 @@ class _SeatMapScreenState extends State<SeatMapScreen> {
           ),
         ),
         const SizedBox(width: 8),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12),
-        ),
+        Text(label, style: const TextStyle(fontSize: 12)),
       ],
     );
   }
@@ -139,16 +121,12 @@ class _SeatMapScreenState extends State<SeatMapScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Row number placeholder (for alignment)
         SizedBox(width: 24),
-
-        // Left side headers (A B C)
         ..._columns.sublist(0, 3).map((col) => Container(
           width: seatSize,
           margin: EdgeInsets.symmetric(horizontal: seatMargin),
           child: Center(
-            child: Text(
-              col,
+            child: Text(col,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.grey,
@@ -156,17 +134,12 @@ class _SeatMapScreenState extends State<SeatMapScreen> {
             ),
           ),
         )),
-
-        // Aisle gap
         const SizedBox(width: 16),
-
-        // Right side headers (D E F)
         ..._columns.sublist(3).map((col) => Container(
           width: seatSize,
           margin: EdgeInsets.symmetric(horizontal: seatMargin),
           child: Center(
-            child: Text(
-              col,
+            child: Text(col,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Colors.grey,
@@ -174,8 +147,6 @@ class _SeatMapScreenState extends State<SeatMapScreen> {
             ),
           ),
         )),
-
-        // Row number placeholder (for alignment)
         SizedBox(width: 24),
       ],
     );
@@ -183,12 +154,10 @@ class _SeatMapScreenState extends State<SeatMapScreen> {
 
   List<Widget> _buildSeatRows(double seatSize, double seatMargin) {
     List<Widget> rows = [];
-
     for (int row = 1; row <= _rows; row++) {
       rows.add(_buildSeatRow(row, seatSize, seatMargin));
       rows.add(const SizedBox(height: 6));
     }
-
     return rows;
   }
 
@@ -196,44 +165,23 @@ class _SeatMapScreenState extends State<SeatMapScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Row number (left)
         SizedBox(
           width: 24,
           child: Text(
             rowNumber.toString(),
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey,
-            ),
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
           ),
         ),
-
-        // Left side seats (A B C)
-        ..._columns.sublist(0, 3).map(
-          (col) => _buildSeat(rowNumber, col, seatSize, seatMargin),
-        ),
-
-        // Aisle gap
+        ..._columns.sublist(0, 3).map((col) => _buildSeat(rowNumber, col, seatSize, seatMargin)),
         const SizedBox(width: 16),
-
-        // Right side seats (D E F)
-        ..._columns.sublist(3).map(
-          (col) => _buildSeat(rowNumber, col, seatSize, seatMargin),
-        ),
-
-        // Row number (right)
+        ..._columns.sublist(3).map((col) => _buildSeat(rowNumber, col, seatSize, seatMargin)),
         SizedBox(
           width: 24,
           child: Text(
             rowNumber.toString(),
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey,
-            ),
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
           ),
         ),
       ],
@@ -247,13 +195,13 @@ class _SeatMapScreenState extends State<SeatMapScreen> {
     Color seatColor;
     switch (status) {
       case 'occupied':
-        seatColor = Colors.red.shade300;
+        seatColor = AppColors.error;
         break;
       case 'selected':
-        seatColor = Colors.cyan;
+        seatColor = AppColors.cyan;
         break;
       default:
-        seatColor = Colors.grey.shade300;
+        seatColor = _availableColor(context);
     }
 
     return GestureDetector(
@@ -266,17 +214,15 @@ class _SeatMapScreenState extends State<SeatMapScreen> {
           color: seatColor,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: status == 'selected'
-                ? Colors.cyan.shade700
-                : Colors.transparent,
+            color: status == 'selected' ? AppColors.cyanDark : Colors.transparent,
             width: 2,
           ),
         ),
         child: Center(
           child: status == 'occupied'
-              ? Icon(Icons.close, color: Colors.white, size: seatSize * 0.4)
+              ? Icon(Icons.close, color: AppColors.surface, size: seatSize * 0.4)
               : status == 'selected'
-                  ? Icon(Icons.check, color: Colors.white, size: seatSize * 0.4)
+                  ? Icon(Icons.check, color: AppColors.surface, size: seatSize * 0.4)
                   : null,
         ),
       ),
@@ -287,10 +233,10 @@ class _SeatMapScreenState extends State<SeatMapScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface, // بدل colorScheme.surface
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade300,
+            color: AppColors.border.withOpacity(0.15), // بدل colorScheme.shadow
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -306,16 +252,12 @@ class _SeatMapScreenState extends State<SeatMapScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      'Selected: ',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                    Text(
-                      _selectedSeat!,
+                    const Text('Selected: ', style: TextStyle(fontSize: 16)),
+                    Text(_selectedSeat!,
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.cyan,
+                        color: AppColors.cyan,
                       ),
                     ),
                   ],
@@ -326,28 +268,29 @@ class _SeatMapScreenState extends State<SeatMapScreen> {
               child: ElevatedButton(
                 onPressed: _selectedSeat != null
                     ? () {
-                        // Save seat to provider
                         context.read<BookingProvider>().selectSeat(_selectedSeat!);
                         Navigator.pushNamed(context, '/payment');
                       }
                     : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.cyan,
-                  foregroundColor: Colors.white,
+                  backgroundColor: AppColors.cyan,
+                  foregroundColor: AppColors.surface,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  'Confirm Seat',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
+                child: const Text('Confirm Seat', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Color _availableColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark ? AppColors.textHint : AppColors.bg;
   }
 }

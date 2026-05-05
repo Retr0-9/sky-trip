@@ -1,0 +1,427 @@
+{
+  "@@locale": "en",
+  "appTitle": "Sky Trip",
+  "appVersion": "SkyTrip v1.0.0",
+
+  "homeGreeting": "{greeting}, {firstName}",
+  "@homeGreeting": {
+    "description": "Personalized greeting on home screen",
+    "placeholders": {
+      "greeting": {"type": "String", "example": "Good Morning"},
+      "firstName": {"type": "String", "example": "John"}
+    }
+  },
+  "homeReady": "Ready for your next adventure?",
+  "homeRecentSearches": "Recent Searches",
+  "homeLatestOffers": "Latest Offers",
+  "homeFeaturedDestinations": "Featured Destinations",
+  "homeSeeAll": "See All",
+
+  "bookingTitle": "Book a Flight",
+  "bookingTripRoundtrip": "Roundtrip",
+  "bookingTripOneWay": "One Way",
+  "bookingTripMultiCity": "Multi-City",
+  "bookingFromLabel": "From",
+  "bookingToLabel": "To",
+  "bookingSearchCity": "Search city…",
+  "bookingDepartureDate": "Departure",
+  "bookingReturnDate": "Return",
+  "bookingAdults": "Adults",
+  "bookingYouth": "Youth",
+  "bookingChildren": "Children",
+  "bookingInfants": "Infants",
+  "bookingClass": "Class",
+  "bookingPassengers": "Passengers",
+  "bookingSearch": "Search Flights",
+  "bookingNoFlightsFound": "No flights found",
+  "bookingTryAnother": "Try another search",
+  "bookingSubtitle": "Where would you like to go today?",
+  "bookingDepartureCityHint": "Departure city",
+  "bookingArrivalCityHint": "Arrival city",
+  "bookingSelectDate": "Select date",
+  "bookingSelectReturnDate": "Select return date",
+  "bookingSelectClass": "Select Class",
+  "bookingErrorSelectCities": "Please select departure and arrival cities.",
+  "bookingErrorDifferentCities": "Departure and arrival cities must be different.",
+  "bookingErrorSelectDeparture": "Please select a departure date.",
+  "bookingErrorSelectReturn": "Please select a return date.",
+  "bookingErrorSearchFailed": "Search failed. Please try again.",
+  "bookingPassengersCount": "{count, plural, one{1 Passenger} other{{count} Passengers}}",
+  "@bookingPassengersCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "bookingAdultSubtext": "12+ years",
+  "bookingYouthSubtext": "2–11 years",
+  "bookingChildrenSubtext": "Under 2",
+  "bookingInfantsSubtext": "Lap infant",
+  "greetingMorning": "Good Morning",
+  "greetingAfternoon": "Good Afternoon",
+  "greetingEvening": "Good Evening",
+  "dialogRetry": "Retry",
+
+  "authSignIn": "Sign In",
+  "authSignUp": "Sign Up",
+  "authEmail": "Email",
+  "authPassword": "Password",
+  "authConfirmPassword": "Confirm Password",
+  "authFirstName": "First Name",
+  "authLastName": "Last Name",
+  "authStaffId": "Staff ID",
+  "authErrorEmail": "Enter a valid email address.",
+  "authErrorPassword": "Password must be at least 6 characters.",
+  "authErrorRequired": "Enter your email and password.",
+  "authErrorComingSoon": "Registration coming soon. Please sign in.",
+  "authErrorGeneric": "Something went wrong. Please try again.",
+  "authHaveAccount": "Already have an account?",
+  "authNoAccount": "Don't have an account?",
+  "authStaffMode": "Staff Mode",
+
+  "availableFlightsTitle": "Available Flights",
+  "availableFlightsPax": "pax",
+  "availableFlightsEmpty": "No flights available",
+  "availableFlightsNoResults": "No flights match your search",
+
+  
+  "flightDetailsTitle": "Flight Details",
+  "flightDetailsFareBreakdown": "Fare Breakdown",
+  "flightDetailsBaseFare": "Base Fare",
+  "flightDetailsBaseFareDetail": "Base Fare ({pax} pax × {currency} {price})",
+  "@flightDetailsBaseFareDetail": {
+    "placeholders": {
+      "pax": {"type": "int"},
+      "currency": {"type": "String"},
+      "price": {"type": "String"}
+    }
+  },
+  "flightDetailsTaxes": "Taxes & Fees (15%)",
+  "flightDetailsTotal": "Total Price",
+  "flightDetailsBaggage": "Baggage Allowance",
+  "flightDetailsBaggageCarry": "1 Carry-on",
+  "flightDetailsBaggageChecked": "Checked Bags",
+  "flightDetailsBaggageEconomy": "Economy: 1 carry-on (7kg) + 1 checked bag (23kg)",
+  "flightDetailsBaggageBusiness": "Business: 1 carry-on (10kg) + 2 checked bags (32kg each)",
+  "flightDetailsCancellation": "Cancellation Policy",
+  "flightDetailsConfirm": "Continue to Passengers",
+  "flightDetailsErrorCreating": "Could not create booking. Please try again.",
+
+  "passengersFormTitle": "Passenger Information",
+  "passengersFormPassenger": "Passenger {number}",
+  "@passengersFormPassenger": {
+    "placeholders": {
+      "number": {"type": "int"}
+    }
+  },
+  "passengersFormFirstName": "First Name",
+  "passengersFormLastName": "Last Name",
+  "passengersFormEmail": "Email",
+  "passengersFormPhone": "Phone",
+  "passengersFormDOB": "Date of Birth",
+  "passengersFormGender": "Gender",
+  "passengersFormMale": "Male",
+  "passengersFormFemale": "Female",
+  "passengersFormDocument": "Travel Document",
+  "passengersFormPassport": "Passport",
+  "passengersFormDocumentIssue": "Issued by Country",
+  "passengersFormSearchCountry": "Search country…",
+  "passengersFormExpiry": "Expiry Date",
+  "passengersFormContinue": "Continue to Services",
+
+  "servicesTitle": "Optional Services",
+  "servicesEnhance": "Enhance Your Journey",
+  "servicesSubtitle": "Add extra services to make your trip more comfortable",
+  "servicesTotal": "Services total:",
+  "servicesCurrency": "JOD",
+  "servicesSkip": "Skip Services",
+  "servicesContinue": "Continue to Seat Selection",
+  "servicesNoAvailable": "No services available.",
+  "servicesLoadError": "Could not load services.",
+  "servicesRetry": "Retry",
+  "servicesErrorSaving": "Could not save services. Please try again.",
+
+  "seatMapTitle": "Select Your Seat",
+  "seatMapAvailable": "Available",
+  "seatMapOccupied": "Occupied",
+  "seatMapSelected": "Selected",
+  "seatMapContinue": "Confirm Seat Selection",
+
+  "paymentTitle": "Payment",
+  "paymentBookingSummary": "Booking Summary",
+  "paymentOrderDetails": "Order Details",
+  "paymentFlightDetails": "Flight Details",
+  "paymentPassengers": "Passengers",
+  "paymentBaseFare": "Base Fare",
+  "paymentTaxes": "Taxes & Fees",
+  "paymentServicesFee": "Services",
+  "paymentTotal": "Total",
+  "paymentGrandTotal": "Grand Total",
+  "paymentStripeInfo": "Secured by Stripe",
+  "paymentProceed": "Proceed to Payment",
+  "paymentStart": "Start Payment",
+  "paymentErrorTicketId": "Ticket ID missing — please restart booking.",
+  "paymentErrorSession": "Could not create payment session. Please try again.",
+  "paymentErrorOpen": "Could not open payment page.",
+  "paymentCurrency": "JOD",
+  "paymentSuccessTitle": "Booking Confirmed!",
+  "paymentSuccessMessage": "Your payment was successful and your booking is confirmed. View your ticket in the Tickets tab.",
+  "paymentSuccessGoHome": "Go Home",
+  "paymentSuccessViewTickets": "View Tickets",
+
+  "ticketsUpcoming": "Upcoming",
+  "ticketsPast": "Past",
+  "ticketsNoUpcoming": "No upcoming flights",
+  "ticketsNoPast": "No past flights",
+  "ticketsCount": "{count, plural, one{{count} {type}} other{{count} {type}s}}",
+  "@ticketsCount": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "type": {"type": "String"}
+      
+    }
+  },
+
+  "profileTitle": "Profile",
+  "profilePersonalInfo": "Personal Information",
+  "profileFullName": "Full Name",
+  "profileEmail": "Email",
+  "profilePhone": "Phone",
+  "profileNationality": "Nationality",
+  "profileTravelDocs": "Travel Documents",
+  "profilePassport": "Passport Number",
+  "profilePreferredClass": "Preferred Class",
+  "profileLoyalty": "Frequent Flyer",
+  "profileStats": "Travel Stats",
+  "profileFlights": "Flights",
+  "profileMiles": "Miles",
+  "profileTier": "Tier",
+  "profilePhotoUpload": "Photo upload: Coming in Phase 6",
+
+  "settingsTitle": "Settings",
+  "settingsNotifications": "Notifications",
+  "settingsFlightUpdates": "Flight Updates",
+  "settingsFlightUpdatesDesc": "Gate changes, delays & cancellations",
+  "settingsPriceAlerts": "Price Alerts",
+  "settingsPriceAlertsDesc": "Get notified when prices drop",
+  "settingsBookingReminders": "Booking Reminders",
+  "settingsBookingRemindersDesc": "24h before departure",
+  "settingsPromotions": "Promotions & Offers",
+  "settingsPromotionsDesc": "Deals, discounts and seasonal offers",
+  "settingsSmsAlerts": "SMS Alerts",
+  "settingsSmsAlertsDesc": "Receive alerts via text message",
+  "settingsDisplay": "Display & Language",
+  "settingsLanguage": "Language",
+  "settingsCurrency": "Currency",
+  "settingsDarkMode": "Dark Mode",
+  "settingsDarkModeDesc": "Switch to dark theme",
+  "settingsPrivacy": "Privacy & Security",
+  "settingsChangePassword": "Change Password",
+  "settingsBiometric": "Biometric Login",
+  "settingsBiometricDesc": "Use fingerprint or Face ID",
+  "settingsShareData": "Share Usage Data",
+  "settingsShareDataDesc": "Help us improve the app",
+   "ticketsHotels": "Hotels",
+  "ticketsVehicles": "Vehicles",
+  "settingsAccount": "Account",
+  "settingsDeleteAccount": "Delete Account",
+  "settingsDeleteAccountDesc": "Permanently remove your data",
+  "settingsAppVersion": "App Version",
+  "settingsLogout": "Log Out",
+  "settingsComingSoon": "Coming in Phase 6",
+  "settingsSelectLanguage": "Select Language",
+  "settingsSelectCurrency": "Select Currency",
+  "hotelTitle": "Book a Hotel",
+  "hotelSearch": "Search Hotels",
+  "hotelWhere": "Where to?",
+  "hotelDestination": "Destination city or hotel name",
+  "hotelCheckIn": "Check-in",
+  "hotelCheckOut": "Check-out",
+  "hotelRooms": "Rooms",
+  "hotelGuests": "Guests",
+  "hotelEmptyMessage": "Find your perfect stay",
+  "hotelEmptySubtitle": "Enter a destination to search hotels",
+  "hotelHotelsIn": "{count} hotels in {destination}",
+  "@hotelHotelsIn": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "destination": {"type": "String"}
+    }
+  },
+  "hotelNights": "{count, plural, one{1 night} other{{count} nights}}",
+  "@hotelNights": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "hotelErrorDestination": "Please enter a destination",
+
+  "vanTitle": "Van Rental",
+  "vanFind": "Find Vehicles",
+  "vanPickupLocation": "Pick-up",
+  "vanDropLocation": "Drop-off",
+  "vanPickupDate": "Pick-up Date",
+  "vanReturnDate": "Return Date",
+  "vanEmptyMessage": "Find the perfect ride",
+  "vanEmptySubtitle": "Select locations to browse available vehicles",
+  "vanVehiclesAvailable": "{count, plural, one{1 vehicle available} other{{count} vehicles available}}",
+  "@vanVehiclesAvailable": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "vanNoVehicles": "No vehicles in this category",
+  "vanErrorPickup": "Please select a pick-up location",
+
+  "contactUsTitle": "Contact Us",
+  "contactGetInTouch": "Get In Touch",
+  "contactCall": "Call Us",
+  "contactCallNumber": "+962 6 510 0000",
+  "contactEmail": "Email Us",
+  "contactEmailAddress": "support@skytrip.com",
+  "contactChat": "Live Chat",
+  "contactChatAvailable": "Available 24/7",
+  "contactSendMessage": "Send a Message",
+  "contactSubject": "Subject",
+  "contactMessage": "Message",
+  "contactSend": "Send Message",
+  "contactFaq": "FAQ",
+  "contactOpening": "Opening {type}…",
+  "@contactOpening": {
+    "placeholders": {
+      "type": {"type": "String"}
+    }
+  },
+  "contactSuccess": "Message sent! We'll respond within 24 hours.",
+  "contactComing": "Live chat: Coming in Phase 6",
+
+  "dialogCancel": "Cancel",
+  "dialogOk": "OK",
+  "dialogConfirm": "Confirm",
+  "dialogCannotCancel": "Cancel Booking?",
+  "dialogCancelBookingDesc": "You have a booking in progress. Leaving now will lose all your selections.",
+  "dialogKeepGoing": "Keep Going",
+  "dialogLogout": "Log Out",
+  "dialogLogoutConfirm": "Are you sure you want to log out?",
+  "dialogDeleteAccount": "Delete Account",
+  "dialogDeleteAccountConfirm": "Permanently remove all your data? This action cannot be undone.",
+
+  "drawerHotel": "Book a Hotel",
+  "drawerVanRental": "Van Rental",
+  "drawerSettings": "Settings",
+  "drawerContactUs": "Contact Us",
+  "drawerAbout": "About",
+  "drawerWelcome": "Welcome",
+  "drawerWelcomeName": "Welcome, {name}",
+  "@drawerWelcomeName": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "drawerLogout": "Log Out",
+  "drawerBooking": "Booking",
+  "dialogDone": "Done",
+  "paymentContinue": "Continue to Payment",
+  "profileEditLabel": "Edit {label}",
+  "@profileEditLabel": {
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "profileLabelUpdated": "{label} updated",
+  "@profileLabelUpdated": {
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "profileSave": "Save",
+  "hotelBook": "Book",
+  "hotelConfirmBooking": "Confirm Booking",
+  "hotelBooked": "Hotel Booked!",
+  "vanRent": "Rent",
+  "vanConfirmRental": "Confirm Rental",
+  "vanRentalConfirmed": "Rental Confirmed!",
+  "authGoogleSignIn": "Google Sign-In: Coming in Phase 6",
+  "settingsSave": "Save Settings",
+  "settingsSaved": "Settings saved successfully",
+  "settingsErrorSaving": "Error saving settings: {error}",
+  "@settingsErrorSaving": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "settingsFeatureComing": "{feature}: Coming in Phase 6",
+  "@settingsFeatureComing": {
+    "placeholders": {
+      "feature": {"type": "String"}
+    }
+  },
+  "settingsAccountDeletion": "Account deletion: TODO in Phase 6",
+  "ticketDetail": "Ticket {id}: TODO detail view",
+  "@ticketDetail": {
+    "placeholders": {
+      "id": {"type": "String"}
+    }
+  },
+  "availableFlightsPerPerson": "per person",
+  "availableFlightsTotal": "Total: {currency} {price}",
+  "@availableFlightsTotal": {
+    "placeholders": {
+      "currency": {"type": "String"},
+      "price": {"type": "String"}
+    }
+  },
+  
+  "ticketsFlightSingular": "Flight",
+  "ticketsFlightPlural": "Flights",
+  "ticketsNoHotelBookings": "No hotel bookings",
+  "ticketsNoVehicleBookings": "No vehicle bookings",
+  "ticketsCheckIn": "Check-in",
+  "ticketsCheckOut": "Check-out",
+  "ticketsGuests": "Guests",
+  "hotelSelectDestination": "Select Destination",
+  "hotelDuration": "Duration",
+  "hotelRoomType": "Room Type",
+  "hotelRoomsLabel": "{count, plural, one{room} other{rooms}}",
+  "@hotelRoomsLabel": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "hotelGuestsLabel": "{count, plural, one{guest} other{guests}}",
+  "@hotelGuestsLabel": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "vanPricePerDay": "{currency} {price}/day",
+  "@vanPricePerDay": {
+    "placeholders": {
+      "currency": {"type": "String"},
+      "price": {"type": "String"}
+    }
+  },
+  "vanDays": "{count, plural, one{1 day} other{{count} days}}",
+  "@vanDays": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "vanFeatures": "Features",
+  "vanDuration": "Duration",
+  "dialogTotal": "Total",
+  "servicesFree": "Free",
+  "servicesPricePerPerson": "{currency} {price} per person",
+  "@servicesPricePerPerson": {
+    "placeholders": {
+      "currency": {"type": "String"},
+      "price": {"type": "String"}
+    }
+  },
+  "flightDetailsBookingCreating": "Creating Booking...",
+  "flightDetailsPolicies": "Policies",
+  "flightDetailsDateChange": "Date Change",
+  "flightDetailsRefundableWithFee": "Refundable with fee",
+  "flightDetailsAllowedWithFee": "Allowed with fee",
+  "flightDetailsChangeDate": "Date Change",
+  "profilePhotoUpcoming": "Photo upload: Coming in Phase 6"
+}

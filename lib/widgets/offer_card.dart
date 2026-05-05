@@ -8,7 +8,7 @@ class OfferCard extends StatelessWidget {
   final String subtitle;
   final String discount;
   final String validUntil;
-  final Color color;
+  final Color? color; // optional, fallback to theme
   final VoidCallback? onTap;
 
   const OfferCard({
@@ -17,19 +17,25 @@ class OfferCard extends StatelessWidget {
     required this.subtitle,
     required this.discount,
     required this.validUntil,
-    required this.color,
+    this.color,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final cardColor = color ?? colorScheme.primary;
+    final textColor = colorScheme.onPrimary;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color,
+          color: cardColor,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -41,10 +47,9 @@ class OfferCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 18,
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: textColor,
                   ),
                 ),
                 Container(
@@ -53,30 +58,32 @@ class OfferCard extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.25),
+                    color: textColor.withOpacity(0.25),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     discount,
-                    style: const TextStyle(
-                      fontSize: 12,
+                    style: theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: textColor,
+                      fontSize: 12,
                     ),
                   ),
                 ),
               ],
             ),
+
             const SizedBox(height: 6),
 
             // Subtitle
             Text(
               subtitle,
-              style: TextStyle(
+              style: theme.textTheme.bodyMedium?.copyWith(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.9),
+                color: textColor.withOpacity(0.9),
               ),
             ),
+
             const SizedBox(height: 10),
 
             // Valid Until
@@ -85,14 +92,14 @@ class OfferCard extends StatelessWidget {
                 Icon(
                   Icons.calendar_today,
                   size: 12,
-                  color: Colors.white.withOpacity(0.8),
+                  color: textColor.withOpacity(0.8),
                 ),
                 const SizedBox(width: 6),
                 Text(
                   'Valid until $validUntil',
-                  style: TextStyle(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     fontSize: 12,
-                    color: Colors.white.withOpacity(0.8),
+                    color: textColor.withOpacity(0.8),
                   ),
                 ),
               ],

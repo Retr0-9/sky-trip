@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:skytrip/generated/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../widgets/info_row.dart';
 import '../widgets/primary_button.dart';
@@ -67,7 +68,7 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
     } on AuthException catch (e) {
       _snack(e.message, isError: true);
     } catch (_) {
-      _snack('Could not create booking. Please try again.', isError: true);
+      _snack(AppLocalizations.of(context)!.flightDetailsErrorCreating, isError: true);
     } finally {
       if (mounted) setState(() => _confirming = false);
     }
@@ -85,6 +86,7 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
   Widget build(BuildContext context) {
     final s = _schedule;
     final passengers = _search?.totalPassengers ?? 1;
+    final user = context.watch<UserProvider>();
 
     // Values with safe fallbacks
     final depCity   = s?.departureCity  ?? '—';
@@ -92,21 +94,24 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
     final depTime   = s?.departureDisplay ?? '—';
     final arrTime   = s?.arrivalDisplay   ?? '—';
     final price     = s?.totalPrice       ?? 0.0;
-    final baseFare  = price * passengers;
+    final convertedPrice = user.convertPrice(price);
+    final baseFare  = convertedPrice * passengers;
     final taxes     = baseFare * 0.15;
     final total     = baseFare + taxes;
+
+   
 
     return GradientBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('Flight Details'), elevation: 0),
+        appBar: AppBar(title: Text(AppLocalizations.of(context)!.flightDetailsTitle), elevation: 0),
         body: Column(children: [
           Expanded(
             child: SingleChildScrollView(
               child: Column(children: [
                 _buildFlightSummary(depCity, arrCity, depTime, arrTime, s),
                 const SizedBox(height: 8),
-                _buildFareBreakdown(passengers, price, baseFare, taxes, total),
+                _buildFareBreakdown(passengers, convertedPrice, baseFare, taxes, total, user.currency),
                 const SizedBox(height: 8),
                 _buildBaggageInfo(),
                 const SizedBox(height: 8),
@@ -123,6 +128,9 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
 
   Widget _buildFlightSummary(String depCity, String arrCity,
       String depTime, String arrTime, FlightScheduleModel? s) {
+    // ── Dynamic: airline icon background ──
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -136,7 +144,9 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
           Container(
             width: 50, height: 50,
             decoration: BoxDecoration(
-                color: Colors.white, borderRadius: BorderRadius.circular(8)),
+              color: colorScheme.surface,                    
+              borderRadius: BorderRadius.circular(8),
+            ),
             child: const Icon(Icons.flight, color: AppColors.cyan),
           ),
           const SizedBox(width: 12),
@@ -173,25 +183,36 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
   }
 
   Widget _buildFareBreakdown(
-      int passengers, double price, double baseFare, double taxes, double total) {
+      int passengers, double price, double baseFare, double taxes, double total, String currency) {
+    // ── Dynamic: card background and border ──
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,                          // was: Colors.white
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: colorScheme.outlineVariant), // was: Colors.grey.shade200
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Fare Breakdown',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        Text(AppLocalizations.of(context)!.flightDetailsFareBreakdown,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
-        _fareRow('Base Fare ($passengers pax × JOD ${price.toStringAsFixed(2)})',
-            'JOD ${baseFare.toStringAsFixed(2)}'),
+        _fareRow(
+          AppLocalizations.of(context)!.flightDetailsBaseFareDetail(
+            passengers,
+            currency,
+            price.toStringAsFixed(2),
+          ),
+          '$currency ${baseFare.toStringAsFixed(2)}',
+        ),
         const SizedBox(height: 8),
-        _fareRow('Taxes & Fees (15%)', 'JOD ${taxes.toStringAsFixed(2)}'),
+        _fareRow(AppLocalizations.of(context)!.flightDetailsTaxes,
+            '$currency ${taxes.toStringAsFixed(2)}'),
         const Divider(height: 24),
-        _fareRow('Total', 'JOD ${total.toStringAsFixed(2)}',
+        _fareRow(AppLocalizations.of(context)!.flightDetailsTotal,
+            '$currency ${total.toStringAsFixed(2)}',
             isBold: true, isLarge: true),
       ]),
     );
@@ -199,13 +220,18 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
 
   Widget _fareRow(String label, String amount,
       {bool isBold = false, bool isLarge = false}) {
+    // ── Dynamic: bold text color ──
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
       Expanded(
         child: Text(label,
             style: TextStyle(
                 fontSize: isLarge ? 16 : 14,
                 fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-                color: isBold ? Colors.black : AppColors.textSecondary)),
+                color: isBold
+                    ? colorScheme.onSurface                  // was: Colors.black
+                    : AppColors.textSecondary)),
       ),
       Text(amount,
           style: TextStyle(
@@ -215,57 +241,84 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
     ]);
   }
 
-  Widget _buildBaggageInfo() => Container(
-    margin: const EdgeInsets.symmetric(horizontal: 16),
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.grey.shade200),
-    ),
-    child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('Baggage Allowance',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-      SizedBox(height: 16),
-      InfoRow(icon: Icons.work_outline,    label: 'Carry-on',        value: '1 bag (7 kg)'),
-      SizedBox(height: 12),
-      InfoRow(icon: Icons.luggage,         label: 'Checked Baggage', value: '1 bag (23 kg)'),
-    ]),
-  );
+  Widget _buildBaggageInfo() {
+    // ── Dynamic: card background and border ──
+    final colorScheme = Theme.of(context).colorScheme;
 
-  Widget _buildPolicies() => Container(
-    margin: const EdgeInsets.symmetric(horizontal: 16),
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.grey.shade200),
-    ),
-    child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('Policies',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-      SizedBox(height: 16),
-      InfoRow(icon: Icons.cancel_outlined, label: 'Cancellation', value: 'Refundable with fee'),
-      SizedBox(height: 12),
-      InfoRow(icon: Icons.swap_horiz,      label: 'Date Change',  value: 'Allowed with fee'),
-    ]),
-  );
-
-  Widget _buildBottomBar() => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      boxShadow: [BoxShadow(
-          color: Colors.grey.shade200, blurRadius: 8, offset: const Offset(0, -2))],
-    ),
-    child: SafeArea(
-      child: PrimaryButton(
-        label: _confirming ? 'Creating Booking…' : 'Confirm & Continue',
-        icon: _confirming ? null : Icons.arrow_forward,
-        onPressed: _confirming ? null : _confirm,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,                          // was: Colors.white
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.outlineVariant), // was: Colors.grey.shade200
       ),
-    ),
-  );
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(AppLocalizations.of(context)!.flightDetailsBaggage,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        InfoRow(icon: Icons.work_outline,
+            label: AppLocalizations.of(context)!.flightDetailsBaggageCarry,
+            value: AppLocalizations.of(context)!.flightDetailsBaggageEconomy),
+        const SizedBox(height: 12),
+        InfoRow(icon: Icons.luggage,
+            label: AppLocalizations.of(context)!.flightDetailsBaggageChecked,
+            value: AppLocalizations.of(context)!.flightDetailsBaggageBusiness),
+      ]),
+    );
+  }
+
+  Widget _buildPolicies() {
+    // ── Dynamic: card background and border ──
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,                          // was: Colors.white
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.outlineVariant), // was: Colors.grey.shade200
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(AppLocalizations.of(context)!.flightDetailsPolicies,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        InfoRow(icon: Icons.cancel_outlined,
+            label: AppLocalizations.of(context)!.flightDetailsCancellation,
+            value: AppLocalizations.of(context)!.flightDetailsRefundableWithFee),
+        const SizedBox(height: 12),
+        InfoRow(icon: Icons.swap_horiz,
+            label: AppLocalizations.of(context)!.flightDetailsDateChange,
+            value: AppLocalizations.of(context)!.flightDetailsAllowedWithFee),
+      ]),
+    );
+  }
+
+  Widget _buildBottomBar() {
+    // ── Dynamic: bottom bar background and shadow ──
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,                          // was: Colors.white
+        boxShadow: [BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.12),    // was: Colors.grey.shade200
+            blurRadius: 8,
+            offset: const Offset(0, -2))],
+      ),
+      child: SafeArea(
+        child: PrimaryButton(
+          label: _confirming
+              ? AppLocalizations.of(context)!.flightDetailsBookingCreating
+              : AppLocalizations.of(context)!.flightDetailsConfirm,
+          icon: _confirming ? null : Icons.arrow_forward,
+          onPressed: _confirming ? null : _confirm,
+        ),
+      ),
+    );
+  }
 
   String _fmtDate(DateTime d) {
     const m = ['','Jan','Feb','Mar','Apr','May','Jun',

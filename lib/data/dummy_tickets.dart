@@ -1,7 +1,6 @@
 import '../models/ticket_model.dart';
 
 class DummyTickets {
-  // TODO: Replace with API/Firebase call in Phase 6
   static const List<TicketModel> tickets = [
     // Upcoming
     TicketModel(

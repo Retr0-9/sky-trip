@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// A flight result card used in AvailableFlightsScreen.
-/// Usage: FlightCard(airline: 'Royal Jordanian', flightNumber: 'RJ 501', ...)
+/// Automatically adapts to light/dark theme.
 class FlightCard extends StatelessWidget {
   final String airline;
   final String flightNumber;
@@ -32,17 +32,20 @@ class FlightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade300),
+          border: Border.all(color: colorScheme.outline), 
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.shade200,
+              color: colorScheme.shadow.withOpacity(0.05), 
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -54,15 +57,14 @@ class FlightCard extends StatelessWidget {
             // Airline Row
             Row(
               children: [
-                // TODO: Replace with actual airline logo image in Phase 7
                 Container(
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: colorScheme.onSurface.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.flight, color: Colors.cyan, size: 22),
+                  child: Icon(Icons.flight, color: colorScheme.primary, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -71,16 +73,15 @@ class FlightCard extends StatelessWidget {
                     children: [
                       Text(
                         airline,
-                        style: const TextStyle(
-                          fontSize: 15,
+                        style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
                         ),
                       ),
                       Text(
                         flightNumber,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
                     ],
@@ -100,16 +101,15 @@ class FlightCard extends StatelessWidget {
                     children: [
                       Text(
                         departureTime,
-                        style: const TextStyle(
-                          fontSize: 18,
+                        style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
                         ),
                       ),
                       Text(
                         fromCode,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade600,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
                     ],
@@ -121,26 +121,25 @@ class FlightCard extends StatelessWidget {
                   children: [
                     Text(
                       duration,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade600,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Container(width: 40, height: 1, color: Colors.grey.shade400),
-                        Icon(Icons.flight_takeoff, size: 16, color: Colors.grey.shade500),
-                        Container(width: 40, height: 1, color: Colors.grey.shade400),
+                        Container(width: 40, height: 1, color: colorScheme.outline),
+                        Icon(Icons.flight_takeoff, size: 16, color: colorScheme.onSurface.withOpacity(0.5)),
+                        Container(width: 40, height: 1, color: colorScheme.outline),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Text(
                       stops,
-                      style: TextStyle(
-                        fontSize: 10,
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: stops == 'Direct' ? Colors.green : Colors.orange,
                         fontWeight: FontWeight.w500,
+                        fontSize: 10,
                       ),
                     ),
                   ],
@@ -153,16 +152,15 @@ class FlightCard extends StatelessWidget {
                     children: [
                       Text(
                         arrivalTime,
-                        style: const TextStyle(
-                          fontSize: 18,
+                        style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
                         ),
                       ),
                       Text(
                         toCode,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade600,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
                     ],
@@ -181,17 +179,17 @@ class FlightCard extends StatelessWidget {
                   children: [
                     Text(
                       '$currency $price',
-                      style: const TextStyle(
-                        fontSize: 20,
+                      style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.cyan,
+                        color: colorScheme.primary,
+                        fontSize: 20,
                       ),
                     ),
                     Text(
                       'per person',
-                      style: TextStyle(
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurface.withOpacity(0.6),
                         fontSize: 10,
-                        color: Colors.grey.shade600,
                       ),
                     ),
                   ],
@@ -199,7 +197,7 @@ class FlightCard extends StatelessWidget {
                 Icon(
                   Icons.arrow_forward_ios,
                   size: 16,
-                  color: Colors.grey.shade400,
+                  color: colorScheme.onSurface.withOpacity(0.5),
                 ),
               ],
             ),

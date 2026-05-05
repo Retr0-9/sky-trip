@@ -4,6 +4,201 @@ import 'package:flutter/material.dart';
 //  SkyTrip Design System
 // ─────────────────────────────────────────────────────────
 
+class AppTheme {
+  static ThemeData get lightTheme => _buildLightTheme();
+  static ThemeData get darkTheme => _buildDarkTheme();
+
+  static ThemeData _buildLightTheme() {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.cyan,
+        primary: AppColors.cyan,
+        onPrimary: Colors.white,
+        secondary: AppColors.orange,
+        surface: AppColors.surface,
+      ),
+      scaffoldBackgroundColor: Colors.transparent,
+      appBarTheme: AppBarTheme(
+        backgroundColor: AppColors.gradientTop.withOpacity(0.85),
+        elevation: 0,
+        scrolledUnderElevation: 1,
+        shadowColor: AppColors.border,
+        surfaceTintColor: Colors.transparent,
+        titleTextStyle: const TextStyle(
+          fontSize: 18, fontWeight: FontWeight.w700,
+          color: AppColors.textPrimary,
+        ),
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: AppColors.surface,
+        selectedItemColor: AppColors.cyan,
+        unselectedItemColor: AppColors.textHint,
+        showUnselectedLabels: true,
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+      ),
+      cardTheme: const CardThemeData(
+        color: AppColors.surface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.md,
+          side: BorderSide(color: AppColors.border),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.cyan,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.md),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.textPrimary,
+          side: const BorderSide(color: AppColors.border),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.md),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.surface,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.cyan, width: 2),
+        ),
+        hintStyle: const TextStyle(color: AppColors.textHint, fontSize: 14),
+        labelStyle: const TextStyle(color: AppColors.textSecondary),
+      ),
+      dividerTheme: const DividerThemeData(
+        color: AppColors.border,
+        space: 1,
+        thickness: 1,
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: AppColors.cyanLight,
+        labelStyle: const TextStyle(color: AppColors.cyanDark, fontWeight: FontWeight.w500),
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.full),
+        side: BorderSide.none,
+      ),
+    );
+  }
+
+  static ThemeData _buildDarkTheme() {
+    // Dark mode colors
+    const darkBg = Color(0xFF1A1A1A);
+    const darkSurface = Color(0xFF242424);
+    const darkBorder = Color(0xFF3A3A3A);
+    const darkTextPrimary = Color(0xFFE8E8E8);
+    const darkTextSecondary = Color(0xFFB0B0B0);
+    const darkTextHint = Color(0xFF808080);
+
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.cyan,
+        brightness: Brightness.dark,
+        primary: AppColors.cyan,
+        onPrimary: Colors.white,
+        secondary: AppColors.orange,
+        surface: darkSurface,
+      ),
+      scaffoldBackgroundColor: Colors.transparent,
+      appBarTheme: AppBarTheme(
+        backgroundColor: darkBg,
+        elevation: 0,
+        scrolledUnderElevation: 1,
+        shadowColor: darkBorder,
+        surfaceTintColor: Colors.transparent,
+        titleTextStyle: const TextStyle(
+          fontSize: 18, fontWeight: FontWeight.w700,
+          color: darkTextPrimary,
+        ),
+        iconTheme: const IconThemeData(color: darkTextPrimary),
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: darkSurface,
+        selectedItemColor: AppColors.cyan,
+        unselectedItemColor: darkTextHint,
+        showUnselectedLabels: true,
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+      ),
+      cardTheme: const CardThemeData(
+        color: darkSurface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.md,
+          side: BorderSide(color: darkBorder),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.cyan,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.md),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: darkTextPrimary,
+          side: const BorderSide(color: darkBorder),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.md),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: darkSurface,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: darkBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: darkBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.cyan, width: 2),
+        ),
+        hintStyle: const TextStyle(color: darkTextHint, fontSize: 14),
+        labelStyle: const TextStyle(color: darkTextSecondary),
+      ),
+      dividerTheme: const DividerThemeData(
+        color: darkBorder,
+        space: 1,
+        thickness: 1,
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: AppColors.cyan.withOpacity(0.2),
+        labelStyle: const TextStyle(color: AppColors.cyan, fontWeight: FontWeight.w500),
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.full),
+        side: BorderSide.none,
+      ),
+    );
+  }
+}
 class AppColors {
   // Primary — softer cyan to match the screenshot palette
   static const cyan       = Color(0xFF5BB8C8);
@@ -106,139 +301,38 @@ class AppShadows {
 }
 
 // ─────────────────────────────────────────────────────────
-//  Theme Data
-// ─────────────────────────────────────────────────────────
-
-ThemeData buildAppTheme() {
-  return ThemeData(
-    useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: AppColors.cyan,
-      primary: AppColors.cyan,
-      onPrimary: Colors.white,
-      secondary: AppColors.orange,
-      // Use gradient top as the scaffold background
-      surface: AppColors.surface,
-    ),
-    // Transparent scaffold so the gradient shows through everywhere
-    scaffoldBackgroundColor: Colors.transparent,
-
-    // AppBar — transparent to let gradient show
-    appBarTheme: AppBarTheme(
-      backgroundColor: AppColors.gradientTop.withOpacity(0.85),
-      elevation: 0,
-      scrolledUnderElevation: 1,
-      shadowColor: AppColors.border,
-      surfaceTintColor: Colors.transparent,
-      titleTextStyle: const TextStyle(
-        fontSize: 18, fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
-      ),
-      iconTheme: const IconThemeData(color: AppColors.textPrimary),
-    ),
-
-    // Bottom Nav
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: AppColors.surface,
-      selectedItemColor: AppColors.cyan,
-      unselectedItemColor: AppColors.textHint,
-      showUnselectedLabels: true,
-      type: BottomNavigationBarType.fixed,
-      elevation: 8,
-    ),
-
-    // Cards
-    cardTheme: const CardThemeData(
-      color: AppColors.surface,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppRadius.md,
-        side: BorderSide(color: AppColors.border),
-      ),
-    ),
-
-    // ElevatedButton
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.cyan,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-        shape: const RoundedRectangleBorder(borderRadius: AppRadius.md),
-        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-      ),
-    ),
-
-    // OutlinedButton
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.textPrimary,
-        side: const BorderSide(color: AppColors.border),
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-        shape: const RoundedRectangleBorder(borderRadius: AppRadius.md),
-      ),
-    ),
-
-    // Input
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: AppColors.surface,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.border),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.border),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.cyan, width: 2),
-      ),
-      hintStyle: const TextStyle(color: AppColors.textHint, fontSize: 14),
-      labelStyle: const TextStyle(color: AppColors.textSecondary),
-    ),
-
-    // Divider
-    dividerTheme: const DividerThemeData(
-      color: AppColors.border,
-      space: 1,
-      thickness: 1,
-    ),
-
-    // Chips
-    chipTheme: ChipThemeData(
-      backgroundColor: AppColors.cyanLight,
-      labelStyle: const TextStyle(color: AppColors.cyanDark, fontWeight: FontWeight.w500),
-      shape: const RoundedRectangleBorder(borderRadius: AppRadius.full),
-      side: BorderSide.none,
-    ),
-  );
-}
-
-// ─────────────────────────────────────────────────────────
 //  Gradient Background Wrapper
 //  Wrap any screen's Scaffold in this to get the gradient
 // ─────────────────────────────────────────────────────────
 
 class GradientBackground extends StatelessWidget {
   final Widget child;
-  const GradientBackground({super.key, required this.child});
-
+  
+  const GradientBackground({
+    super.key,
+    required this.child,
+  });
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          stops: [0.0, 0.45, 1.0],
-          colors: [
-            AppColors.gradientTop,    // warm cream
-            AppColors.gradientMid,    // pale sky
-            AppColors.gradientBottom, // soft cyan-blue
-          ],
+          stops: const [0.0, 0.45, 1.0],
+          colors: isDark
+              ? const [
+                  Color(0xFF1A1A1A),    // dark bg top
+                  Color(0xFF242424),    // dark mid
+                  Color(0xFF2A3A4A),    // dark bottom (slight blue tint)
+                ]
+              : const [
+                  AppColors.gradientTop,    // warm cream
+                  AppColors.gradientMid,    // pale sky
+                  AppColors.gradientBottom, // soft cyan-blue
+                ],
         ),
       ),
       child: child,
@@ -260,12 +354,16 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = color ?? (isDark ? const Color(0xFF242424) : AppColors.surface);
+    final borderColor = isDark ? const Color(0xFF3A3A3A) : AppColors.border;
+    
     return Container(
       padding: padding ?? const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color ?? AppColors.surface,
+        color: bgColor,
         borderRadius: AppRadius.md,
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: borderColor),
         boxShadow: AppShadows.card,
       ),
       child: child,
@@ -296,6 +394,11 @@ class SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? const Color(0xFFE8E8E8) : AppColors.textPrimary;
+    final secondaryTextColor = isDark ? const Color(0xFFB0B0B0) : AppColors.textSecondary;
+    final dividerColor = isDark ? const Color(0xFF3A3A3A) : AppColors.border;
+    
     return Column(
       children: [
         InkWell(
@@ -318,21 +421,33 @@ class SettingsTile extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: AppTextStyles.titleSmall),
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w600,
+                          color: textColor,
+                        ),
+                      ),
                       if (subtitle != null) ...[
                         const SizedBox(height: 2),
-                        Text(subtitle!, style: AppTextStyles.bodySmall),
+                        Text(
+                          subtitle!,
+                          style: TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w400,
+                            color: secondaryTextColor,
+                          ),
+                        ),
                       ],
                     ],
                   ),
                 ),
-                trailing ?? const Icon(Icons.chevron_right,
-                    color: AppColors.textHint, size: 20),
+                trailing ?? Icon(Icons.chevron_right,
+                    color: secondaryTextColor, size: 20),
               ],
             ),
           ),
         ),
-        if (showDivider) const Divider(height: 1, indent: 52),
+        if (showDivider) Divider(height: 1, color: dividerColor, indent: 52),
       ],
     );
   }
@@ -345,13 +460,16 @@ class AppSectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? const Color(0xFFB0B0B0) : AppColors.textSecondary;
+    
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 20, 0, 8),
       child: Text(
         label.toUpperCase(),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 11, fontWeight: FontWeight.w700,
-          color: AppColors.textSecondary, letterSpacing: 1.2,
+          color: textColor, letterSpacing: 1.2,
         ),
       ),
     );

@@ -1,4 +1,3 @@
-/// Country returned by GET /api/Country/All
 class CountryModel {
   final int countryId;
   final String countryName;

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:skytrip/generated/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../providers/user_provider.dart';
-import '../services/auth_service.dart';
+import 'package:skytrip/services/auth_service.dart';
 
 enum _AuthMode { signIn, signUp }
 
@@ -76,7 +77,6 @@ class _AuthScreenState extends State<AuthScreen>
   }
 
   Future<void> _submit() async {
-    // ── Basic validation ──────────────────────────────────
     final email    = _emailCtrl.text.trim();
     final password = _passwordCtrl.text;
 
@@ -95,7 +95,6 @@ class _AuthScreenState extends State<AuthScreen>
         return;
       }
     } else {
-      // Sign-up — register not wired yet
       _showError('Registration coming soon. Please sign in.');
       return;
     }
@@ -107,7 +106,6 @@ class _AuthScreenState extends State<AuthScreen>
 
       if (!mounted) return;
 
-      // Derive a display name from the email (e.g. "ali@gmail.com" → "Ali")
       final namePart  = result.email.split('@').first;
       final firstName = namePart.isNotEmpty
           ? namePart[0].toUpperCase() + namePart.substring(1)
@@ -125,9 +123,7 @@ class _AuthScreenState extends State<AuthScreen>
         role:      result.role,
       );
 
-      // Fire-and-forget: fetch full profile in the background
       user.loadProfile();
-
       Navigator.pushReplacementNamed(context, '/home');
     } on AuthException catch (e) {
       _showError(e.message);
@@ -162,10 +158,11 @@ class _AuthScreenState extends State<AuthScreen>
   }
 
   Widget _buildCard() {
+    final theme = Theme.of(context);
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: AppRadius.xl,
         boxShadow: [
           BoxShadow(
@@ -179,11 +176,8 @@ class _AuthScreenState extends State<AuthScreen>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ── Logo ──────────────────────────────────────
           _buildLogo(),
           const SizedBox(height: 24),
-
-          // ── Title ─────────────────────────────────────
           Text(
             _isStaffMode
                 ? 'Staff Login'
@@ -192,7 +186,7 @@ class _AuthScreenState extends State<AuthScreen>
                     : 'Create Account',
             style: AppTextStyles.displayMedium.copyWith(
               fontSize: 24,
-              color: AppColors.textPrimary,
+              color: theme.textTheme.bodyLarge?.color,
             ),
           ),
           const SizedBox(height: 6),
@@ -202,12 +196,11 @@ class _AuthScreenState extends State<AuthScreen>
                 : _mode == _AuthMode.signIn
                     ? 'Sign in to continue your journey'
                     : 'Join SkyTrip today',
-            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+            style: AppTextStyles.bodyMedium.copyWith(color: theme.textTheme.bodySmall?.color),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 28),
 
-          // ── Form Fields ───────────────────────────────
           if (_mode == _AuthMode.signUp && !_isStaffMode) ...[
             _buildNameRow(),
             const SizedBox(height: 14),
@@ -228,11 +221,9 @@ class _AuthScreenState extends State<AuthScreen>
             const SizedBox(height: 14),
           ],
 
-          // ── Primary button ────────────────────────────
           const SizedBox(height: 6),
           _buildSubmitButton(),
 
-          // ── Divider ───────────────────────────────────
           if (!_isStaffMode) ...[
             const SizedBox(height: 18),
             _buildDivider(),
@@ -240,11 +231,9 @@ class _AuthScreenState extends State<AuthScreen>
             _buildGoogleButton(),
           ],
 
-          // ── Toggle sign in / sign up ──────────────────
           const SizedBox(height: 20),
           if (!_isStaffMode) _buildToggleRow(),
 
-          // ── Staff login link ──────────────────────────
           if (!_isStaffMode) ...[
             const SizedBox(height: 12),
             const Divider(height: 1),
@@ -256,7 +245,6 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  // ── Logo ─────────────────────────────────────────────────
   Widget _buildLogo() {
     return Container(
       width: 72, height: 72,
@@ -278,7 +266,6 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  // ── Name row ─────────────────────────────────────────────
   Widget _buildNameRow() {
     return Row(children: [
       Expanded(
@@ -299,7 +286,6 @@ class _AuthScreenState extends State<AuthScreen>
     ]);
   }
 
-  // ── Fields ───────────────────────────────────────────────
   Widget _buildEmailField() {
     return _AuthField(
       controller: _emailCtrl,
@@ -349,8 +335,8 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  // ── Submit Button ─────────────────────────────────────────
   Widget _buildSubmitButton() {
+    final theme = Theme.of(context);
     final label = _isStaffMode
         ? 'Login as Staff'
         : _mode == _AuthMode.signIn
@@ -364,8 +350,8 @@ class _AuthScreenState extends State<AuthScreen>
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.md),
-          backgroundColor: AppColors.cyan,
-          foregroundColor: Colors.white,
+          backgroundColor: theme.colorScheme.primary,
+          foregroundColor: theme.colorScheme.onPrimary,
           elevation: 0,
         ),
         child: _isLoading
@@ -380,7 +366,6 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  // ── Divider ───────────────────────────────────────────────
   Widget _buildDivider() {
     return Row(children: [
       const Expanded(child: Divider(height: 1)),
@@ -392,45 +377,42 @@ class _AuthScreenState extends State<AuthScreen>
     ]);
   }
 
-  // ── Google Button ─────────────────────────────────────────
   Widget _buildGoogleButton() {
+    final theme = Theme.of(context);
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton(
         onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Google Sign-In: Coming in Phase 6'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.authGoogleSignIn),
             behavior: SnackBarBehavior.floating,
           ),
         ),
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 14),
-          side: const BorderSide(color: AppColors.border),
+          side: BorderSide(color: theme.dividerColor),
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.md),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Google icon (using a circle 'G' approximation since no asset)
             Container(
               width: 20, height: 20,
               decoration: const BoxDecoration(shape: BoxShape.circle),
-              child: const Icon(Icons.language, size: 20,
-                  color: AppColors.textSecondary),
+              child: Icon(Icons.language, size: 20,
+                  color: theme.textTheme.bodySmall?.color),
             ),
             const SizedBox(width: 10),
-            const Text('Continue with Google',
-                style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 15)),
+            Text('Continue with Google',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                )),
           ],
         ),
       ),
     );
   }
 
-  // ── Toggle Row ────────────────────────────────────────────
   Widget _buildToggleRow() {
     final question = _mode == _AuthMode.signIn
         ? "Don't have an account?"
@@ -451,7 +433,6 @@ class _AuthScreenState extends State<AuthScreen>
     ]);
   }
 
-  // ── Staff Link ────────────────────────────────────────────
   Widget _buildStaffLink() {
     if (_isStaffMode) {
       return GestureDetector(
@@ -482,7 +463,7 @@ class _AuthScreenState extends State<AuthScreen>
   }
 }
 
-// ── Shared input field ────────────────────────────────────────────────────────
+// ── Shared input field with Dark Mode support ───────────────────────
 class _AuthField extends StatelessWidget {
   final TextEditingController controller;
   final IconData icon;
@@ -502,28 +483,35 @@ class _AuthField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF9F9F9),
+        color: theme.inputDecorationTheme.fillColor ??
+            theme.colorScheme.surface,
         borderRadius: AppRadius.md,
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: theme.dividerColor),
       ),
       child: Row(
         children: [
           const SizedBox(width: 14),
-          Icon(icon, color: AppColors.textHint, size: 20),
+          Icon(
+            icon,
+            color: theme.colorScheme.onSurface.withOpacity(0.6),
+            size: 20,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
               controller: controller,
               obscureText: obscureText,
               keyboardType: keyboardType,
-              style: const TextStyle(
-                  fontSize: 15, color: AppColors.textPrimary),
+              style: theme.textTheme.bodyMedium,
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: const TextStyle(
-                    color: AppColors.textHint, fontSize: 14),
+                hintStyle: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.hintColor,
+                ),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,

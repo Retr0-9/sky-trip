@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 enum TicketStatus { upcoming, completed, cancelled }
 
 /// A boarding-pass styled ticket card for the Tickets screen.
-/// Usage: TicketCard(from: 'AMM', to: 'DXB', date: 'Mar 15', ...)
 class TicketCard extends StatelessWidget {
   final String from;
   final String fromCity;
@@ -14,6 +13,7 @@ class TicketCard extends StatelessWidget {
   final String flightNumber;
   final String seatNumber;
   final TicketStatus status;
+  final IconData icon;
   final VoidCallback? onTap;
 
   const TicketCard({
@@ -27,6 +27,7 @@ class TicketCard extends StatelessWidget {
     required this.flightNumber,
     required this.seatNumber,
     required this.status,
+    required this.icon,
     this.onTap,
   });
 
@@ -54,15 +55,21 @@ class TicketCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final bgColor = isDark ? Colors.grey[850] : Colors.white;
+    final tearLineColor = isDark ? Colors.grey[700]! : Colors.grey.shade300;
+    final labelColor = isDark ? Colors.grey[400]! : Colors.grey.shade500;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: bgColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.shade200,
+              color: isDark ? Colors.black26 : Colors.grey.shade200,
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -83,13 +90,12 @@ class TicketCard extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // From
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         from,
-                        style: const TextStyle(
+                        style:  TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -104,21 +110,17 @@ class TicketCard extends StatelessWidget {
                       ),
                     ],
                   ),
-
-                  // Plane Icon
-                  const Icon(
-                    Icons.flight_takeoff,
+                   Icon(
+                    icon,
                     color: Colors.white,
                     size: 28,
                   ),
-
-                  // To
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
                         to,
-                        style: const TextStyle(
+                        style:  TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -138,7 +140,45 @@ class TicketCard extends StatelessWidget {
             ),
 
             // Tear Line
-            _buildTearLine(),
+            Row(
+              children: [
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: tearLineColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return Flex(
+                        direction: Axis.horizontal,
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: List.generate(
+                          (constraints.constrainWidth() / 12).floor(),
+                          (_) => Container(
+                            width: 6,
+                            height: 1,
+                            color: tearLineColor,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: tearLineColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ],
+            ),
 
             // Bottom Section (Ticket details)
             Padding(
@@ -148,22 +188,17 @@ class TicketCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildDetailItem('Date', date),
-                      _buildDetailItem('Time', time),
-                      _buildDetailItem('Flight', flightNumber),
-                      _buildDetailItem('Seat', seatNumber),
+                      _buildDetailItem('Date', date, labelColor),
+                      _buildDetailItem('Time', time, labelColor),
+                      _buildDetailItem('Flight', flightNumber, labelColor),
+                      _buildDetailItem('Seat', seatNumber, labelColor),
                     ],
                   ),
                   const SizedBox(height: 12),
-
-                  // Status Badge
                   Align(
                     alignment: Alignment.centerRight,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
                         color: _statusColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
@@ -188,49 +223,7 @@ class TicketCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTearLine() {
-    return Row(
-      children: [
-        Container(
-          width: 20,
-          height: 20,
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            shape: BoxShape.circle,
-          ),
-        ),
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return Flex(
-                direction: Axis.horizontal,
-                mainAxisSize: MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(
-                  (constraints.constrainWidth() / 12).floor(),
-                  (_) => Container(
-                    width: 6,
-                    height: 1,
-                    color: Colors.grey.shade300,
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-        Container(
-          width: 20,
-          height: 20,
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            shape: BoxShape.circle,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDetailItem(String label, String value) {
+  Widget _buildDetailItem(String label, String value, Color labelColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -238,7 +231,7 @@ class TicketCard extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 11,
-            color: Colors.grey.shade500,
+            color: labelColor,
           ),
         ),
         const SizedBox(height: 4),

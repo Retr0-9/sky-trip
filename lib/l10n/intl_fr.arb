@@ -1,0 +1,397 @@
+{
+  "@@locale": "fr",
+  "appTitle": "Sky Trip",
+  "appVersion": "SkyTrip v1.0.0",
+
+  "homeGreeting": "{greeting}, {firstName}",
+  "@homeGreeting": {
+    "description": "Salutation personnalisée sur l'écran d'accueil",
+    "placeholders": {
+      "greeting": {"type": "String", "example": "Bonjour"},
+      "firstName": {"type": "String", "example": "John"}
+    }
+  },
+  "homeReady": "Prêt pour votre prochaine aventure ?",
+  "homeRecentSearches": "Recherches récentes",
+  "homeLatestOffers": "Dernières offres",
+  "homeFeaturedDestinations": "Destinations en vedette",
+  "homeSeeAll": "Voir tout",
+
+  "bookingTitle": "Réserver un vol",
+  "bookingTripRoundtrip": "Aller-retour",
+  "bookingTripOneWay": "Aller simple",
+  "bookingTripMultiCity": "Multi-destinations",
+  "bookingFromLabel": "De",
+  "bookingToLabel": "À",
+  "bookingSearchCity": "Rechercher une ville…",
+  "bookingDepartureDate": "Départ",
+  "bookingReturnDate": "Retour",
+  "bookingAdults": "Adultes",
+  "bookingYouth": "Jeunes",
+  "bookingChildren": "Enfants",
+  "bookingInfants": "Bébés",
+  "bookingClass": "Classe",
+  "bookingPassengers": "Passagers",
+  "bookingSearch": "Rechercher des vols",
+  "bookingNoFlightsFound": "Aucun vol trouvé",
+  "bookingTryAnother": "Essayez une autre recherche",
+  "bookingSubtitle": "Où souhaitez-vous aller aujourd'hui ?",
+  "bookingDepartureCityHint": "Ville de départ",
+  "bookingArrivalCityHint": "Ville d'arrivée",
+  "bookingSelectDate": "Sélectionner une date",
+  "bookingSelectReturnDate": "Sélectionner la date de retour",
+  "bookingSelectClass": "Sélectionner la classe",
+
+  "bookingErrorSelectCities": "Veuillez sélectionner les villes de départ et d'arrivée.",
+  "bookingErrorDifferentCities": "Les villes de départ et d'arrivée doivent être différentes.",
+  "bookingErrorSelectDeparture": "Veuillez sélectionner une date de départ.",
+  "bookingErrorSelectReturn": "Veuillez sélectionner une date de retour.",
+  "bookingErrorSearchFailed": "La recherche a échoué. Veuillez réessayer.",
+  "bookingPassengersCount": "{count, plural, one{1 passager} other{{count} passagers}}",
+  "@bookingPassengersCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "bookingAdultSubtext": "12 ans et plus",
+  "bookingYouthSubtext": "2–11 ans",
+  "bookingChildrenSubtext": "Moins de 2 ans",
+  "bookingInfantsSubtext": "Bébé sur les genoux",
+  "greetingMorning": "Bonjour",
+  "greetingAfternoon": "Bon après-midi",
+  "greetingEvening": "Bonsoir",
+  "dialogRetry": "Réessayer",
+
+  "authSignIn": "Se connecter",
+  "authSignUp": "S'inscrire",
+  "authEmail": "E-mail",
+  "authPassword": "Mot de passe",
+  "authConfirmPassword": "Confirmer le mot de passe",
+  "authFirstName": "Prénom",
+  "authLastName": "Nom",
+  "authStaffId": "ID employé",
+  "authErrorEmail": "Entrez une adresse e-mail valide.",
+  "authErrorPassword": "Le mot de passe doit contenir au moins 6 caractères.",
+  "authErrorRequired": "Entrez votre e-mail et votre mot de passe.",
+  "authErrorComingSoon": "Inscription bientôt disponible. Veuillez vous connecter.",
+  "authErrorGeneric": "Une erreur s'est produite. Veuillez réessayer.",
+  "authHaveAccount": "Vous avez déjà un compte ?",
+  "authNoAccount": "Vous n'avez pas de compte ?",
+  "authStaffMode": "Mode employé",
+
+  "availableFlightsTitle": "Vols disponibles",
+  "availableFlightsPax": "passager",
+  "availableFlightsEmpty": "Aucun vol disponible",
+  "availableFlightsNoResults": "Aucun vol ne correspond à votre recherche",
+
+  "flightDetailsTitle": "Détails du vol",
+  "flightDetailsFareBreakdown": "Détail du tarif",
+  "flightDetailsBaseFare": "Tarif de base",
+  "flightDetailsBaseFareDetail": "Tarif de base ({pax} passager × {currency} {price})",
+  "@flightDetailsBaseFareDetail": {
+    "placeholders": {
+      "pax": {"type": "int"},
+      "currency": {"type": "String"},
+      "price": {"type": "String"}
+    }
+  },
+  "flightDetailsTaxes": "Taxes et frais (15%)",
+  "flightDetailsTotal": "Prix total",
+  "flightDetailsBaggage": "Bagages autorisés",
+  "flightDetailsBaggageCarry": "1 bagage cabine",
+  "flightDetailsBaggageChecked": "Bagages enregistrés",
+  "flightDetailsBaggageEconomy": "Économie : 1 bagage cabine (7 kg) + 1 bagage enregistré (23 kg)",
+  "flightDetailsBaggageBusiness": "Affaires : 1 bagage cabine (10 kg) + 2 bagages enregistrés (32 kg chacun)",
+  "flightDetailsCancellation": "Politique d'annulation",
+  "flightDetailsConfirm": "Continuer vers les passagers",
+  "flightDetailsErrorCreating": "Impossible de créer la réservation. Veuillez réessayer.",
+
+  "passengersFormTitle": "Informations passagers",
+  "passengersFormPassenger": "Passager {number}",
+  "@passengersFormPassenger": {
+    "placeholders": {
+      "number": {"type": "int"}
+    }
+  },
+  "passengersFormFirstName": "Prénom",
+  "passengersFormLastName": "Nom",
+  "passengersFormEmail": "E-mail",
+  "passengersFormPhone": "Téléphone",
+  "passengersFormDOB": "Date de naissance",
+  "passengersFormGender": "Genre",
+  "passengersFormMale": "Homme",
+  "passengersFormFemale": "Femme",
+  "passengersFormDocument": "Document de voyage",
+  "passengersFormPassport": "Passeport",
+  "passengersFormDocumentIssue": "Pays d'émission",
+  "passengersFormSearchCountry": "Rechercher un pays…",
+  "passengersFormExpiry": "Date d'expiration",
+  "passengersFormContinue": "Continuer vers les services",
+
+  "servicesTitle": "Services optionnels",
+  "servicesEnhance": "Améliorez votre voyage",
+  "servicesSubtitle": "Ajoutez des services supplémentaires pour plus de confort",
+  "servicesTotal": "Total des services :",
+  "servicesCurrency": "JOD",
+  "servicesSkip": "Ignorer les services",
+  "servicesContinue": "Continuer vers la sélection des sièges",
+  "servicesNoAvailable": "Aucun service disponible.",
+  "servicesLoadError": "Impossible de charger les services.",
+  "servicesRetry": "Réessayer",
+  "servicesErrorSaving": "Impossible d'enregistrer les services. Veuillez réessayer.",
+
+  "seatMapTitle": "Sélectionnez votre siège",
+  "seatMapAvailable": "Disponible",
+  "seatMapOccupied": "Occupé",
+  "seatMapSelected": "Sélectionné",
+  "seatMapContinue": "Confirmer la sélection du siège",
+
+  "paymentTitle": "Paiement",
+  "paymentBookingSummary": "Résumé de la réservation",
+  "paymentOrderDetails": "Détails de la commande",
+  "paymentFlightDetails": "Détails du vol",
+  "paymentPassengers": "Passagers",
+  "paymentBaseFare": "Tarif de base",
+  "paymentTaxes": "Taxes et frais",
+  "paymentServicesFee": "Services",
+  "paymentTotal": "Total",
+  "paymentGrandTotal": "Total général",
+  "paymentStripeInfo": "Sécurisé par Stripe",
+  "paymentProceed": "Procéder au paiement",
+  "paymentStart": "Commencer le paiement",
+  "paymentErrorTicketId": "ID de billet manquant — veuillez recommencer.",
+  "paymentErrorSession": "Impossible de créer la session de paiement. Veuillez réessayer.",
+  "paymentErrorOpen": "Impossible d'ouvrir la page de paiement.",
+  "paymentCurrency": "JOD",
+  "paymentSuccessTitle": "Réservation confirmée !",
+  "paymentSuccessMessage": "Votre paiement a été effectué avec succès et votre réservation est confirmée. Consultez votre billet dans l'onglet Billets.",
+  "paymentSuccessGoHome": "Accueil",
+  "paymentSuccessViewTickets": "Voir les billets",
+
+  "ticketsUpcoming": "À venir",
+  "ticketsPast": "Passés",
+  
+  "ticketsHotels": "Hôtels",
+  "ticketsVehicles": "Véhicules",
+  "ticketsFlightSingular": "Vol",
+  "ticketsFlightPlural": "Vols",
+  "ticketsNoHotelBookings": "Aucune réservation d'hôtel",
+  "ticketsNoVehicleBookings": "Aucune réservation de véhicule",
+  "ticketsCheckIn": "Enregistrement",
+  "ticketsCheckOut": "Départ",
+  "ticketsGuests": "Invités",
+
+  "ticketsNoUpcoming": "Aucun vol à venir",
+  "ticketsNoPast": "Aucun vol passé",
+  "ticketsCount": "{count, plural, one{{count} {type}} other{{count} {type}s}}",
+  "@ticketsCount": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "type": {"type": "String"}
+    }
+  },
+
+  "profileTitle": "Profil",
+  "profilePersonalInfo": "Informations personnelles",
+  "profileFullName": "Nom complet",
+  "profileEmail": "E-mail",
+  "profilePhone": "Téléphone",
+  "profileNationality": "Nationalité",
+  "profileTravelDocs": "Documents de voyage",
+  "profilePassport": "Numéro de passeport",
+  "profilePreferredClass": "Classe préférée",
+  "profileLoyalty": "Voyageur fréquent",
+  "profileStats": "Statistiques de voyage",
+  "profileFlights": "Vols",
+  "profileMiles": "Miles",
+  "profileTier": "Niveau",
+  "profilePhotoUpload": "Téléversement de photo : bientôt en phase 6",
+
+  "settingsTitle": "Paramètres",
+  "settingsNotifications": "Notifications",
+  "settingsFlightUpdates": "Mises à jour des vols",
+  "settingsFlightUpdatesDesc": "Changements de porte, retards et annulations",
+  "settingsPriceAlerts": "Alertes de prix",
+  "settingsPriceAlertsDesc": "Soyez averti lorsque les prix baissent",
+  "settingsBookingReminders": "Rappels de réservation",
+  "settingsBookingRemindersDesc": "24h avant le départ",
+  "settingsPromotions": "Promotions et offres",
+  "settingsPromotionsDesc": "Offres et réductions saisonnières",
+  "settingsSmsAlerts": "Alertes SMS",
+  "settingsSmsAlertsDesc": "Recevoir des alertes par SMS",
+  "settingsDisplay": "Affichage et langue",
+  "settingsLanguage": "Langue",
+  "settingsCurrency": "Devise",
+  "settingsDarkMode": "Mode sombre",
+  "settingsDarkModeDesc": "Passer au thème sombre",
+  "settingsPrivacy": "Confidentialité et sécurité",
+  "settingsChangePassword": "Changer le mot de passe",
+  "settingsBiometric": "Connexion biométrique",
+  "settingsBiometricDesc": "Utiliser l'empreinte ou Face ID",
+  "settingsShareData": "Partager les données d'utilisation",
+  "settingsShareDataDesc": "Aidez-nous à améliorer l'application",
+  "settingsAccount": "Compte",
+  "settingsDeleteAccount": "Supprimer le compte",
+  "settingsDeleteAccountDesc": "Supprimer définitivement vos données",
+  "settingsAppVersion": "Version de l'application",
+  "settingsLogout": "Se déconnecter",
+  "settingsComingSoon": "Bientôt en phase 6",
+  "settingsSelectLanguage": "Sélectionner la langue",
+  "settingsSelectCurrency": "Sélectionner la devise",
+
+  "hotelTitle": "Réserver un hôtel",
+  "hotelSearch": "Rechercher des hôtels",
+  "hotelWhere": "Destination ?",
+  "hotelDestination": "Ville ou nom de l'hôtel",
+  "hotelCheckIn": "Arrivée",
+  "hotelCheckOut": "Départ",
+  
+  "hotelRooms": "Chambres",
+  "hotelGuests": "Invités",
+  "hotelEmptyMessage": "Trouvez votre séjour idéal",
+  "hotelEmptySubtitle": "Entrez une destination pour rechercher des hôtels",
+  "hotelHotelsIn": "{count} hôtels à {destination}",
+  "@hotelHotelsIn": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "destination": {"type": "String"}
+    }
+  },
+  "hotelNights": "{count, plural, one{1 nuit} other{{count} nuits}}",
+  "@hotelNights": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "hotelErrorDestination": "Veuillez entrer une destination",
+
+  "vanTitle": "Location de van",
+  "vanFind": "Trouver des véhicules",
+  "vanPickupLocation": "Lieu de prise en charge",
+  "vanDropLocation": "Lieu de dépôt",
+  "vanPickupDate": "Date de prise en charge",
+  "vanReturnDate": "Date de retour",
+  "vanEmptyMessage": "Trouvez le véhicule parfait",
+  "vanEmptySubtitle": "Sélectionnez des lieux pour voir les véhicules disponibles",
+  "vanVehiclesAvailable": "{count, plural, one{1 véhicule disponible} other{{count} véhicules disponibles}}",
+  "@vanVehiclesAvailable": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "vanNoVehicles": "Aucun véhicule dans cette catégorie",
+  "vanErrorPickup": "Veuillez sélectionner un lieu de prise en charge",
+
+  "contactUsTitle": "Contactez-nous",
+  "contactGetInTouch": "Entrer en contact",
+  "contactCall": "Appelez-nous",
+  "contactCallNumber": "+962 6 510 0000",
+  "contactEmail": "Envoyez-nous un e-mail",
+  "contactEmailAddress": "support@skytrip.com",
+  "contactChat": "Chat en direct",
+  "contactChatAvailable": "Disponible 24/7",
+  "contactSendMessage": "Envoyer un message",
+  "contactSubject": "Sujet",
+  "contactMessage": "Message",
+  "contactSend": "Envoyer le message",
+  "contactFaq": "FAQ",
+  "contactOpening": "Ouverture de {type}…",
+  "@contactOpening": {
+    "placeholders": {
+      "type": {"type": "String"}
+    }
+  },
+  "contactSuccess": "Message envoyé ! Nous vous répondrons sous 24h.",
+  "contactComing": "Chat en direct : bientôt en phase 6",
+
+  "dialogCancel": "Annuler",
+  "dialogOk": "OK",
+  "dialogConfirm": "Confirmer",
+  "dialogCannotCancel": "Annuler la réservation ?",
+  "dialogCancelBookingDesc": "Vous avez une réservation en cours. Quitter maintenant annulera toutes vos sélections.",
+  "dialogKeepGoing": "Continuer",
+  "dialogLogout": "Se déconnecter",
+  "dialogLogoutConfirm": "Êtes-vous sûr de vouloir vous déconnecter ?",
+  "dialogDeleteAccount": "Supprimer le compte",
+  "dialogDeleteAccountConfirm": "Supprimer définitivement toutes vos données ? Cette action est irréversible.",
+
+  "drawerHotel": "Réserver un hôtel",
+  "drawerVanRental": "Location de van",
+  "drawerSettings": "Paramètres",
+  "drawerContactUs": "Contactez-nous",
+  "drawerAbout": "À propos",
+  "drawerWelcome": "Bienvenue",
+  "drawerWelcomeName": "Bienvenue, {name}",
+  "@drawerWelcomeName": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "drawerLogout": "Se déconnecter",
+  "drawerBooking": "Réservation",
+
+  "dialogDone": "Terminé",
+  "paymentContinue": "Continuer vers le paiement",
+  "profileEditLabel": "Modifier {label}",
+  "@profileEditLabel": {
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "profileLabelUpdated": "{label} mis à jour",
+  "@profileLabelUpdated": {
+    "placeholders": {
+      "label": {"type": "String"}
+    }
+  },
+  "profileSave": "Enregistrer",
+  "hotelBook": "Réserver",
+  "hotelConfirmBooking": "Confirmer la Réservation",
+  "hotelBooked": "Hôtel Réservé !",
+  "vanRent": "Louer",
+  "vanConfirmRental": "Confirmer la Location",
+  "vanRentalConfirmed": "Location Confirmée !",
+  "authGoogleSignIn": "Connexion Google : bientôt en phase 6",
+  "settingsSave": "Enregistrer les Paramètres",
+  "settingsSaved": "Paramètres enregistrés avec succès",
+  "settingsErrorSaving": "Erreur lors de l'enregistrement des paramètres : {error}",
+  "@settingsErrorSaving": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "settingsFeatureComing": "{feature} : bientôt en phase 6",
+  "@settingsFeatureComing": {
+    "placeholders": {
+      "feature": {"type": "String"}
+    }
+  },
+  "settingsAccountDeletion": "Suppression de compte : TODO en phase 6",
+  "ticketDetail": "Ticket {id} : vue détaillée TODO",
+  "@ticketDetail": {
+    "placeholders": {
+      "id": {"type": "String"}
+    }
+  },
+  "availableFlightsPerPerson": "Vols disponibles par personne",
+  "availableFlightsTotal": "Total des vols disponibles",
+  "hotelSelectDestination": "Sélectionner une destination",
+  "hotelDuration": "Durée",
+  "hotelRoomType": "Type de chambre",
+  "hotelRoomsLabel": "Chambres",
+  "hotelGuestsLabel": "Hôtes",
+  "vanPricePerDay": "Prix par jour",
+  "vanDays": "Jours",
+  "vanFeatures": "Caractéristiques",
+  "vanDuration": "Durée",
+  "dialogTotal": "Total",
+  "servicesFree": "Gratuit",
+  "servicesPricePerPerson": "Prix par personne",
+  "flightDetailsBookingCreating": "Création de la réservation",
+  "flightDetailsPolicies": "Politiques",
+  "flightDetailsDateChange": "Changement de date",
+  "flightDetailsRefundableWithFee": "Remboursable avec frais",
+  "flightDetailsAllowedWithFee": "Autorisé avec frais",
+  "flightDetailsChangeDate": "Modifier la date",
+  "profilePhotoUpcoming": "Photo à venir"
+}

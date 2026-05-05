@@ -5,8 +5,6 @@ class DummyFlights {
     required String fromCode,
     required String toCode,
   }) {
-    // TODO: Replace with API call in Phase 6
-    // Returns dummy flights filtered by route
     return _allFlights
         .where((f) => f.fromCode == fromCode && f.toCode == toCode)
         .toList();

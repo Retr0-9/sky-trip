@@ -34,7 +34,6 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
   int get _total    => _search?.totalPassengers ?? 1;
 
   // ── Per-passenger form data store ─────────────────────────────
-  // Each entry mirrors one passenger's filled values.
   late List<Map<String, dynamic>> _data;
 
   // ── Current-passenger form controllers ───────────────────────
@@ -176,15 +175,21 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
           final filtered = _countries
               .where((c) => c.countryName.toLowerCase().contains(q.toLowerCase()))
               .toList();
+          // ── Dynamic: handle bar color ──
+          final cs = Theme.of(ctx).colorScheme;
           return DraggableScrollableSheet(
             expand: false,
             initialChildSize: 0.55,
             maxChildSize: 0.9,
             builder: (_, ctrl) => Column(children: [
               const SizedBox(height: 12),
-              Container(width: 40, height: 4,
-                  decoration: BoxDecoration(color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2))),
+              Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: cs.outlineVariant,               // was: Colors.grey.shade300
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: TextField(
@@ -251,7 +256,6 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
   Future<void> _submitAll() async {
     _saveCurrentToData();
 
-    // Validate all passengers
     for (int i = 0; i < _total; i++) {
       final d = _data[i];
       if ((d['firstName'] ?? '').isEmpty || (d['lastName'] ?? '').isEmpty ||
@@ -347,24 +351,29 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
     );
   }
 
-  Widget _buildProgressHeader() => Container(
-    padding: const EdgeInsets.all(16),
-    color: AppColors.cyanLight,
-    child: Column(children: [
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text('Passenger ${_currentIndex + 1} of $_total',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        Text('${((_currentIndex + 1) / _total * 100).toInt()}%',
-            style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+  Widget _buildProgressHeader() {
+    // ── Dynamic: progress bar track color ──
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      color: AppColors.cyanLight,
+      child: Column(children: [
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Text('Passenger ${_currentIndex + 1} of $_total',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Text('${((_currentIndex + 1) / _total * 100).toInt()}%',
+              style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+        ]),
+        const SizedBox(height: 8),
+        LinearProgressIndicator(
+          value: (_currentIndex + 1) / _total,
+          backgroundColor: colorScheme.outlineVariant,    // was: Colors.grey.shade200
+          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.cyan),
+        ),
       ]),
-      const SizedBox(height: 8),
-      LinearProgressIndicator(
-        value: (_currentIndex + 1) / _total,
-        backgroundColor: Colors.grey.shade200,
-        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.cyan),
-      ),
-    ]),
-  );
+    );
+  }
 
   Widget _buildTypeLabel() {
     const colors = {
@@ -390,104 +399,115 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
     );
   }
 
-  Widget _buildForm() => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    // Name row
-    Row(children: [
-      Expanded(child: _field('First Name *', _firstNameCtrl, Icons.person_outline)),
-      const SizedBox(width: 12),
-      Expanded(child: _field('Last Name *',  _lastNameCtrl,  Icons.person_outline)),
-    ]),
-    const SizedBox(height: 16),
+  Widget _buildForm() {
+    // ── Dynamic: form field backgrounds and borders ──
+    final colorScheme = Theme.of(context).colorScheme;
 
-    _field('Email *', _emailCtrl, Icons.email_outlined,
-        keyboard: TextInputType.emailAddress),
-    const SizedBox(height: 16),
-
-    _field('Phone *', _phoneCtrl, Icons.phone_outlined,
-        keyboard: TextInputType.phone),
-    const SizedBox(height: 16),
-
-    // DOB + Gender
-    Row(children: [
-      Expanded(child: _pickerTile('Date of Birth *',
-          _dob != null ? _fmt(_dob!) : null,
-          Icons.calendar_today_outlined, _pickDob)),
-      const SizedBox(width: 12),
-      Expanded(child: _dropdownTile('Gender *', _gender.isEmpty ? null : _gender,
-          Icons.wc, _showGenderPicker)),
-    ]),
-    const SizedBox(height: 16),
-
-    // Issue country
-    _pickerTile(
-      'Issue Country *',
-      _loadingCountries ? 'Loading…' : _issueCountry?.countryName,
-      Icons.public,
-      _loadingCountries ? null : _pickCountry,
-    ),
-    const SizedBox(height: 16),
-
-    // Document type
-    _label('Document Type *'),
-    const SizedBox(height: 8),
-    RadioGroup<String>(
-      groupValue: _docType,
-      onChanged: (v) { if (v != null) setState(() => _docType = v); },
-      child: Row(children: [
-        for (final t in ['Passport', 'ID'])
-          Expanded(child: GestureDetector(
-            onTap: () => setState(() => _docType = t),
-            child: Row(children: [
-              Radio<String>(value: t, activeColor: AppColors.cyan),
-              Text(t),
-            ]),
-          )),
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      // Name row
+      Row(children: [
+        Expanded(child: _field('First Name *', _firstNameCtrl, Icons.person_outline)),
+        const SizedBox(width: 12),
+        Expanded(child: _field('Last Name *',  _lastNameCtrl,  Icons.person_outline)),
       ]),
-    ),
-    const SizedBox(height: 16),
+      const SizedBox(height: 16),
 
-    // Expiry date
-    _pickerTile('Document Expiry Date *',
-        _expiryDate != null ? _fmt(_expiryDate!) : null,
-        Icons.event_outlined, _pickExpiry),
-    const SizedBox(height: 16),
+      _field('Email *', _emailCtrl, Icons.email_outlined,
+          keyboard: TextInputType.emailAddress),
+      const SizedBox(height: 16),
 
-    // Document file
-    _label('Upload Document (PDF / Photo)'),
-    const SizedBox(height: 8),
-    GestureDetector(
-      onTap: _pickDocument,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: _docFile != null ? AppColors.cyan : Colors.grey.shade300,
-          ),
-        ),
-        child: Column(children: [
-          Icon(
-            _docFile != null ? Icons.check_circle : Icons.upload_file,
-            color: _docFile != null ? AppColors.cyan : Colors.grey.shade400,
-            size: 32,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _docFile != null
-                ? _docFile!.path.split('/').last
-                : 'Tap to upload PDF or photo',
-            style: TextStyle(
-              color: _docFile != null ? AppColors.textPrimary : Colors.grey.shade500,
-              fontSize: 13,
-            ),
-            textAlign: TextAlign.center,
-          ),
+      _field('Phone *', _phoneCtrl, Icons.phone_outlined,
+          keyboard: TextInputType.phone),
+      const SizedBox(height: 16),
+
+      // DOB + Gender
+      Row(children: [
+        Expanded(child: _pickerTile('Date of Birth *',
+            _dob != null ? _fmt(_dob!) : null,
+            Icons.calendar_today_outlined, _pickDob)),
+        const SizedBox(width: 12),
+        Expanded(child: _dropdownTile('Gender *', _gender.isEmpty ? null : _gender,
+            Icons.wc, _showGenderPicker)),
+      ]),
+      const SizedBox(height: 16),
+
+      // Issue country
+      _pickerTile(
+        'Issue Country *',
+        _loadingCountries ? 'Loading…' : _issueCountry?.countryName,
+        Icons.public,
+        _loadingCountries ? null : _pickCountry,
+      ),
+      const SizedBox(height: 16),
+
+      // Document type
+      _label('Document Type *'),
+      const SizedBox(height: 8),
+      RadioGroup<String>(
+        groupValue: _docType,
+        onChanged: (v) { if (v != null) setState(() => _docType = v); },
+        child: Row(children: [
+          for (final t in ['Passport', 'ID'])
+            Expanded(child: GestureDetector(
+              onTap: () => setState(() => _docType = t),
+              child: Row(children: [
+                Radio<String>(value: t, activeColor: AppColors.cyan),
+                Text(t),
+              ]),
+            )),
         ]),
       ),
-    ),
-  ]);
+      const SizedBox(height: 16),
+
+      // Expiry date
+      _pickerTile('Document Expiry Date *',
+          _expiryDate != null ? _fmt(_expiryDate!) : null,
+          Icons.event_outlined, _pickExpiry),
+      const SizedBox(height: 16),
+
+      // Document file
+      _label('Upload Document (PDF / Photo)'),
+      const SizedBox(height: 8),
+      GestureDetector(
+        onTap: _pickDocument,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,                        // was: Colors.white
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _docFile != null
+                  ? AppColors.cyan
+                  : colorScheme.outlineVariant,                // was: Colors.grey.shade300
+            ),
+          ),
+          child: Column(children: [
+            Icon(
+              _docFile != null ? Icons.check_circle : Icons.upload_file,
+              color: _docFile != null
+                  ? AppColors.cyan
+                  : colorScheme.onSurfaceVariant,              // was: Colors.grey.shade400
+              size: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _docFile != null
+                  ? _docFile!.path.split('/').last
+                  : 'Tap to upload PDF or photo',
+              style: TextStyle(
+                color: _docFile != null
+                    ? AppColors.textPrimary
+                    : colorScheme.onSurfaceVariant,            // was: Colors.grey.shade500
+                fontSize: 13,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ]),
+        ),
+      ),
+    ]);
+  }
 
   void _showGenderPicker() {
     showModalBottomSheet(
@@ -511,54 +531,67 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
     );
   }
 
-  Widget _buildNavButtons() => Row(children: [
-    Expanded(child: OutlinedButton.icon(
-      onPressed: _currentIndex > 0 ? () => _goTo(_currentIndex - 1) : null,
-      icon: const Icon(Icons.arrow_back, size: 18),
-      label: const Text('Previous'),
-      style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          side: BorderSide(color: Colors.grey.shade300)),
-    )),
-    const SizedBox(width: 16),
-    Expanded(child: ElevatedButton(
-      onPressed: _currentIndex < _total - 1 ? () {
-        final err = _validateCurrent();
-        if (err != null) { _snack(err); return; }
-        _goTo(_currentIndex + 1);
-      } : null,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.cyan, foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Text('Next'), SizedBox(width: 8), Icon(Icons.arrow_forward, size: 18),
-      ]),
-    )),
-  ]);
+  Widget _buildNavButtons() {
+    // ── Dynamic: outlined button border color ──
+    final colorScheme = Theme.of(context).colorScheme;
 
-  Widget _buildBottomBar() => Container(
-    padding: const EdgeInsets.all(16),
-    decoration: const BoxDecoration(color: Colors.white, boxShadow: AppShadows.sm),
-    child: SafeArea(
-      child: SizedBox(width: double.infinity,
-        child: ElevatedButton(
-          onPressed: _submitting ? null : _submitAll,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.cyan, foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Row(children: [
+      Expanded(child: OutlinedButton.icon(
+        onPressed: _currentIndex > 0 ? () => _goTo(_currentIndex - 1) : null,
+        icon: const Icon(Icons.arrow_back, size: 18),
+        label: const Text('Previous'),
+        style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            side: BorderSide(color: colorScheme.outlineVariant)), // was: Colors.grey.shade300
+      )),
+      const SizedBox(width: 16),
+      Expanded(child: ElevatedButton(
+        onPressed: _currentIndex < _total - 1 ? () {
+          final err = _validateCurrent();
+          if (err != null) { _snack(err); return; }
+          _goTo(_currentIndex + 1);
+        } : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.cyan, foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Text('Next'), SizedBox(width: 8), Icon(Icons.arrow_forward, size: 18),
+        ]),
+      )),
+    ]);
+  }
+
+  Widget _buildBottomBar() {
+    // ── Dynamic: bottom bar background ──
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,                            // was: Colors.white
+        boxShadow: AppShadows.sm,
+      ),
+      child: SafeArea(
+        child: SizedBox(width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _submitting ? null : _submitAll,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.cyan, foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: _submitting
+                ? const SizedBox(height: 20, width: 20,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                : const Text('Continue to Services',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           ),
-          child: _submitting
-              ? const SizedBox(height: 20, width: 20,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-              : const Text('Continue to Services',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         ),
       ),
-    ),
-  );
+    );
+  }
 
   // ── Small helpers ─────────────────────────────────────────────
 
@@ -566,50 +599,67 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87));
 
   Widget _field(String label, TextEditingController ctrl, IconData icon,
-      {TextInputType? keyboard}) =>
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _label(label),
-        const SizedBox(height: 6),
-        TextFormField(
-          controller: ctrl,
-          keyboardType: keyboard,
-          decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: AppColors.cyan, size: 20),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade300)),
-          ),
-        ),
-      ]);
+      {TextInputType? keyboard}) {
+    // ── Dynamic: enabled border color ──
+    final colorScheme = Theme.of(context).colorScheme;
 
-  Widget _pickerTile(String label, String? value, IconData icon, VoidCallback? onTap) =>
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _label(label),
-        const SizedBox(height: 6),
-        GestureDetector(
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: Colors.white,
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _label(label),
+      const SizedBox(height: 6),
+      TextFormField(
+        controller: ctrl,
+        keyboardType: keyboard,
+        decoration: InputDecoration(
+          prefixIcon: Icon(icon, color: AppColors.cyan, size: 20),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                  color: value != null ? AppColors.cyan : Colors.grey.shade300),
-            ),
-            child: Row(children: [
-              Icon(icon,
-                  color: value != null ? AppColors.cyan : Colors.grey.shade400, size: 20),
-              const SizedBox(width: 12),
-              Expanded(child: Text(value ?? 'Select…',
-                  style: TextStyle(
-                      color: value != null ? Colors.black87 : Colors.grey.shade400))),
-              Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade400, size: 18),
-            ]),
-          ),
+              borderSide: BorderSide(color: colorScheme.outlineVariant)), // was: Colors.grey.shade300
         ),
-      ]);
+      ),
+    ]);
+  }
+
+  Widget _pickerTile(String label, String? value, IconData icon, VoidCallback? onTap) {
+    // ── Dynamic: picker tile background and border ──
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _label(label),
+      const SizedBox(height: 6),
+      GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,                        // was: Colors.white
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+                color: value != null
+                    ? AppColors.cyan
+                    : colorScheme.outlineVariant),             // was: Colors.grey.shade300
+          ),
+          child: Row(children: [
+            Icon(icon,
+                color: value != null
+                    ? AppColors.cyan
+                    : colorScheme.onSurfaceVariant,            // was: Colors.grey.shade400
+                size: 20),
+            const SizedBox(width: 12),
+            Expanded(child: Text(value ?? 'Select…',
+                style: TextStyle(
+                    color: value != null
+                        ? colorScheme.onSurface                // was: Colors.black87
+                        : colorScheme.onSurfaceVariant))),     // was: Colors.grey.shade400
+            Icon(Icons.keyboard_arrow_down,
+                color: colorScheme.onSurfaceVariant,           // was: Colors.grey.shade400
+                size: 18),
+          ]),
+        ),
+      ),
+    ]);
+  }
 
   Widget _dropdownTile(String label, String? value, IconData icon, VoidCallback onTap) =>
       _pickerTile(label, value, icon, onTap);

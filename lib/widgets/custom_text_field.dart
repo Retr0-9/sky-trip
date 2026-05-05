@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// A styled text field used across booking, passengers, and payment screens.
-/// Usage: CustomTextField(label: 'First Name', hint: 'As shown in passport')
-/// With icon: CustomTextField(label: 'Email', hint: '', icon: Icons.email)
+/// Automatically adapts to light/dark theme.
 class CustomTextField extends StatelessWidget {
   final String label;
   final String hint;
@@ -29,6 +28,9 @@ class CustomTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context); // get current theme
+    final colorScheme = theme.colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -36,16 +38,15 @@ class CustomTextField extends StatelessWidget {
         RichText(
           text: TextSpan(
             text: label,
-            style: const TextStyle(
-              fontSize: 14,
+            style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w500,
-              color: Colors.black87,
+              color: colorScheme.onBackground, 
             ),
             children: [
               if (isRequired)
-                const TextSpan(
+                TextSpan(
                   text: ' *',
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(color: colorScheme.error),
                 ),
             ],
           ),
@@ -58,20 +59,22 @@ class CustomTextField extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colorScheme.surface, 
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300),
+              border: Border.all(color: colorScheme.outline), 
             ),
             child: Row(
               children: [
                 if (icon != null) ...[
-                  Icon(icon, color: Colors.cyan.shade300, size: 20),
+                  Icon(icon, color: colorScheme.primary, size: 20), 
                   const SizedBox(width: 12),
                 ],
                 Expanded(
                   child: Text(
                     hint,
-                    style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurface.withOpacity(0.6), 
+                    ),
                   ),
                 ),
                 if (suffix != null) suffix!,

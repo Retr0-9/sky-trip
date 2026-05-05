@@ -1,0 +1,58 @@
+import '../models/vehicle.dart';
+
+final List<Vehicle> dummyVehicles = [
+  const Vehicle(
+    name: 'Toyota Corolla',
+    type: 'Economy',
+    rating: 4.5,
+    seats: 4,
+    bags: 2,
+    features: ['AC', 'GPS', 'Bluetooth'],
+    price: 25.0,
+  ),
+  const Vehicle(
+    name: 'Toyota Hiace Van',
+    type: 'Van',
+    rating: 4.7,
+    seats: 12,
+    bags: 5,
+    features: ['AC', 'GPS', 'Large Boot'],
+    price: 55.0,
+  ),
+  const Vehicle(
+    name: 'Nissan Patrol',
+    type: 'SUV',
+    rating: 4.8,
+    seats: 7,
+    bags: 4,
+    features: ['AC', 'GPS', '4WD', 'Sunroof'],
+    price: 65.0,
+  ),
+  const Vehicle(
+    name: 'Mercedes S-Class',
+    type: 'Luxury',
+    rating: 4.9,
+    seats: 4,
+    bags: 2,
+    features: ['AC', 'GPS', 'Leather', 'Premium Sound'],
+    price: 120.0,
+  ),
+  const Vehicle(
+    name: 'Hyundai Tucson',
+    type: 'SUV',
+    rating: 4.6,
+    seats: 5,
+    bags: 3,
+    features: ['AC', 'GPS', 'Bluetooth'],
+    price: 45.0,
+  ),
+  const Vehicle(
+    name: 'Kia Carnival',
+    type: 'Van',
+    rating: 4.4,
+    seats: 8,
+    bags: 4,
+    features: ['AC', 'GPS', 'USB Charging'],
+    price: 60.0,
+  ),
+];
