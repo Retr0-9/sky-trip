@@ -61,4 +61,40 @@ class BookedVehicleModel extends HiveObject {
     required this.days,
     required this.totalPrice,
   });
+
+  factory BookedVehicleModel.fromJson(Map<String, dynamic> json) {
+    return BookedVehicleModel(
+      id: json['id'] as String,
+      vehicleName: json['vehicleName'] as String,
+      vehicleType: json['vehicleType'] as String,
+      seats: json['seats'] as int,
+      bags: json['bags'] as int,
+      rating: (json['rating'] as num).toDouble(),
+      price: (json['price'] as num).toDouble(),
+      features: List<String>.from(json['features'] as List),
+      pickupLocation: json['pickupLocation'] as String,
+      dropLocation: json['dropLocation'] as String,
+      pickupDate: json['pickupDate'] as String,
+      returnDate: json['returnDate'] as String,
+      days: json['days'] as int,
+      totalPrice: (json['totalPrice'] as num).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'vehicleName': vehicleName,
+        'vehicleType': vehicleType,
+        'seats': seats,
+        'bags': bags,
+        'rating': rating,
+        'price': price,
+        'features': features,
+        'pickupLocation': pickupLocation,
+        'dropLocation': dropLocation,
+        'pickupDate': pickupDate,
+        'returnDate': returnDate,
+        'days': days,
+        'totalPrice': totalPrice,
+      };
 }

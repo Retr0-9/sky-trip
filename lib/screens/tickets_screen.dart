@@ -240,10 +240,10 @@ class _TicketsScreenState extends State<TicketsScreen>
                 Row(
                   children: [
                     _buildInfoItem(context, Icons.calendar_today,
-                        l10n.ticketsCheckIn, hotel.checkInDate),
+                        l10n.ticketsCheckIn, hotel.checkInDate.toString()),
                     const SizedBox(width: 16),
                     _buildInfoItem(context, Icons.calendar_today,
-                        l10n.ticketsCheckOut, hotel.checkOutDate),
+                        l10n.ticketsCheckOut, hotel.checkOutDate.toString()),
                   ],
                 ),
                 const SizedBox(height: 12),

@@ -13,10 +13,10 @@ class HotelBookingModel extends HiveObject {
   final String location;
 
   @HiveField(3)
-  final String checkInDate;
+  final DateTime checkInDate;
 
   @HiveField(4)
-  final String checkOutDate;
+  final DateTime checkOutDate;
 
   @HiveField(5)
   final int numberOfGuests;
@@ -41,4 +41,30 @@ class HotelBookingModel extends HiveObject {
     this.roomType = 'Standard Room',
     this.pricePerNight = 0.0,
   });
+
+  factory HotelBookingModel.fromJson(Map<String, dynamic> json) {
+    return HotelBookingModel(
+      id: json['id'] as String,
+      hotelName: json['hotelName'] as String,
+      location: json['location'] as String,
+      checkInDate: DateTime.parse(json['checkInDate'] as String),
+      checkOutDate: DateTime.parse(json['checkOutDate'] as String),
+      numberOfGuests: json['numberOfGuests'] as int,
+      numberOfRooms: json['numberOfRooms'] as int? ?? 1,
+      roomType: json['roomType'] as String? ?? 'Standard Room',
+      pricePerNight: (json['pricePerNight'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'hotelName': hotelName,
+        'location': location,
+        'checkInDate': checkInDate.toIso8601String(),
+        'checkOutDate': checkOutDate.toIso8601String(),
+        'numberOfGuests': numberOfGuests,
+        'numberOfRooms': numberOfRooms,
+        'roomType': roomType,
+        'pricePerNight': pricePerNight,
+      };
 }

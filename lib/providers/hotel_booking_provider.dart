@@ -1,13 +1,12 @@
 // providers/hotel_booking_provider.dart
-import 'dart:convert'; 
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart'; 
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/hotel_booking_model.dart';
 
 class HotelBookingProvider extends ChangeNotifier {
-  
   static const String _storageKey = 'hotel_bookings_list';
-  
+
   List<HotelBookingModel> _bookings = [];
 
   List<HotelBookingModel> get allHotelBookings => _bookings;
@@ -19,7 +18,8 @@ class HotelBookingProvider extends ChangeNotifier {
     if (data != null && data.isNotEmpty) {
       final List<dynamic> decodedList = jsonDecode(data);
       _bookings = decodedList
-          .map((item) => HotelBookingModel.fromJson(item))
+          .map((item) =>
+              HotelBookingModel.fromJson(item as Map<String, dynamic>))
           .toList();
     }
     notifyListeners();

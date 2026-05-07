@@ -5,8 +5,8 @@ final List<HotelBookingModel> dummyHotelBookings = [
     id: '1',
     hotelName: 'Grand Palace Hotel',
     location: 'New York, USA',
-    checkInDate: '2024-07-20',
-    checkOutDate: '2024-07-25',
+    checkInDate: DateTime(2024, 7, 20),
+    checkOutDate: DateTime(2024, 7, 25),
     numberOfGuests: 2,
     numberOfRooms: 1,           // ← مضاف
     roomType: 'Deluxe Room',    // ← مضاف
@@ -16,8 +16,8 @@ final List<HotelBookingModel> dummyHotelBookings = [
     id: '2',
     hotelName: 'Ocean View Resort',
     location: 'Miami, USA',
-    checkInDate: '2024-08-10',
-    checkOutDate: '2024-08-15',
+    checkInDate: DateTime(2024, 8, 10),
+    checkOutDate: DateTime(2024, 8, 15),
     numberOfGuests: 4,
     numberOfRooms: 2,          
     roomType: 'Superior Room',  
