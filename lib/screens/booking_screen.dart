@@ -74,17 +74,19 @@ class _BookingScreenState extends State<BookingScreen> {
         _loadingMeta = false;
       });
     } on AuthException catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _metaError = e.message;
           _loadingMeta = false;
         });
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _metaError = 'Failed to load flight data.';
           _loadingMeta = false;
         });
+      }
     }
   }
 
@@ -350,15 +352,19 @@ class _BookingScreenState extends State<BookingScreen> {
       infants: _infants,
       travelClass: _selectedClass?.name ?? 'Economy',
     );
+    print('Searching flights with: ${search.toString()}');
 
     try {
+      final classId = _selectedClass?.classId;
       List<FlightScheduleModel> results;
       if (_isRoundTrip) {
         results = await FlightService.searchRoundTrip(
-            _fromCity, _toCity, _departureDate!, _returnDate!, token);
+            _fromCity, _toCity, _departureDate!, _returnDate!, token,
+            classId: classId);
       } else {
         results = await FlightService.searchOneWay(
-            _fromCity, _toCity, _departureDate!, token);
+            _fromCity, _toCity, _departureDate!, token,
+            classId: classId);
       }
 
       if (!mounted) return;
@@ -367,8 +373,8 @@ class _BookingScreenState extends State<BookingScreen> {
           arguments: {'search': search, 'flights': results});
     } on AuthException catch (e) {
       _snack(e.message);
-    } catch (_) {
-      _snack('Search failed. Please try again.');
+    } catch (e) {
+      _snack('Search failed: $e');
     } finally {
       if (mounted) setState(() => _searchLoading = false);
     }

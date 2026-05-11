@@ -132,7 +132,7 @@ class ApiClient {
   }
 
   static AuthException _networkError(Object e) =>
-      const AuthException('Could not reach the server. Check your connection.');
+      AuthException('Could not reach the server: $e');
 
   /// Convenience: decode response body as JSON map.
   static Map<String, dynamic> decodeMap(http.Response res) =>

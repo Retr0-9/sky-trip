@@ -12,27 +12,34 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   // Notification toggles
-  bool _flightUpdates    = true;
-  bool _priceAlerts      = true;
+  bool _flightUpdates = true;
+  bool _priceAlerts = true;
   bool _bookingReminders = true;
-  bool _promotions       = false;
-  bool _smsAlerts        = false;
+  bool _promotions = false;
+  bool _smsAlerts = false;
 
   // Display
-  String _language       = 'English';
-  String _currency       = 'JOD – Jordanian Dinar';
-  bool   _darkMode       = false;
+  String _language = 'English';
+  String _currency = 'JOD – Jordanian Dinar';
+  bool _darkMode = false;
 
   // Privacy
-  bool _shareData        = false;
+  bool _shareData = false;
   bool _locationServices = true;
 
   final List<String> _languages = [
-    'English', 'Arabic', 'French', 'German', 'Spanish',
+    'English',
+    'Arabic',
+    'French',
+    'German',
+    'Spanish',
   ];
   final List<String> _currencies = [
-    'JOD – Jordanian Dinar', 'USD – US Dollar',
-    'EUR – Euro', 'GBP – British Pound', 'AED – UAE Dirham',
+    'JOD – Jordanian Dinar',
+    'USD – US Dollar',
+    'EUR – Euro',
+    'GBP – British Pound',
+    'AED – UAE Dirham',
   ];
 
   @override
@@ -55,35 +62,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 icon: Icons.flight_takeoff,
                 title: 'Flight Updates',
                 subtitle: 'Gate changes, delays & cancellations',
-                trailing: _toggle(_flightUpdates, (v) => setState(() => _flightUpdates = v)),
+                trailing: _toggle(
+                    _flightUpdates, (v) => setState(() => _flightUpdates = v)),
               ),
               SettingsTile(
                 icon: Icons.trending_down,
                 iconColor: AppColors.green,
                 title: 'Price Alerts',
                 subtitle: 'Get notified when prices drop',
-                trailing: _toggle(_priceAlerts, (v) => setState(() => _priceAlerts = v)),
+                trailing: _toggle(
+                    _priceAlerts, (v) => setState(() => _priceAlerts = v)),
               ),
               SettingsTile(
                 icon: Icons.notifications_active_outlined,
                 iconColor: AppColors.orange,
                 title: 'Booking Reminders',
                 subtitle: '24h before departure',
-                trailing: _toggle(_bookingReminders, (v) => setState(() => _bookingReminders = v)),
+                trailing: _toggle(_bookingReminders,
+                    (v) => setState(() => _bookingReminders = v)),
               ),
               SettingsTile(
                 icon: Icons.local_offer_outlined,
                 iconColor: AppColors.purple,
                 title: 'Promotions & Offers',
                 subtitle: 'Deals, discounts and seasonal offers',
-                trailing: _toggle(_promotions, (v) => setState(() => _promotions = v)),
+                trailing: _toggle(
+                    _promotions, (v) => setState(() => _promotions = v)),
               ),
               SettingsTile(
                 icon: Icons.sms_outlined,
                 iconColor: AppColors.gold,
                 title: 'SMS Alerts',
                 subtitle: 'Receive alerts via text message',
-                trailing: _toggle(_smsAlerts, (v) => setState(() => _smsAlerts = v)),
+                trailing:
+                    _toggle(_smsAlerts, (v) => setState(() => _smsAlerts = v)),
                 showDivider: false,
               ),
             ]),
@@ -122,7 +134,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 iconColor: AppColors.purple,
                 title: 'Dark Mode',
                 subtitle: 'Switch to dark theme',
-                trailing: _toggle(_darkMode, (v) => setState(() => _darkMode = v)),
+                trailing:
+                    _toggle(_darkMode, (v) => setState(() => _darkMode = v)),
                 showDivider: false,
               ),
             ]),
@@ -150,14 +163,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 iconColor: AppColors.orange,
                 title: 'Share Usage Data',
                 subtitle: 'Help us improve the app',
-                trailing: _toggle(_shareData, (v) => setState(() => _shareData = v)),
+                trailing:
+                    _toggle(_shareData, (v) => setState(() => _shareData = v)),
               ),
               SettingsTile(
                 icon: Icons.location_on_outlined,
                 iconColor: AppColors.error,
                 title: 'Location Services',
                 subtitle: 'Used for nearby airports',
-                trailing: _toggle(_locationServices, (v) => setState(() => _locationServices = v)),
+                trailing: _toggle(_locationServices,
+                    (v) => setState(() => _locationServices = v)),
                 showDivider: false,
               ),
             ]),
@@ -234,8 +249,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           const SizedBox(height: 12),
           Container(
-            width: 36, height: 4,
-            decoration: BoxDecoration(
+            width: 36,
+            height: 4,
+            decoration: const BoxDecoration(
               color: AppColors.border,
               borderRadius: AppRadius.full,
             ),
@@ -246,15 +262,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const Divider(height: 1),
           ...options.map((opt) => ListTile(
-            title: Text(opt),
-            trailing: opt == selected
-                ? const Icon(Icons.check, color: AppColors.cyan)
-                : null,
-            onTap: () {
-              onSelect(opt);
-              Navigator.pop(ctx);
-            },
-          )),
+                title: Text(opt),
+                trailing: opt == selected
+                    ? const Icon(Icons.check, color: AppColors.cyan)
+                    : null,
+                onTap: () {
+                  onSelect(opt);
+                  Navigator.pop(ctx);
+                },
+              )),
           const SizedBox(height: 16),
         ],
       ),

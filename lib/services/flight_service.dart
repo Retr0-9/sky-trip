@@ -9,45 +9,65 @@ class FlightService {
   static Future<List<String>> getCities(String token) async {
     final res = await ApiClient.get('/api/FlightSchedules/Cities', token);
     final list = jsonDecode(res.body) as List<dynamic>;
-    return list.map((e) => e.toString().trim()).where((s) => s.isNotEmpty).toList();
+    // Deduplicate and filter blanks; preserve original order via LinkedHashSet
+    final seen = <String>{};
+    return list
+        .map((e) => e.toString().trim())
+        .where((s) => s.isNotEmpty && seen.add(s))
+        .toList();
   }
 
-  /// POST /api/FlightSchedules/oneway
+  /// POST /api/FlightSchedules/Search — one-way (covers the entire selected day)
   static Future<List<FlightScheduleModel>> searchOneWay(
     String from,
     String to,
     DateTime date,
-    String token,
-  ) async {
+    String token, {
+    int? classId,
+  }) async {
     final res = await ApiClient.post(
-      '/api/FlightSchedules/oneway',
-      {'from': from, 'to': to, 'date': date.toIso8601String()},
+      '/api/FlightSchedules/Search',
+      _buildSearchBody(from, to, date, date, classId),
       token,
     );
     return _parseList(res.body);
   }
 
-  /// POST /api/FlightSchedules/roundtrip
+  /// POST /api/FlightSchedules/Search — round-trip outbound leg
   static Future<List<FlightScheduleModel>> searchRoundTrip(
     String from,
     String to,
     DateTime departureDate,
     DateTime returnDate,
-    String token,
-  ) async {
+    String token, {
+    int? classId,
+  }) async {
+    // Search for outbound flights on the departure date
     final res = await ApiClient.post(
-      '/api/FlightSchedules/roundtrip',
-      {
-        'from': from,
-        'to': to,
-        'departureDate': departureDate.toIso8601String(),
-        'returnDate': returnDate.toIso8601String(),
-        'maxItineraries': 10,
-        'maxOptionsPerLeg': 5,
-      },
+      '/api/FlightSchedules/Search',
+      _buildSearchBody(from, to, departureDate, departureDate, classId),
       token,
     );
     return _parseList(res.body);
+  }
+
+  static Map<String, dynamic> _buildSearchBody(
+    String from,
+    String to,
+    DateTime dateFrom,
+    DateTime dateTo,
+    int? classId,
+  ) {
+    // Cover the full calendar day: 00:00:00 → 23:59:59
+    final start = DateTime(dateFrom.year, dateFrom.month, dateFrom.day);
+    final end = DateTime(dateTo.year, dateTo.month, dateTo.day, 23, 59, 59);
+    return {
+      'departureCity': from,
+      'arrivalCity': to,
+      'flightDateFrom': start.toIso8601String(),
+      'flightDateTo': end.toIso8601String(),
+      if (classId != null) 'passengerClassID': classId,
+    };
   }
 
   /// GET /api/PassengerClass/All
@@ -70,24 +90,39 @@ class FlightService {
   }
 
   static List<FlightScheduleModel> _parseList(String body) {
-    final decoded = jsonDecode(body);
-    if (decoded is List) {
-      return decoded
-          .map((j) =>
-              FlightScheduleModel.fromJson(j as Map<String, dynamic>))
-          .toList();
+    // Guard against empty / null body
+    if (body.isEmpty) return [];
+    final dynamic decoded;
+    try {
+      decoded = jsonDecode(body);
+    } catch (_) {
+      return [];
     }
-    // Some endpoints wrap the list in an object
-    if (decoded is Map) {
-      final vals = decoded.values.firstWhere(
+    if (decoded == null) return [];
+
+    List<dynamic> raw;
+    if (decoded is List) {
+      raw = decoded;
+    } else if (decoded is Map) {
+      // Some endpoints wrap the list in an object
+      raw = decoded.values.firstWhere(
         (v) => v is List,
         orElse: () => <dynamic>[],
       ) as List<dynamic>;
-      return vals
-          .map((j) =>
-              FlightScheduleModel.fromJson(j as Map<String, dynamic>))
-          .toList();
+    } else {
+      return [];
     }
-    return [];
+
+    final results = <FlightScheduleModel>[];
+    for (final j in raw) {
+      if (j is Map<String, dynamic>) {
+        try {
+          results.add(FlightScheduleModel.fromJson(j));
+        } catch (_) {
+          // Skip malformed entries
+        }
+      }
+    }
+    return results;
   }
 }

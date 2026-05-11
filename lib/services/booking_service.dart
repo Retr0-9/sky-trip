@@ -20,11 +20,11 @@ class AddPassengerResult {
 
   factory AddPassengerResult.fromJson(Map<String, dynamic> json) {
     return AddPassengerResult(
-      passengerId:     json['passengerId']     as int,
-      personId:        json['personId']        as int,
+      passengerId: json['passengerId'] as int,
+      personId: json['personId'] as int,
       documentationId: json['documentationId'] as int,
-      current:         json['current']         as int,
-      total:           json['total']           as int,
+      current: json['current'] as int,
+      total: json['total'] as int,
     );
   }
 }
@@ -59,6 +59,9 @@ class PassengerFormData {
   });
 }
 
+/// Strips milliseconds: "2000-01-01T00:00:00.000" → "2000-01-01T00:00:00"
+String _isoNoMs(DateTime d) => d.toIso8601String().split('.').first;
+
 class BookingService {
   /// POST /api/BookingTrip → returns bookID
   static Future<int> createBookingTrip({
@@ -69,9 +72,9 @@ class BookingService {
     final res = await ApiClient.post(
       '/api/BookingTrip',
       {
-        'clientID':    clientId,
-        'tripType':    tripTypeId,
-        'isActive':    true,
+        'clientID': clientId,
+        'tripType': tripTypeId,
+        'isActive': true,
         'bookingDate': DateTime.now().toIso8601String(),
       },
       token,
@@ -92,10 +95,10 @@ class BookingService {
     final res = await ApiClient.post(
       '/api/InfoTickets',
       {
-        'bookID':           bookId,
+        'bookID': bookId,
         'passengerClassID': passengerClassId,
-        'ticketPrice':      ticketPrice,
-        'passengersCount':  passengersCount,
+        'ticketPrice': ticketPrice,
+        'passengersCount': passengersCount,
       },
       token,
     );
@@ -110,19 +113,22 @@ class BookingService {
     required PassengerFormData data,
     required String token,
   }) async {
+    // SecondName and ThirdName must always be present (SP_AddNewPerson requires them)
     final fields = <String, String>{
-      'FirstName':         data.firstName,
-      'LastName':          data.lastName,
-      'Email':             data.email,
-      'Phone':             data.phone,
-      'BirthDate':         data.birthDate.toIso8601String(),
-      'Gender':            data.gender,
-      'IssueCountryId':    data.issueCountryId.toString(),
+      'FirstName': data.firstName,
+      'SecondName':
+          data.secondName?.isNotEmpty == true ? data.secondName! : 'Guest',
+      'ThirdName':
+          data.thirdName?.isNotEmpty == true ? data.thirdName! : 'Guest',
+      'LastName': data.lastName,
+      'Email': data.email,
+      'Phone': data.phone,
+      'BirthDate': _isoNoMs(data.birthDate),
+      'Gender': data.gender,
+      'IssueCountryId': data.issueCountryId.toString(),
       'DocumentationType': data.documentationType,
-      'ExpirationDate':    data.expirationDate.toIso8601String(),
+      'ExpirationDate': _isoNoMs(data.expirationDate),
     };
-    if (data.secondName != null) fields['SecondName'] = data.secondName!;
-    if (data.thirdName  != null) fields['ThirdName']  = data.thirdName!;
 
     final files = <String, http.MultipartFile>{};
     if (data.documentFile != null) {
