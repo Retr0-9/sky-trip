@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:skytrip/generated/l10n/app_localizations.dart';
+import '../app_constants.dart';
 import '../theme/app_theme.dart';
 import '../providers/user_provider.dart';
 
@@ -85,11 +86,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     String languageDisplay = _codeToLanguage[_languageCode] ?? 'English';
     String currencyDisplay = _codeToCurrency[_currencyCode] ?? 'JOD – Jordanian Dinar';
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+    return GradientBackground(
+      child: Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: Text(l10n.settingsTitle),
-        backgroundColor: theme.appBarTheme.backgroundColor,
+        backgroundColor: Colors.transparent,
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -214,7 +216,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 icon: Icons.info_outline,
                 iconColor: theme.iconTheme.color,
                 title: l10n.settingsAppVersion,
-                subtitle: l10n.appVersion,
+                subtitle: kAppVersion,
                 trailing: const SizedBox.shrink(),
                 showDivider: false,
               ),
@@ -231,7 +233,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   Future<void> _saveAllSettings(BuildContext context) async {

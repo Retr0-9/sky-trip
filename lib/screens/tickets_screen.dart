@@ -4,11 +4,13 @@ import 'package:skytrip/generated/l10n/app_localizations.dart';
 import 'package:skytrip/models/booked_vehicle_model.dart';
 import '../widgets/ticket_card.dart';
 import '../widgets/section_header.dart';
-import '../data/dummy_tickets.dart';
 import '../models/ticket_model.dart';
 import '../models/hotel_booking_model.dart';
 import '../providers/hotel_booking_provider.dart';
+import '../providers/user_provider.dart';
 import '../providers/vehicle_provider.dart';
+import '../services/booking_service.dart';
+import '../services/auth_service.dart';
 
 class TicketsScreen extends StatefulWidget {
   const TicketsScreen({super.key});
@@ -21,10 +23,40 @@ class _TicketsScreenState extends State<TicketsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
+  List<TicketModel>? _flightTickets;
+  bool _loadingTickets = false;
+  String? _ticketsError;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _fetchFlightTickets();
+  }
+
+  Future<void> _fetchFlightTickets() async {
+    final user = context.read<UserProvider>();
+    setState(() { _loadingTickets = true; _ticketsError = null; });
+    try {
+      final apiTickets = await BookingService.fetchClientTickets(
+        clientId: user.clientId,
+        token: user.token,
+      );
+      if (!mounted) return;
+      setState(() {
+        _flightTickets = apiTickets.map((t) => t.toTicketModel()).toList();
+        _loadingTickets = false;
+      });
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      setState(() { _ticketsError = e.message; _loadingTickets = false; });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _ticketsError = 'Could not load tickets. Pull down to retry.';
+        _loadingTickets = false;
+      });
+    }
   }
 
   @override
@@ -45,7 +77,7 @@ class _TicketsScreenState extends State<TicketsScreen>
           child: TabBarView(
             controller: _tabController,
             children: [
-              _buildFlightList(context, DummyTickets.upcoming),
+              _buildFlightTab(context),
               _buildHotelList(context),
               _buildVehicleList(context),
             ],
@@ -101,6 +133,33 @@ class _TicketsScreenState extends State<TicketsScreen>
   // ═══════════════════════════════════════════════
   //  TAB 1 – FLIGHTS
   // ═══════════════════════════════════════════════
+  Widget _buildFlightTab(BuildContext context) {
+    if (_loadingTickets) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_ticketsError != null) {
+      return RefreshIndicator(
+        onRefresh: _fetchFlightTickets,
+        child: ListView(
+          padding: const EdgeInsets.all(32),
+          children: [
+            Icon(Icons.cloud_off, size: 56, color: Theme.of(context).hintColor),
+            const SizedBox(height: 16),
+            Text(
+              _ticketsError!,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Theme.of(context).hintColor),
+            ),
+          ],
+        ),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _fetchFlightTickets,
+      child: _buildFlightList(context, _flightTickets ?? []),
+    );
+  }
+
   Widget _buildFlightList(BuildContext context, List<TicketModel> tickets) {
     final l10n = AppLocalizations.of(context)!;
 

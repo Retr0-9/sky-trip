@@ -1,11 +1,124 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:skytrip/generated/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../providers/user_provider.dart';
+import '../services/profile_service.dart';
+import '../services/auth_service.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  File? _localImage;
+  bool _uploading = false;
+
+  void _showImageOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(ctx).colorScheme.outlineVariant,
+                borderRadius: AppRadius.full,
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('Profile Photo', style: AppTextStyles.titleMedium),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: AppColors.cyan),
+              title: const Text('Take a Photo'),
+              onTap: () { Navigator.pop(ctx); _pickImage(ImageSource.camera); },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppColors.cyan),
+              title: const Text('Choose from Gallery'),
+              onTap: () { Navigator.pop(ctx); _pickImage(ImageSource.gallery); },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    if (source == ImageSource.camera) {
+      final status = await Permission.camera.request();
+      if (!mounted) return;
+      if (status.isPermanentlyDenied) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: const Text('Camera permission permanently denied. Enable it in Settings.'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          action: SnackBarAction(
+            label: 'Settings',
+            textColor: Colors.white,
+            onPressed: openAppSettings,
+          ),
+        ));
+        return;
+      }
+      if (!status.isGranted) return;
+    }
+
+    final picked = await ImagePicker().pickImage(
+      source: source,
+      imageQuality: 80,
+      maxWidth: 512,
+    );
+    if (picked == null || !mounted) return;
+
+    final file = File(picked.path);
+    setState(() { _localImage = file; _uploading = true; });
+
+    try {
+      final token = context.read<UserProvider>().token;
+      await ProfileService.uploadAvatar(image: file, token: token);
+      if (!mounted) return;
+      setState(() => _uploading = false);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Profile photo updated'),
+        backgroundColor: AppColors.green,
+        behavior: SnackBarBehavior.floating,
+      ));
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      setState(() => _uploading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(e.message),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+      ));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _uploading = false);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Could not upload photo. Please try again.'),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +127,7 @@ class ProfileScreen extends StatelessWidget {
 
     return SingleChildScrollView(
       child: Column(children: [
-        _buildHero(context, user),
+        _buildHero(user),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(children: [
@@ -27,7 +140,7 @@ class ProfileScreen extends StatelessWidget {
                   icon: Icons.person_outline,
                   title: 'Full Name',
                   subtitle: user.fullName,
-                  onTap: () => _editField(context, 'Full Name', user.fullName, (v) {
+                  onTap: () => _editField('Full Name', user.fullName, (v) {
                     final parts = v.trim().split(' ');
                     user.updateProfile(
                       firstName: parts.first,
@@ -40,7 +153,7 @@ class ProfileScreen extends StatelessWidget {
                   iconColor: AppColors.orange,
                   title: 'Email',
                   subtitle: user.email,
-                  onTap: () => _editField(context, 'Email', user.email,
+                  onTap: () => _editField('Email', user.email,
                       (v) => user.updateProfile(email: v)),
                 ),
                 SettingsTile(
@@ -48,7 +161,7 @@ class ProfileScreen extends StatelessWidget {
                   iconColor: AppColors.green,
                   title: 'Phone',
                   subtitle: user.phone,
-                  onTap: () => _editField(context, 'Phone', user.phone,
+                  onTap: () => _editField('Phone', user.phone,
                       (v) => user.updateProfile(phone: v)),
                 ),
                 SettingsTile(
@@ -56,7 +169,7 @@ class ProfileScreen extends StatelessWidget {
                   iconColor: AppColors.purple,
                   title: 'Nationality',
                   subtitle: user.nationality,
-                  onTap: () => _showNationalityPicker(context, user),
+                  onTap: () => _showNationalityPicker(user),
                   showDivider: false,
                 ),
               ]),
@@ -71,7 +184,7 @@ class ProfileScreen extends StatelessWidget {
                   icon: Icons.badge_outlined,
                   title: 'Passport Number',
                   subtitle: user.passportNumber,
-                  onTap: () => _editField(context, 'Passport Number',
+                  onTap: () => _editField('Passport Number',
                       user.passportNumber,
                       (v) => user.updateProfile(passportNumber: v)),
                 ),
@@ -80,15 +193,11 @@ class ProfileScreen extends StatelessWidget {
                   iconColor: AppColors.cyan,
                   title: 'Preferred Class',
                   subtitle: user.preferredClass,
-                  onTap: () => _showClassPicker(context, user),
+                  onTap: () => _showClassPicker(user),
                   showDivider: false,
                 ),
               ]),
             ),
-
-            // Loyalty Program
-            AppSectionLabel(label: l10n.profileLoyalty),
-            _buildLoyaltyCard(context, user),
 
             // Stats
             AppSectionLabel(label: l10n.profileStats),
@@ -102,10 +211,17 @@ class ProfileScreen extends StatelessWidget {
   }
 
   // ── Hero Header ─────────────────────────────────────────
-  Widget _buildHero(BuildContext context, UserProvider user) {
+  Widget _buildHero(UserProvider user) {
+    ImageProvider? avatarImage;
+    if (_localImage != null) {
+      avatarImage = FileImage(_localImage!);
+    } else if (user.profileImageUrl != null) {
+      avatarImage = NetworkImage(user.profileImageUrl!);
+    }
+
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -118,21 +234,22 @@ class ProfileScreen extends StatelessWidget {
         Stack(children: [
           CircleAvatar(
             radius: 46,
-            backgroundColor: Colors.white.withOpacity(0.2),
-            child: Text(
-              _initials(user.fullName),
-              style: const TextStyle(
-                  fontSize: 28, fontWeight: FontWeight.w800, color: Colors.white),
-            ),
+            backgroundColor: Colors.white24,
+            backgroundImage: avatarImage,
+            child: avatarImage == null
+                ? Text(
+                    _initials(user.fullName),
+                    style: const TextStyle(
+                        fontSize: 28, fontWeight: FontWeight.w800, color: Colors.white),
+                  )
+                : _uploading
+                    ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                    : null,
           ),
           Positioned(
             bottom: 0, right: 0,
             child: GestureDetector(
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Photo upload: Coming in Phase 6'),
-                    behavior: SnackBarBehavior.floating),
-              ),
+              onTap: _showImageOptions,
               child: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: const BoxDecoration(
@@ -179,70 +296,6 @@ class ProfileScreen extends StatelessWidget {
         color: Colors.white.withOpacity(0.25));
   }
 
-  // ── Loyalty Card ────────────────────────────────────────
-  // ── Dynamic context added as parameter ──
-  Widget _buildLoyaltyCard(BuildContext context, UserProvider user) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    final tierColors = {
-      'Silver': [const Color(0xFF78909C), const Color(0xFF546E7A)],
-      'Gold':   [AppColors.gold, const Color(0xFFFF8F00)],
-      'Platinum': [const Color(0xFF7C4DFF), const Color(0xFF5C35CC)],
-    };
-    final colors = tierColors[user.loyaltyTier] ??
-        [AppColors.textSecondary, AppColors.textPrimary];
-
-    return AppCard(
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: colors),
-              borderRadius: AppRadius.full,
-            ),
-            child: Row(children: [
-              const Icon(Icons.star, color: Colors.white, size: 14),
-              const SizedBox(width: 4),
-              Text('${user.loyaltyTier} Member',
-                  style: const TextStyle(
-                      color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
-            ]),
-          ),
-          const Spacer(),
-          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text('${_formatMiles(user.milesBalance)} miles',
-                style: AppTextStyles.titleMedium.copyWith(color: colors[0])),
-            Text('available balance', style: AppTextStyles.bodySmall),
-          ]),
-        ]),
-        const SizedBox(height: 14),
-
-        // Progress to next tier
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text('Progress to ${_nextTier(user.loyaltyTier)}',
-              style: AppTextStyles.bodySmall),
-          Text('${_formatMiles(user.milesBalance)} / ${_tierTarget(user.loyaltyTier)} miles',
-              style: AppTextStyles.bodySmall),
-        ]),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: AppRadius.full,
-          child: LinearProgressIndicator(
-            value: user.milesBalance / _tierTargetNum(user.loyaltyTier),
-            // ── Dynamic: use theme outline variant instead of hardcoded border ──
-            backgroundColor: colorScheme.outlineVariant,   // was: AppColors.border
-            color: colors[0],
-            minHeight: 8,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text('Loyalty #: ${user.loyaltyNumber}',
-            style: AppTextStyles.bodySmall),
-      ]),
-    );
-  }
-
   // ── Stats Grid ──────────────────────────────────────────
   Widget _buildStatsGrid() {
     final stats = [
@@ -277,8 +330,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   // ── Edit Dialog ─────────────────────────────────────────
-  void _editField(BuildContext context, String label, String current,
-      ValueChanged<String> onSave) {
+  void _editField(String label, String current, ValueChanged<String> onSave) {
     final ctrl = TextEditingController(text: current);
     showDialog(
       context: context,
@@ -313,7 +365,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  void _showNationalityPicker(BuildContext context, UserProvider user) {
+  void _showNationalityPicker(UserProvider user) {
     const nationalities = ['Jordanian', 'Emirati', 'Saudi', 'British', 'American', 'German', 'French'];
     showModalBottomSheet(
       context: context,
@@ -350,7 +402,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  void _showClassPicker(BuildContext context, UserProvider user) {
+  void _showClassPicker(UserProvider user) {
     const classes = ['Economy', 'Business', 'First Class'];
     showModalBottomSheet(
       context: context,
@@ -399,25 +451,6 @@ class ProfileScreen extends StatelessWidget {
     return name.isNotEmpty ? name[0].toUpperCase() : '?';
   }
 
-  String _formatMiles(int miles) {
-    if (miles >= 1000) return '${(miles / 1000).toStringAsFixed(1)}K';
-    return '$miles';
-  }
-
-  String _nextTier(String tier) {
-    const next = {'Silver': 'Gold', 'Gold': 'Platinum', 'Platinum': 'Platinum'};
-    return next[tier] ?? 'Gold';
-  }
-
-  String _tierTarget(String tier) {
-    const targets = {'Silver': '25K', 'Gold': '50K', 'Platinum': '100K'};
-    return targets[tier] ?? '25K';
-  }
-
-  int _tierTargetNum(String tier) {
-    const targets = {'Silver': 25000, 'Gold': 50000, 'Platinum': 100000};
-    return targets[tier] ?? 25000;
-  }
 }
 
 class _Stat {

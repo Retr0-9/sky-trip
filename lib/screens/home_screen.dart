@@ -109,11 +109,12 @@ class HomeScreen extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               children: const [
-                _DestCard(city: 'Dubai', emoji: '🏙️', color: Color(0xFF5BB8C8)),
-                _DestCard(city: 'London', emoji: '🎡', color: Color(0xFF7C9CBF)),
-                _DestCard(city: 'Paris', emoji: '🗼', color: Color(0xFF9B8EA8)),
-                _DestCard(city: 'Cairo', emoji: '🏛️', color: Color(0xFFC4956A)),
-                _DestCard(city: 'Istanbul', emoji: '🕌', color: Color(0xFF7EB5A0)),
+                _DestCard(city: 'Dubai',  imagePath: 'lib/assets/cites_images/dubai.jpg'),
+                _DestCard(city: 'London', imagePath: 'lib/assets/cites_images/london.jpg'),
+                _DestCard(city: 'Paris',  imagePath: 'lib/assets/cites_images/paris.jpg'),
+                _DestCard(city: 'Cairo',  imagePath: 'lib/assets/cites_images/cairo.jpg'),
+                _DestCard(city: 'Riyadh', imagePath: 'lib/assets/cites_images/riyadh.jpg'),
+                _DestCard(city: 'Amman',  imagePath: 'lib/assets/cites_images/amman.jpg'),
               ],
             ),
           ),
@@ -127,10 +128,9 @@ class HomeScreen extends StatelessWidget {
 
 class _DestCard extends StatelessWidget {
   final String city;
-  final String emoji;
-  final Color color;
+  final String imagePath;
 
-  const _DestCard({required this.city, required this.emoji, required this.color});
+  const _DestCard({required this.city, required this.imagePath});
 
   @override
   Widget build(BuildContext context) {
@@ -139,29 +139,34 @@ class _DestCard extends StatelessWidget {
       margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
         borderRadius: AppRadius.md,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [color, color.withOpacity(0.7)],
-        ),
         boxShadow: AppShadows.sm,
       ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: 10, right: 10,
-            child: Text(emoji, style: const TextStyle(fontSize: 36)),
-          ),
-          Positioned(
-            bottom: 12, left: 12,
-            child: Text(
-              city,
-              style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14,
+      child: ClipRRect(
+        borderRadius: AppRadius.md,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(imagePath, fit: BoxFit.cover),
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Colors.black54],
+                ),
               ),
             ),
-          ),
-        ],
+            Positioned(
+              bottom: 10, left: 10,
+              child: Text(
+                city,
+                style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

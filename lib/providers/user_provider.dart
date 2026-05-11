@@ -26,6 +26,7 @@ import '../services/profile_service.dart';
   int _personId = 0;
   int _clientId = 0;
   String _role = '';
+  String? _profileImageUrl;
 
   // ─────────────────────────────────────────────
   // THEME & LOCALIZATION STATE
@@ -125,6 +126,7 @@ import '../services/profile_service.dart';
   int get personId => _personId;
   int get clientId => _clientId;
   String get role => _role;
+  String? get profileImageUrl => _profileImageUrl;
 
   String get greeting {
     final hour = DateTime.now().hour;
@@ -210,8 +212,9 @@ import '../services/profile_service.dart';
       _firstName   = profile.firstName.isNotEmpty ? profile.firstName : _firstName;
       _lastName    = profile.lastName.isNotEmpty  ? profile.lastName  : _lastName;
       _email       = profile.email.isNotEmpty     ? profile.email     : _email;
-      _phone       = profile.phone       ?? _phone;
-      _nationality = profile.countryName ?? _nationality;
+      _phone            = profile.phone            ?? _phone;
+      _nationality      = profile.countryName      ?? _nationality;
+      _profileImageUrl  = profile.profileImageUrl  ?? _profileImageUrl;
       notifyListeners();
     } catch (_) {
       // Silently ignore — profile will show what login returned

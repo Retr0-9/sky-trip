@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'api_client.dart';
+import '../models/api_ticket_model.dart';
 
 class AddPassengerResult {
   final int passengerId;
@@ -148,5 +149,17 @@ class BookingService {
     required String token,
   }) async {
     await ApiClient.post('/api/BookingTrip/$bookId/confirm', {}, token);
+  }
+
+  /// GET /api/InfoTickets/my
+  static Future<List<ApiTicketModel>> fetchClientTickets({
+    required int clientId,
+    required String token,
+  }) async {
+    final res = await ApiClient.get('/api/InfoTickets/my', token);
+    final list = ApiClient.decodeList(res);
+    return list
+        .map((j) => ApiTicketModel.fromJson(j as Map<String, dynamic>))
+        .toList();
   }
 }
