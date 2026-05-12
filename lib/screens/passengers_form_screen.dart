@@ -329,8 +329,10 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
   Widget build(BuildContext context) {
     final isLast = _currentIndex == _total - 1;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Passenger Information'), elevation: 0),
+    return GradientBackground(
+      child: Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(title: const Text('Passenger Information'), elevation: 0, backgroundColor: Colors.transparent),
       body: Column(children: [
         _buildProgressHeader(),
         Expanded(
@@ -348,6 +350,7 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
         ),
         if (isLast) _buildBottomBar(),
       ]),
+      ),
     );
   }
 

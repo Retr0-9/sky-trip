@@ -36,7 +36,10 @@ class _TicketsScreenState extends State<TicketsScreen>
 
   Future<void> _fetchFlightTickets() async {
     final user = context.read<UserProvider>();
-    setState(() { _loadingTickets = true; _ticketsError = null; });
+    setState(() {
+      _loadingTickets = true;
+      _ticketsError = null;
+    });
     try {
       final apiTickets = await BookingService.fetchClientTickets(
         clientId: user.clientId,
@@ -49,7 +52,10 @@ class _TicketsScreenState extends State<TicketsScreen>
       });
     } on AuthException catch (e) {
       if (!mounted) return;
-      setState(() { _ticketsError = e.message; _loadingTickets = false; });
+      setState(() {
+        _ticketsError = e.message;
+        _loadingTickets = false;
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -103,9 +109,11 @@ class _TicketsScreenState extends State<TicketsScreen>
         indicatorColor: colorScheme.primary,
         indicatorWeight: 3,
         tabs: [
-          Tab(icon: const Icon(Icons.flight),         text: l10n.ticketsUpcoming),
-          Tab(icon: const Icon(Icons.hotel),          text: l10n.ticketsHotels),
-          Tab(icon: const Icon(Icons.directions_car), text: l10n.ticketsVehicles),
+          Tab(icon: const Icon(Icons.flight), text: l10n.ticketsUpcoming),
+          Tab(icon: const Icon(Icons.hotel), text: l10n.ticketsHotels),
+          Tab(
+              icon: const Icon(Icons.directions_car),
+              text: l10n.ticketsVehicles),
         ],
       ),
     );
@@ -218,8 +226,7 @@ class _TicketsScreenState extends State<TicketsScreen>
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: hotels.length,
-      itemBuilder: (context, index) =>
-          _buildHotelCard(context, hotels[index]),
+      itemBuilder: (context, index) => _buildHotelCard(context, hotels[index]),
     );
   }
 
@@ -281,8 +288,7 @@ class _TicketsScreenState extends State<TicketsScreen>
                       ),
                       Text(
                         hotel.location,
-                        style: TextStyle(
-                            color: Theme.of(context).hintColor),
+                        style: TextStyle(color: Theme.of(context).hintColor),
                       ),
                     ],
                   ),
@@ -311,8 +317,8 @@ class _TicketsScreenState extends State<TicketsScreen>
                     _buildInfoItem(context, Icons.meeting_room_outlined,
                         l10n.hotelRooms, '${hotel.numberOfRooms}'),
                     const SizedBox(width: 16),
-                    _buildInfoItem(context, Icons.people,
-                        l10n.ticketsGuests, '${hotel.numberOfGuests}'),
+                    _buildInfoItem(context, Icons.people, l10n.ticketsGuests,
+                        '${hotel.numberOfGuests}'),
                     const SizedBox(width: 16),
                     _buildInfoItem(context, Icons.king_bed_outlined,
                         l10n.hotelRoomType, hotel.roomType),
@@ -342,7 +348,7 @@ class _TicketsScreenState extends State<TicketsScreen>
       padding: const EdgeInsets.all(16),
       itemCount: bookings.length,
       itemBuilder: (context, index) =>
-          _buildVehicleCard(context, bookings[index] as BookedVehicleModel),
+          _buildVehicleCard(context, bookings[index]),
     );
   }
 
@@ -423,8 +429,7 @@ class _TicketsScreenState extends State<TicketsScreen>
                             ),
                           ),
                           const SizedBox(width: 8),
-                          const Icon(Icons.star,
-                              color: Colors.amber, size: 16),
+                          const Icon(Icons.star, color: Colors.amber, size: 16),
                           const SizedBox(width: 2),
                           Text(
                             '${booking.rating}',
@@ -447,8 +452,8 @@ class _TicketsScreenState extends State<TicketsScreen>
               children: [
                 Row(
                   children: [
-                    _buildInfoItem(context, Icons.my_location,
-                        'Pick-up', booking.pickupLocation),
+                    _buildInfoItem(context, Icons.my_location, 'Pick-up',
+                        booking.pickupLocation),
                     const SizedBox(width: 16),
                     _buildInfoItem(context, Icons.location_on_outlined,
                         'Drop-off', booking.dropLocation),
@@ -457,24 +462,24 @@ class _TicketsScreenState extends State<TicketsScreen>
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    _buildInfoItem(context, Icons.calendar_today,
-                        'From', booking.pickupDate),
+                    _buildInfoItem(context, Icons.calendar_today, 'From',
+                        booking.pickupDate),
                     const SizedBox(width: 16),
-                    _buildInfoItem(context, Icons.calendar_today,
-                        'To', booking.returnDate),
+                    _buildInfoItem(context, Icons.calendar_today, 'To',
+                        booking.returnDate),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    _buildInfoItem(context, Icons.event_seat,
-                        'Seats', '${booking.seats}'),
+                    _buildInfoItem(
+                        context, Icons.event_seat, 'Seats', '${booking.seats}'),
                     const SizedBox(width: 16),
-                    _buildInfoItem(context, Icons.luggage,
-                        'Bags', '${booking.bags}'),
+                    _buildInfoItem(
+                        context, Icons.luggage, 'Bags', '${booking.bags}'),
                     const SizedBox(width: 16),
-                    _buildInfoItem(context, Icons.timer_outlined,
-                        'Days', '${booking.days}'),
+                    _buildInfoItem(context, Icons.timer_outlined, 'Days',
+                        '${booking.days}'),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -494,8 +499,7 @@ class _TicketsScreenState extends State<TicketsScreen>
                       child: Text(
                         feature,
                         style: TextStyle(
-                            fontSize: 12,
-                            color: Theme.of(context).hintColor),
+                            fontSize: 12, color: Theme.of(context).hintColor),
                       ),
                     );
                   }).toList(),
@@ -507,8 +511,7 @@ class _TicketsScreenState extends State<TicketsScreen>
                     Text(
                       '\$${booking.price.toStringAsFixed(0)}/day',
                       style: TextStyle(
-                          fontSize: 14,
-                          color: Theme.of(context).hintColor),
+                          fontSize: 14, color: Theme.of(context).hintColor),
                     ),
                     Text(
                       'Total: \$${booking.totalPrice.toStringAsFixed(2)}',

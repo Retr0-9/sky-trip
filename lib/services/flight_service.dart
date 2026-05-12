@@ -21,7 +21,7 @@ class FlightService {
   ) async {
     final res = await ApiClient.post(
       '/api/FlightSchedules/oneway',
-      {'from': from, 'to': to, 'date': date.toIso8601String()},
+      {'from': from, 'to': to, 'date': date.toIso8601String().substring(0, 10)},
       token,
     );
     return _parseList(res.body);
@@ -40,8 +40,8 @@ class FlightService {
       {
         'from': from,
         'to': to,
-        'departureDate': departureDate.toIso8601String(),
-        'returnDate': returnDate.toIso8601String(),
+        'departureDate': departureDate.toIso8601String().substring(0, 10),
+        'returnDate': returnDate.toIso8601String().substring(0, 10),
         'maxItineraries': 10,
         'maxOptionsPerLeg': 5,
       },
@@ -71,23 +71,27 @@ class FlightService {
 
   static List<FlightScheduleModel> _parseList(String body) {
     final decoded = jsonDecode(body);
+
+    // Format: {tripType, itineraries: [{totalPrice, segments: [{...}]}]}
+    if (decoded is Map && decoded['itineraries'] is List) {
+      final itineraries = decoded['itineraries'] as List;
+      return itineraries.expand((it) {
+        final segments = (it['segments'] as List?) ?? [];
+        final itTotal = it['totalPrice'];
+        return segments.map((seg) {
+          final m = Map<String, dynamic>.from(seg as Map);
+          m['totalPrice'] ??= itTotal;
+          return FlightScheduleModel.fromJson(m);
+        });
+      }).toList();
+    }
+
     if (decoded is List) {
       return decoded
-          .map((j) =>
-              FlightScheduleModel.fromJson(j as Map<String, dynamic>))
+          .map((j) => FlightScheduleModel.fromJson(j as Map<String, dynamic>))
           .toList();
     }
-    // Some endpoints wrap the list in an object
-    if (decoded is Map) {
-      final vals = decoded.values.firstWhere(
-        (v) => v is List,
-        orElse: () => <dynamic>[],
-      ) as List<dynamic>;
-      return vals
-          .map((j) =>
-              FlightScheduleModel.fromJson(j as Map<String, dynamic>))
-          .toList();
-    }
+
     return [];
   }
 }

@@ -23,16 +23,29 @@ class FlightScheduleModel {
   });
 
   factory FlightScheduleModel.fromJson(Map<String, dynamic> json) {
+    String s(List<String> keys) {
+      for (final k in keys) {
+        if (json[k] != null) return (json[k] as String).trim();
+      }
+      return '';
+    }
+    num n(List<String> keys) {
+      for (final k in keys) {
+        if (json[k] != null) return json[k] as num;
+      }
+      return 0;
+    }
+
     return FlightScheduleModel(
-      flightScheduleId: json['flightScheduleID'] as int,
-      departureCity:    (json['departureCity']   as String? ?? '').trim(),
-      arrivalCity:      (json['arrivalCity']      as String? ?? '').trim(),
-      departureTime:    _trimTime(json['departureTime'] as String? ?? ''),
-      arrivalTime:      _trimTime(json['arrivalTime']   as String? ?? ''),
-      flightDate:       DateTime.parse(json['flightDate'] as String),
-      basePrice:        (json['basePrice']  as num).toDouble(),
-      classFee:         (json['classFee']   as num? ?? 0).toDouble(),
-      totalPrice:       (json['totalPrice'] as num? ?? 0).toDouble(),
+      flightScheduleId: ((json['flightScheduleId'] ?? json['flightScheduleID']) as num?)?.toInt() ?? 0,
+      departureCity:    s(['departureCity', 'DepartureCity', 'from', 'From']),
+      arrivalCity:      s(['arrivalCity',   'ArrivalCity',   'to',   'To']),
+      departureTime:    _trimTime(s(['departureTime', 'DepartureTime'])),
+      arrivalTime:      _trimTime(s(['arrivalTime',   'ArrivalTime'])),
+      flightDate:       DateTime.parse((json['date'] ?? json['flightDate'] ?? json['FlightDate'] ?? '1970-01-01') as String),
+      basePrice:        n(['basePrice',  'BasePrice']).toDouble(),
+      classFee:         n(['classFee',   'ClassFee']).toDouble(),
+      totalPrice:       n(['totalPrice', 'TotalPrice']).toDouble(),
     );
   }
 

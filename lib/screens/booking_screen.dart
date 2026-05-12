@@ -62,22 +62,30 @@ class _BookingScreenState extends State<BookingScreen> {
         FlightService.getTripTypes(token),
       ]);
       if (!mounted) return;
-      final cities    = results[0] as List<String>;
-      final classes   = results[1] as List<PassengerClassModel>;
+      final cities = results[0] as List<String>;
+      final classes = results[1] as List<PassengerClassModel>;
       final tripTypes = results[2] as List<TripTypeModel>;
 
       setState(() {
-        _cities          = cities;
-        _classes         = classes;
-        _tripTypes       = tripTypes;
-        _selectedClass   = classes.isNotEmpty   ? classes.first   : null;
+        _cities = cities;
+        _classes = classes;
+        _tripTypes = tripTypes;
+        _selectedClass = classes.isNotEmpty ? classes.first : null;
         _selectedTripType = tripTypes.isNotEmpty ? tripTypes.first : null;
-        _loadingMeta     = false;
+        _loadingMeta = false;
       });
     } on AuthException catch (e) {
-      if (mounted) setState(() { _metaError = e.message; _loadingMeta = false; });
+      if (mounted)
+        setState(() {
+          _metaError = e.message;
+          _loadingMeta = false;
+        });
     } catch (_) {
-      if (mounted) setState(() { _metaError = 'Failed to load flight data.'; _loadingMeta = false; });
+      if (mounted)
+        setState(() {
+          _metaError = 'Failed to load flight data.';
+          _loadingMeta = false;
+        });
     }
   }
 
@@ -104,9 +112,10 @@ class _BookingScreenState extends State<BookingScreen> {
             builder: (_, ctrl) => Column(children: [
               const SizedBox(height: 12),
               Container(
-                width: 40, height: 4,
+                width: 40,
+                height: 4,
                 decoration: BoxDecoration(
-                  color: cs.outlineVariant,              // was: Colors.grey.shade300
+                  color: cs.outlineVariant, // was: Colors.grey.shade300
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -117,7 +126,8 @@ class _BookingScreenState extends State<BookingScreen> {
                   decoration: InputDecoration(
                     hintText: AppLocalizations.of(context)!.bookingSearchCity,
                     prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   ),
                   onChanged: (v) => setS(() => query = v),
@@ -128,7 +138,8 @@ class _BookingScreenState extends State<BookingScreen> {
                   controller: ctrl,
                   itemCount: filtered.length,
                   itemBuilder: (_, i) => ListTile(
-                    leading: const Icon(Icons.flight_takeoff, color: AppColors.cyan),
+                    leading:
+                        const Icon(Icons.flight_takeoff, color: AppColors.cyan),
                     title: Text(filtered[i]),
                     onTap: () => Navigator.pop(ctx, filtered[i]),
                   ),
@@ -145,7 +156,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
   // ── Date picker ──────────────────────────────────────────────
   Future<void> _pickDate({required bool isDeparture}) async {
-    final now   = DateTime.now();
+    final now = DateTime.now();
     final first = isDeparture ? now : (_departureDate ?? now);
     final picked = await showDatePicker(
       context: context,
@@ -163,7 +174,8 @@ class _BookingScreenState extends State<BookingScreen> {
     setState(() {
       if (isDeparture) {
         _departureDate = picked;
-        if (_returnDate != null && _returnDate!.isBefore(picked)) _returnDate = null;
+        if (_returnDate != null && _returnDate!.isBefore(picked))
+          _returnDate = null;
       } else {
         _returnDate = picked;
       }
@@ -182,8 +194,8 @@ class _BookingScreenState extends State<BookingScreen> {
         // ── Dynamic: subtitle text color ──
         final cs = Theme.of(ctx).colorScheme;
 
-        Widget row(String label, String sub, int val,
-                VoidCallback dec, VoidCallback inc) =>
+        Widget row(String label, String sub, int val, VoidCallback dec,
+                VoidCallback inc) =>
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 24),
               child: Row(children: [
@@ -191,10 +203,13 @@ class _BookingScreenState extends State<BookingScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-                      Text(sub, style: TextStyle(
-                          color: cs.onSurfaceVariant,   // was: Colors.grey.shade500
-                          fontSize: 12)),
+                      Text(label,
+                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                      Text(sub,
+                          style: TextStyle(
+                              color: cs
+                                  .onSurfaceVariant, // was: Colors.grey.shade500
+                              fontSize: 12)),
                     ],
                   ),
                 ),
@@ -202,7 +217,9 @@ class _BookingScreenState extends State<BookingScreen> {
                     onPressed: dec,
                     icon: const Icon(Icons.remove_circle_outline),
                     color: AppColors.cyan),
-                Text('$val', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                Text('$val',
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w600)),
                 IconButton(
                     onPressed: inc,
                     icon: const Icon(Icons.add_circle_outline),
@@ -213,12 +230,33 @@ class _BookingScreenState extends State<BookingScreen> {
         return Column(mainAxisSize: MainAxisSize.min, children: [
           const SizedBox(height: 16),
           Text(AppLocalizations.of(ctx)!.bookingPassengers,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              style:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const Divider(height: 24),
-          row(AppLocalizations.of(ctx)!.bookingAdults,   AppLocalizations.of(ctx)!.bookingAdultSubtext,  a,   () { if (a > 1)   setS(() => a--); },   () { setS(() => a++); }),
-          row(AppLocalizations.of(ctx)!.bookingYouth,    AppLocalizations.of(ctx)!.bookingYouthSubtext,   y,   () { if (y > 0)   setS(() => y--); },   () { setS(() => y++); }),
-          row(AppLocalizations.of(ctx)!.bookingChildren, AppLocalizations.of(ctx)!.bookingChildrenSubtext, c,   () { if (c > 0)   setS(() => c--); },   () { setS(() => c++); }),
-          row(AppLocalizations.of(ctx)!.bookingInfants,  AppLocalizations.of(ctx)!.bookingInfantsSubtext,  inf, () { if (inf > 0) setS(() => inf--); }, () { setS(() => inf++); }),
+          row(AppLocalizations.of(ctx)!.bookingAdults,
+              AppLocalizations.of(ctx)!.bookingAdultSubtext, a, () {
+            if (a > 1) setS(() => a--);
+          }, () {
+            setS(() => a++);
+          }),
+          row(AppLocalizations.of(ctx)!.bookingYouth,
+              AppLocalizations.of(ctx)!.bookingYouthSubtext, y, () {
+            if (y > 0) setS(() => y--);
+          }, () {
+            setS(() => y++);
+          }),
+          row(AppLocalizations.of(ctx)!.bookingChildren,
+              AppLocalizations.of(ctx)!.bookingChildrenSubtext, c, () {
+            if (c > 0) setS(() => c--);
+          }, () {
+            setS(() => c++);
+          }),
+          row(AppLocalizations.of(ctx)!.bookingInfants,
+              AppLocalizations.of(ctx)!.bookingInfantsSubtext, inf, () {
+            if (inf > 0) setS(() => inf--);
+          }, () {
+            setS(() => inf++);
+          }),
           Padding(
             padding: const EdgeInsets.all(20),
             child: SizedBox(
@@ -228,10 +266,16 @@ class _BookingScreenState extends State<BookingScreen> {
                   backgroundColor: AppColors.cyan,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () {
-                  setState(() { _adults = a; _youth = y; _children = c; _infants = inf; });
+                  setState(() {
+                    _adults = a;
+                    _youth = y;
+                    _children = c;
+                    _infants = inf;
+                  });
                   Navigator.pop(ctx);
                 },
                 child: Text(AppLocalizations.of(ctx)!.dialogConfirm),
@@ -257,17 +301,22 @@ class _BookingScreenState extends State<BookingScreen> {
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const Divider(height: 24),
         ..._classes.map((cls) => ListTile(
-          leading: const Icon(Icons.airline_seat_recline_extra, color: AppColors.cyan),
-          title: Text(cls.name),
-          subtitle: cls.fees > 0 ? Text('+${cls.fees.toStringAsFixed(0)} ${Provider.of<UserProvider>(ctx).currency}') : null,
-          trailing: _selectedClass?.classId == cls.classId
-              ? const Icon(Icons.check_circle, color: AppColors.cyan) : null,
-          onTap: () {
-            setState(() => _selectedClass = cls);
-            context.read<BookingProvider>().setSelectedClassId(cls.classId);
-            Navigator.pop(ctx);
-          },
-        )),
+              leading: const Icon(Icons.airline_seat_recline_extra,
+                  color: AppColors.cyan),
+              title: Text(cls.name),
+              subtitle: cls.fees > 0
+                  ? Text(
+                      '+${cls.fees.toStringAsFixed(0)} ${Provider.of<UserProvider>(ctx).currency}')
+                  : null,
+              trailing: _selectedClass?.classId == cls.classId
+                  ? const Icon(Icons.check_circle, color: AppColors.cyan)
+                  : null,
+              onTap: () {
+                setState(() => _selectedClass = cls);
+                context.read<BookingProvider>().setSelectedClassId(cls.classId);
+                Navigator.pop(ctx);
+              },
+            )),
         const SizedBox(height: 16),
       ]),
     );
@@ -280,34 +329,38 @@ class _BookingScreenState extends State<BookingScreen> {
   // ── Search ────────────────────────────────────────────────────
   Future<void> _search() async {
     if (_fromCity.isEmpty || _toCity.isEmpty) {
-      _snack(AppLocalizations.of(context)!.bookingErrorSelectCities); return;
+      _snack(AppLocalizations.of(context)!.bookingErrorSelectCities);
+      return;
     }
     if (_fromCity == _toCity) {
-      _snack(AppLocalizations.of(context)!.bookingErrorDifferentCities); return;
+      _snack(AppLocalizations.of(context)!.bookingErrorDifferentCities);
+      return;
     }
     if (_departureDate == null) {
-      _snack(AppLocalizations.of(context)!.bookingErrorSelectDeparture); return;
+      _snack(AppLocalizations.of(context)!.bookingErrorSelectDeparture);
+      return;
     }
     if (_isRoundTrip && _returnDate == null) {
-      _snack(AppLocalizations.of(context)!.bookingErrorSelectReturn); return;
+      _snack(AppLocalizations.of(context)!.bookingErrorSelectReturn);
+      return;
     }
 
     setState(() => _searchLoading = true);
 
-    final token  = context.read<UserProvider>().token;
+    final token = context.read<UserProvider>().token;
     final search = BookingSearchModel(
-      fromCode:      _fromCity,
-      fromCity:      _fromCity,
-      toCode:        _toCity,
-      toCity:        _toCity,
+      fromCode: _fromCity,
+      fromCity: _fromCity,
+      toCode: _toCity,
+      toCity: _toCity,
       departureDate: _departureDate!,
-      returnDate:    _returnDate,
-      tripType:      _selectedTripType?.name ?? 'one_way',
-      adults:        _adults,
-      youth:         _youth,
-      children:      _children,
-      infants:       _infants,
-      travelClass:   _selectedClass?.name ?? 'Economy',
+      returnDate: _returnDate,
+      tripType: _selectedTripType?.name ?? 'one_way',
+      adults: _adults,
+      youth: _youth,
+      children: _children,
+      infants: _infants,
+      travelClass: _selectedClass?.name ?? 'Economy',
     );
 
     try {
@@ -326,8 +379,9 @@ class _BookingScreenState extends State<BookingScreen> {
           arguments: {'search': search, 'flights': results});
     } on AuthException catch (e) {
       _snack(e.message);
-    } catch (_) {
-      _snack(AppLocalizations.of(context)!.bookingErrorSearchFailed);
+    } catch (e, st) {
+      debugPrint('SEARCH ERROR: $e\n$st');
+      _snack(e.toString());
     } finally {
       if (mounted) setState(() => _searchLoading = false);
     }
@@ -340,17 +394,22 @@ class _BookingScreenState extends State<BookingScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loadingMeta) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.cyan));
+      return const Center(
+          child: CircularProgressIndicator(color: AppColors.cyan));
     }
     if (_metaError.isNotEmpty) {
-      return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+      return Center(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
         const Icon(Icons.wifi_off, size: 48, color: Colors.grey),
         const SizedBox(height: 12),
         Text(_metaError, textAlign: TextAlign.center),
         const SizedBox(height: 12),
         ElevatedButton(
             onPressed: () {
-              setState(() { _loadingMeta = true; _metaError = ''; });
+              setState(() {
+                _loadingMeta = true;
+                _metaError = '';
+              });
               _loadMeta();
             },
             child: Text(AppLocalizations.of(context)!.dialogRetry)),
@@ -358,27 +417,30 @@ class _BookingScreenState extends State<BookingScreen> {
     }
 
     // ── Dynamic: theme-aware tokens for the whole build ──
-    final cs      = Theme.of(context).colorScheme;
-    final isDark  = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final user      = context.watch<UserProvider>();
-    final hour      = DateTime.now().hour;
-    final greeting  = hour < 12 ? AppLocalizations.of(context)!.greetingMorning : hour < 17 ? AppLocalizations.of(context)!.greetingAfternoon : AppLocalizations.of(context)!.greetingEvening;
-    final totalPax  = _adults + _youth + _children + _infants;
+    final user = context.watch<UserProvider>();
+    final hour = DateTime.now().hour;
+    final greeting = hour < 12
+        ? AppLocalizations.of(context)!.greetingMorning
+        : hour < 17
+            ? AppLocalizations.of(context)!.greetingAfternoon
+            : AppLocalizations.of(context)!.greetingEvening;
+    final totalPax = _adults + _youth + _children + _infants;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-
         // ── Greeting ─────────────────────────────────────────────
         Row(children: [
           Icon(hour < 12 ? Icons.wb_sunny_outlined : Icons.wb_twilight_outlined,
               color: Colors.orange, size: 20),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(AppLocalizations.of(context)!.homeGreeting(
-                greeting,
-                user.firstName.isEmpty ? 'Traveller' : user.firstName),
+            child: Text(
+                AppLocalizations.of(context)!.homeGreeting(greeting,
+                    user.firstName.isEmpty ? 'Traveller' : user.firstName),
                 style: TextStyle(
                   fontSize: 16,
                   color: cs.onSurfaceVariant,
@@ -408,7 +470,7 @@ class _BookingScreenState extends State<BookingScreen> {
                       color: selected
                           ? AppColors.cyanLight
                           : (isDark
-                              ? cs.surfaceVariant          // was: Colors.grey.shade200
+                              ? cs.surfaceVariant // was: Colors.grey.shade200
                               : Colors.grey.shade200),
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -418,8 +480,9 @@ class _BookingScreenState extends State<BookingScreen> {
                           fontSize: 12,
                           color: selected
                               ? AppColors.cyanDark
-                              : cs.onSurfaceVariant,       // was: Colors.grey.shade600
-                          fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                              : cs.onSurfaceVariant, // was: Colors.grey.shade600
+                          fontWeight:
+                              selected ? FontWeight.w600 : FontWeight.normal,
                         )),
                   ),
                 ),
@@ -450,7 +513,8 @@ class _BookingScreenState extends State<BookingScreen> {
         // ── Departure Date ────────────────────────────────────────
         _labelDep(context),
         const SizedBox(height: 8),
-        _dateTile(context,
+        _dateTile(
+          context,
           value: _departureDate != null ? _formatDate(_departureDate!) : null,
           hint: AppLocalizations.of(context)!.bookingSelectDate,
           onTap: () => _pickDate(isDeparture: true),
@@ -461,7 +525,8 @@ class _BookingScreenState extends State<BookingScreen> {
         if (_isRoundTrip) ...[
           _labelRet(context),
           const SizedBox(height: 8),
-          _dateTile(context,
+          _dateTile(
+            context,
             value: _returnDate != null ? _formatDate(_returnDate!) : null,
             hint: AppLocalizations.of(context)!.bookingSelectReturnDate,
             onTap: () => _pickDate(isDeparture: false),
@@ -471,25 +536,34 @@ class _BookingScreenState extends State<BookingScreen> {
 
         // ── Passengers + Class ────────────────────────────────────
         Row(children: [
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _labelPax(context),
-            const SizedBox(height: 8),
-            _tappableTile(context,
-              icon: Icons.people_outline,
-              text: AppLocalizations.of(context)!.bookingPassengersCount(totalPax),
-              onTap: _showPassengerSelector,
-            ),
-          ])),
+          Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                _labelPax(context),
+                const SizedBox(height: 8),
+                _tappableTile(
+                  context,
+                  icon: Icons.people_outline,
+                  text: AppLocalizations.of(context)!
+                      .bookingPassengersCount(totalPax),
+                  onTap: _showPassengerSelector,
+                ),
+              ])),
           const SizedBox(width: 16),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _labelClass(context),
-            const SizedBox(height: 8),
-            _tappableTile(context,
-              icon: Icons.airline_seat_recline_normal,
-              text: _selectedClass?.name ?? 'Economy',
-              onTap: _classes.isEmpty ? null : _showClassSelector,
-            ),
-          ])),
+          Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                _labelClass(context),
+                const SizedBox(height: 8),
+                _tappableTile(
+                  context,
+                  icon: Icons.airline_seat_recline_normal,
+                  text: _selectedClass?.name ?? 'Economy',
+                  onTap: _classes.isEmpty ? null : _showClassSelector,
+                ),
+              ])),
         ]),
         const SizedBox(height: 32),
 
@@ -502,14 +576,19 @@ class _BookingScreenState extends State<BookingScreen> {
               backgroundColor: AppColors.cyan,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             child: _searchLoading
-                ? const SizedBox(height: 20, width: 20,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2.5))
                 : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                     Text(AppLocalizations.of(context)!.bookingSearch,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600)),
                     const SizedBox(width: 8),
                     const Icon(Icons.search, size: 20),
                   ]),
@@ -522,52 +601,77 @@ class _BookingScreenState extends State<BookingScreen> {
   // ── Small helpers ─────────────────────────────────────────────
 
   // ── Dynamic: label color adapts to theme ──
-  Widget _label(BuildContext context) => Text(AppLocalizations.of(context)!.bookingFromLabel, style: TextStyle(
-      fontSize: 14, fontWeight: FontWeight.w500,
-      color: Theme.of(context).colorScheme.onSurface));  // was: Colors.black87
+  Widget _label(BuildContext context) => Text(
+      AppLocalizations.of(context)!.bookingFromLabel,
+      style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color:
+              Theme.of(context).colorScheme.onSurface)); // was: Colors.black87
 
-  Widget _labelTo(BuildContext context) => Text(AppLocalizations.of(context)!.bookingToLabel, style: TextStyle(
-      fontSize: 14, fontWeight: FontWeight.w500,
-      color: Theme.of(context).colorScheme.onSurface));
+  Widget _labelTo(BuildContext context) =>
+      Text(AppLocalizations.of(context)!.bookingToLabel,
+          style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Theme.of(context).colorScheme.onSurface));
 
-  Widget _labelDep(BuildContext context) => Text(AppLocalizations.of(context)!.bookingDepartureDate, style: TextStyle(
-      fontSize: 14, fontWeight: FontWeight.w500,
-      color: Theme.of(context).colorScheme.onSurface));
+  Widget _labelDep(BuildContext context) =>
+      Text(AppLocalizations.of(context)!.bookingDepartureDate,
+          style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Theme.of(context).colorScheme.onSurface));
 
-  Widget _labelRet(BuildContext context) => Text(AppLocalizations.of(context)!.bookingReturnDate, style: TextStyle(
-      fontSize: 14, fontWeight: FontWeight.w500,
-      color: Theme.of(context).colorScheme.onSurface));
+  Widget _labelRet(BuildContext context) =>
+      Text(AppLocalizations.of(context)!.bookingReturnDate,
+          style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Theme.of(context).colorScheme.onSurface));
 
-  Widget _labelPax(BuildContext context) => Text(AppLocalizations.of(context)!.bookingPassengers, style: TextStyle(
-      fontSize: 14, fontWeight: FontWeight.w500,
-      color: Theme.of(context).colorScheme.onSurface));
+  Widget _labelPax(BuildContext context) =>
+      Text(AppLocalizations.of(context)!.bookingPassengers,
+          style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Theme.of(context).colorScheme.onSurface));
 
-  Widget _labelClass(BuildContext context) => Text(AppLocalizations.of(context)!.bookingClass, style: TextStyle(
-      fontSize: 14, fontWeight: FontWeight.w500,
-      color: Theme.of(context).colorScheme.onSurface));
+  Widget _labelClass(BuildContext context) =>
+      Text(AppLocalizations.of(context)!.bookingClass,
+          style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Theme.of(context).colorScheme.onSurface));
 
   Widget _cityTile(BuildContext context,
-      {required String value, required String hint, required VoidCallback onTap}) {
+      {required String value,
+      required String hint,
+      required VoidCallback onTap}) {
     final cs = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: cs.surfaceVariant,                        // was: Colors.grey.shade100
+          color: cs.surfaceVariant, // was: Colors.grey.shade100
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-              color: value.isNotEmpty ? AppColors.cyan : cs.outlineVariant), // was: Colors.grey.shade300
+              color: value.isNotEmpty
+                  ? AppColors.cyan
+                  : cs.outlineVariant), // was: Colors.grey.shade300
         ),
         child: Row(children: [
           Icon(Icons.location_on_outlined,
-              color: value.isNotEmpty ? AppColors.cyan : cs.onSurfaceVariant), // was: Colors.grey.shade400
+              color: value.isNotEmpty
+                  ? AppColors.cyan
+                  : cs.onSurfaceVariant), // was: Colors.grey.shade400
           const SizedBox(width: 12),
           Text(value.isNotEmpty ? value : hint,
               style: TextStyle(
                   color: value.isNotEmpty
-                      ? cs.onSurface                      // was: Colors.black87
-                      : cs.onSurfaceVariant)),            // was: Colors.grey.shade500
+                      ? cs.onSurface // was: Colors.black87
+                      : cs.onSurfaceVariant)), // was: Colors.grey.shade500
         ]),
       ),
     );
@@ -581,20 +685,24 @@ class _BookingScreenState extends State<BookingScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: cs.surfaceVariant,                        // was: Colors.grey.shade100
+          color: cs.surfaceVariant, // was: Colors.grey.shade100
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-              color: value != null ? AppColors.cyan : cs.outlineVariant), // was: Colors.grey.shade300
+              color: value != null
+                  ? AppColors.cyan
+                  : cs.outlineVariant), // was: Colors.grey.shade300
         ),
         child: Row(children: [
           Icon(Icons.calendar_today_outlined,
-              color: value != null ? AppColors.cyan : cs.onSurfaceVariant), // was: Colors.grey.shade400
+              color: value != null
+                  ? AppColors.cyan
+                  : cs.onSurfaceVariant), // was: Colors.grey.shade400
           const SizedBox(width: 12),
           Text(value ?? hint,
               style: TextStyle(
                   color: value != null
-                      ? cs.onSurface                      // was: Colors.black87
-                      : cs.onSurfaceVariant)),            // was: Colors.grey.shade500
+                      ? cs.onSurface // was: Colors.black87
+                      : cs.onSurfaceVariant)), // was: Colors.grey.shade500
         ]),
       ),
     );
@@ -608,22 +716,26 @@ class _BookingScreenState extends State<BookingScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         decoration: BoxDecoration(
-          color: cs.surfaceVariant,                        // was: Colors.grey.shade100
+          color: cs.surfaceVariant, // was: Colors.grey.shade100
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: cs.outlineVariant),   // was: Colors.grey.shade300
+          border:
+              Border.all(color: cs.outlineVariant), // was: Colors.grey.shade300
         ),
         child: Row(children: [
-          Icon(icon, color: cs.onSurfaceVariant, size: 18), // was: Colors.grey.shade400
+          Icon(icon,
+              color: cs.onSurfaceVariant,
+              size: 18), // was: Colors.grey.shade400
           const SizedBox(width: 8),
           Expanded(
             child: Text(text,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                    color: cs.onSurfaceVariant,            // was: Colors.grey.shade700
+                    color: cs.onSurfaceVariant, // was: Colors.grey.shade700
                     fontSize: 13)),
           ),
           Icon(Icons.keyboard_arrow_down,
-              color: cs.onSurfaceVariant, size: 18),       // was: Colors.grey.shade400
+              color: cs.onSurfaceVariant,
+              size: 18), // was: Colors.grey.shade400
         ]),
       ),
     );
@@ -632,7 +744,18 @@ class _BookingScreenState extends State<BookingScreen> {
   String _formatDate(DateTime d) => '${_month(d.month)} ${d.day}, ${d.year}';
 
   String _month(int m) => const [
-        '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        '',
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
       ][m];
 }

@@ -113,17 +113,17 @@ class BookingService {
   }) async {
     final fields = <String, String>{
       'FirstName':         data.firstName,
+      'SecondName':        data.secondName ?? '',
+      'ThirdName':         data.thirdName  ?? '',
       'LastName':          data.lastName,
       'Email':             data.email,
       'Phone':             data.phone,
-      'BirthDate':         data.birthDate.toIso8601String(),
+      'BirthDate':         data.birthDate.toIso8601String().substring(0, 10),
       'Gender':            data.gender,
       'IssueCountryId':    data.issueCountryId.toString(),
       'DocumentationType': data.documentationType,
-      'ExpirationDate':    data.expirationDate.toIso8601String(),
+      'ExpirationDate':    data.expirationDate.toIso8601String().substring(0, 10),
     };
-    if (data.secondName != null) fields['SecondName'] = data.secondName!;
-    if (data.thirdName  != null) fields['ThirdName']  = data.thirdName!;
 
     final files = <String, http.MultipartFile>{};
     if (data.documentFile != null) {

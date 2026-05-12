@@ -42,10 +42,10 @@ class FlightCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: colorScheme.outline), 
+          border: Border.all(color: colorScheme.outline),
           boxShadow: [
             BoxShadow(
-              color: colorScheme.shadow.withOpacity(0.05), 
+              color: colorScheme.shadow.withOpacity(0.05),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -64,7 +64,8 @@ class FlightCard extends StatelessWidget {
                     color: colorScheme.onSurface.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.flight, color: colorScheme.primary, size: 22),
+                  child:
+                      Icon(Icons.flight, color: colorScheme.primary, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -128,9 +129,13 @@ class FlightCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Container(width: 40, height: 1, color: colorScheme.outline),
-                        Icon(Icons.flight_takeoff, size: 16, color: colorScheme.onSurface.withOpacity(0.5)),
-                        Container(width: 40, height: 1, color: colorScheme.outline),
+                        Container(
+                            width: 40, height: 1, color: colorScheme.outline),
+                        Icon(Icons.flight_takeoff,
+                            size: 16,
+                            color: colorScheme.onSurface.withOpacity(0.5)),
+                        Container(
+                            width: 40, height: 1, color: colorScheme.outline),
                       ],
                     ),
                     const SizedBox(height: 4),
