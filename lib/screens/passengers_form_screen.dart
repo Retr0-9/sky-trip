@@ -38,6 +38,8 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
 
   // ── Current-passenger form controllers ───────────────────────
   final _firstNameCtrl = TextEditingController();
+  final _secondNameCtrl = TextEditingController();
+  final _thirdNameCtrl = TextEditingController();
   final _lastNameCtrl  = TextEditingController();
   final _emailCtrl     = TextEditingController();
   final _phoneCtrl     = TextEditingController();
@@ -71,6 +73,8 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
   @override
   void dispose() {
     _firstNameCtrl.dispose();
+    _secondNameCtrl.dispose();
+    _thirdNameCtrl.dispose();
     _lastNameCtrl.dispose();
     _emailCtrl.dispose();
     _phoneCtrl.dispose();
@@ -91,6 +95,8 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
   void _saveCurrentToData() {
     _data[_currentIndex] = {
       'firstName':   _firstNameCtrl.text.trim(),
+      'secondName':  _secondNameCtrl.text.trim(),
+      'thirdName':   _thirdNameCtrl.text.trim(),
       'lastName':    _lastNameCtrl.text.trim(),
       'email':       _emailCtrl.text.trim(),
       'phone':       _phoneCtrl.text.trim(),
@@ -107,6 +113,8 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
   void _loadDataIntoForm(int index) {
     final d = _data[index];
     _firstNameCtrl.text = d['firstName'] ?? '';
+    _secondNameCtrl.text = d['secondName'] ?? '';
+    _thirdNameCtrl.text = d['thirdName'] ?? '';
     _lastNameCtrl.text  = d['lastName']  ?? '';
     _emailCtrl.text     = d['email']     ?? '';
     _phoneCtrl.text     = d['phone']     ?? '';
@@ -240,6 +248,8 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
   // ── Validation ────────────────────────────────────────────────
   String? _validateCurrent() {
     if (_firstNameCtrl.text.trim().isEmpty) return 'First name is required.';
+    if (_secondNameCtrl.text.trim().isEmpty) return 'Second name is required.';
+    if (_thirdNameCtrl.text.trim().isEmpty) return 'Third name is required.';
     if (_lastNameCtrl.text.trim().isEmpty)  return 'Last name is required.';
     if (_emailCtrl.text.trim().isEmpty || !_emailCtrl.text.contains('@')) {
       return 'Enter a valid email.';
@@ -258,7 +268,7 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
 
     for (int i = 0; i < _total; i++) {
       final d = _data[i];
-      if ((d['firstName'] ?? '').isEmpty || (d['lastName'] ?? '').isEmpty ||
+      if ((d['firstName'] ?? '').isEmpty || (d['secondName'] ?? '').isEmpty || (d['thirdName'] ?? '').isEmpty || (d['lastName'] ?? '').isEmpty ||
           (d['email'] ?? '').isEmpty     || (d['gender']    ?? '').isEmpty ||
           d['dob'] == null               || d['countryId']  == null) {
         _snack('Please complete passenger ${i + 1} details.');
@@ -279,6 +289,8 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
           bookId: bookId,
           data: PassengerFormData(
             firstName:       d['firstName'],
+              secondName:      d['secondName'],
+              thirdName:       d['thirdName'],
             lastName:        d['lastName'],
             email:           d['email'],
             phone:           d['phone'] ?? '',
@@ -407,9 +419,16 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      // Name row
+      // Name rows
       Row(children: [
-        Expanded(child: _field('First Name *', _firstNameCtrl, Icons.person_outline)),
+        Expanded(child: _field('First Name *',  _firstNameCtrl,  Icons.person_outline)),
+        const SizedBox(width: 12),
+        Expanded(child: _field('Second Name *', _secondNameCtrl, Icons.person_outline)),
+      ]),
+      const SizedBox(height: 16),
+
+      Row(children: [
+        Expanded(child: _field('Third Name *', _thirdNameCtrl, Icons.person_outline)),
         const SizedBox(width: 12),
         Expanded(child: _field('Last Name *',  _lastNameCtrl,  Icons.person_outline)),
       ]),
