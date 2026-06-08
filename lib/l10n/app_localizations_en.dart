@@ -12,7 +12,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Sky Trip';
 
   @override
-  String get appVersion => 'SkyTrip v1.0.0';
+  String get appVersion => 'SkyTrip v1.0.5';
 
   @override
   String homeGreeting(String greeting, String firstName) {

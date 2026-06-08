@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'api_client.dart';
 
 class PaymentService {
@@ -16,7 +17,7 @@ class PaymentService {
   }
 
   /// GET /api/payments/my/status/{ticketId}
-  /// Returns the payment status string (e.g. 'Paid', 'Pending', 'Failed')
+  /// Returns 'Paid' when payment confirmed, otherwise 'Pending'.
   static Future<String> getPaymentStatus({
     required int ticketId,
     required String token,
@@ -25,8 +26,23 @@ class PaymentService {
       '/api/payments/my/status/$ticketId',
       token,
     );
-    // Response may be a plain string or a JSON object
-    final raw = res.body.trim().replaceAll('"', '');
-    return raw;
+    try {
+      final body = jsonDecode(res.body);
+      if (body is Map) {
+        // Check isConfirmed first (truthy = paid)
+        final confirmed = body['isConfirmed'];
+        if (confirmed == true || confirmed == 1) return 'Paid';
+        // Then check paymentStatus string
+        final ps = (body['paymentStatus'] ?? body['PaymentStatus'] ?? '') as String;
+        if (ps.toLowerCase() == 'paid') return 'Paid';
+        // Fall back to bookingStatus
+        final bs = (body['bookingStatus'] ?? body['BookingStatus'] ?? '') as String;
+        return bs.isEmpty ? 'Pending' : bs;
+      }
+      // Plain string response e.g. "Paid"
+      return (body as String).trim();
+    } catch (_) {
+      return res.body.trim().replaceAll('"', '');
+    }
   }
 }

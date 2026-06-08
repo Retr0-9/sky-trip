@@ -19,7 +19,8 @@ class PaymentScreen extends StatefulWidget {
   State<PaymentScreen> createState() => _PaymentScreenState();
 }
 
-class _PaymentScreenState extends State<PaymentScreen> {
+class _PaymentScreenState extends State<PaymentScreen>
+    with WidgetsBindingObserver {
   FlightScheduleModel? _schedule;
   BookingSearchModel?  _search;
   bool _loaded = false;
@@ -29,6 +30,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
   bool _confirmed  = false;
   String _status   = '';   // 'waiting' | 'paid' | 'failed'
   Timer? _pollTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
 
   @override
   void didChangeDependencies() {
@@ -42,8 +49,49 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pollTimer?.cancel();
     super.dispose();
+  }
+
+  // Fires when user closes the Chrome Custom Tab and returns to the app.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && !_confirmed) {
+      _checkPaymentNow();
+    }
+  }
+
+  bool _checking = false;
+
+  Future<void> _checkPaymentNow() async {
+    if (_checking || _confirmed) return;
+    final booking  = context.read<BookingProvider>();
+    final ticketId = booking.ticketId;
+    if (ticketId == null) {
+      _snack('Session expired — please restart booking.', isError: true);
+      return;
+    }
+    setState(() => _checking = true);
+    final token = context.read<UserProvider>().token;
+    try {
+      final status = await PaymentService.getPaymentStatus(
+          ticketId: ticketId, token: token);
+      if (!mounted) return;
+      if (status.toLowerCase() == 'paid') {
+        _pollTimer?.cancel();
+        await _onPaymentConfirmed();
+      } else {
+        // Show what the server actually returned so we can diagnose
+        _snack('Status: $status — payment not confirmed yet.', isError: true);
+      }
+    } on AuthException catch (e) {
+      if (mounted) _snack(e.message, isError: true);
+    } catch (e) {
+      if (mounted) _snack('Check failed: $e', isError: true);
+    } finally {
+      if (mounted) setState(() => _checking = false);
+    }
   }
 
   Future<void> _startPayment() async {
@@ -63,12 +111,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ticketId: ticketId, token: token);
 
       final uri = Uri.parse(url);
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (!await launchUrl(uri, mode: LaunchMode.inAppBrowserView)) {
         _snack('Could not open payment page.', isError: true);
         setState(() => _launching = false);
         return;
       }
 
+      // Polling starts immediately — detects payment even while Stripe tab is open.
+      // When user closes the tab (back button), the success dialog will appear.
       setState(() { _launching = false; _status = 'waiting'; _polling = true; });
       _startPolling(ticketId, token);
     } on AuthException catch (e) {
@@ -91,8 +141,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
         if (status.toLowerCase() == 'paid') {
           timer.cancel();
           await _onPaymentConfirmed();
-        } else if (tries >= 40) {
-          // ~2 min timeout
+        } else if (tries >= 200) {
+          // ~10 min timeout
           timer.cancel();
           if (mounted) setState(() { _polling = false; _status = 'timeout'; });
         }
@@ -103,57 +153,30 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Future<void> _onPaymentConfirmed() async {
-    final booking = context.read<BookingProvider>();
-    final token   = context.read<UserProvider>().token;
-    final bookId  = booking.bookId;
+    final booking  = context.read<BookingProvider>();
+    final token    = context.read<UserProvider>().token;
+    final bookId   = booking.bookId;
+    final ticketId = booking.ticketId;
 
     try {
       if (bookId != null) {
         await BookingService.confirmBooking(bookId: bookId, token: token);
       }
     } catch (_) {
-      // Confirm failure is non-fatal — payment already went through
+      // Non-fatal — payment already went through
     }
 
     if (!mounted) return;
     setState(() { _polling = false; _status = 'paid'; _confirmed = true; });
+    // Don't reset booking here — PaymentSuccessScreen needs ticketId
+    Navigator.pushReplacementNamed(
+      context,
+      '/payment-success',
+      arguments: {'ticketId': ticketId},
+    );
     booking.resetBooking();
-    _showSuccessDialog();
   }
 
-  void _showSuccessDialog() {
-    final l10n = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(children: [
-          const Icon(Icons.check_circle, color: Colors.green, size: 28),
-          const SizedBox(width: 8),
-          Text(l10n.paymentSuccessTitle),
-        ]),
-        content: Text(l10n.paymentSuccessMessage),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.popUntil(context, (r) => r.isFirst);
-            },
-            child: Text(l10n.paymentSuccessGoHome),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.popUntil(context, (r) => r.isFirst);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.cyan),
-            child: Text(l10n.paymentSuccessViewTickets, style: const TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _snack(String msg, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -340,18 +363,59 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ]),
         if (_status == 'waiting') ...[
           const SizedBox(height: 14),
-          const Row(children: [
-            SizedBox(width: 18, height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.cyan)),
-            SizedBox(width: 10),
-            Expanded(child: Text('Waiting for payment confirmation…',
-                style: TextStyle(fontSize: 13, color: AppColors.textSecondary))),
-          ]),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.cyan.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.cyan.withValues(alpha: 0.25)),
+            ),
+            child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                SizedBox(width: 14, height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.cyan)),
+                SizedBox(width: 8),
+                Text('Waiting for payment…',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+                        color: AppColors.cyan)),
+              ]),
+              SizedBox(height: 8),
+              Text('1. Complete payment on the Stripe page.',
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              SizedBox(height: 4),
+              Text('2. Tap  ✕  (top-left) to close the browser and return here.',
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              SizedBox(height: 4),
+              Text('3. Your booking will be confirmed automatically.',
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            ]),
+          ),
+        ],
+        if (_status == 'waiting' || _status == 'timeout') ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _checking ? null : _checkPaymentNow,
+              icon: _checking
+                  ? const SizedBox(width: 14, height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.cyan))
+                  : const Icon(Icons.refresh, size: 16, color: AppColors.cyan),
+              label: Text(
+                _checking ? 'Checking…' : 'I already paid — check now',
+                style: const TextStyle(color: AppColors.cyan, fontSize: 13),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.cyan),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
         ],
         if (_status == 'timeout') ...[
-          const SizedBox(height: 14),
-          const Text('Payment confirmation timed out. If you completed payment, '
-              'please check your tickets.',
+          const SizedBox(height: 8),
+          const Text('Confirmation timed out. Tap the button above to recheck.',
               style: TextStyle(fontSize: 12, color: AppColors.error)),
         ],
       ]),

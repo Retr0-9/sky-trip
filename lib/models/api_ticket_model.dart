@@ -12,7 +12,11 @@ class ApiTicketModel {
   final String? arrivalTime;
   final String? flightNumber;
   final String? seatNumber;
-  final String? status;
+  final String? bookingStatus;
+  final String? paymentStatus;
+  final double? amount;
+  final String? currency;
+  final DateTime? bookingDate;
   final bool isActive;
 
   const ApiTicketModel({
@@ -27,16 +31,20 @@ class ApiTicketModel {
     this.arrivalTime,
     this.flightNumber,
     this.seatNumber,
-    this.status,
+    this.bookingStatus,
+    this.paymentStatus,
+    this.amount,
+    this.currency,
+    this.bookingDate,
     required this.isActive,
   });
 
   factory ApiTicketModel.fromJson(Map<String, dynamic> json) {
     return ApiTicketModel(
-      ticketId:        (json['ticketID']        ?? json['ticketId']        ?? 0) as int,
-      bookId:          (json['bookID']           ?? json['bookId']           ?? 0) as int,
+      ticketId:        ((json['ticketID']       ?? json['ticketId'])       as num? ?? 0).toInt(),
+      bookId:          ((json['bookID']          ?? json['bookId'])         as num? ?? 0).toInt(),
       ticketPrice:     (json['ticketPrice']      as num? ?? 0).toDouble(),
-      passengersCount: (json['passengersCount']  as int? ?? 1),
+      passengersCount: (json['passengersCount']  as num? ?? 1).toInt(),
       departureCity:   json['departureCity']     as String?,
       arrivalCity:     json['arrivalCity']       as String?,
       flightDate:      json['flightDate'] != null
@@ -46,7 +54,13 @@ class ApiTicketModel {
       arrivalTime:     json['arrivalTime']       as String?,
       flightNumber:    json['flightNumber']      as String?,
       seatNumber:      json['seatNumber']        as String?,
-      status:          json['status']            as String?,
+      bookingStatus:   json['bookingStatus']     as String?,
+      paymentStatus:   json['paymentStatus']     as String?,
+      amount:          (json['amount']           as num?)?.toDouble(),
+      currency:        json['currency']          as String?,
+      bookingDate:     json['bookingDate'] != null
+          ? DateTime.tryParse(json['bookingDate'] as String)
+          : null,
       isActive:        json['isActive']          as bool? ?? true,
     );
   }
@@ -69,7 +83,7 @@ class ApiTicketModel {
   }
 
   TicketStatusType _mapStatus() {
-    switch (status?.toLowerCase()) {
+    switch (bookingStatus?.toLowerCase()) {
       case 'cancelled':  return TicketStatusType.cancelled;
       case 'completed':  return TicketStatusType.completed;
       default:           return TicketStatusType.upcoming;
@@ -99,5 +113,132 @@ class ApiTicketModel {
     hour = hour % 12;
     if (hour == 0) hour = 12;
     return '$hour:$min $suffix';
+  }
+}
+
+// ── Detail models for GET /api/tickets/my/{id} ───────────────────────────────
+
+class ApiTicketDetailFlight {
+  final int flightScheduleId;
+  final String departureCity;
+  final String arrivalCity;
+  final String? departureDateTime;
+  final String? arrivalDateTime;
+  final String? flightType;
+
+  const ApiTicketDetailFlight({
+    required this.flightScheduleId,
+    required this.departureCity,
+    required this.arrivalCity,
+    this.departureDateTime,
+    this.arrivalDateTime,
+    this.flightType,
+  });
+
+  factory ApiTicketDetailFlight.fromJson(Map<String, dynamic> j) {
+    String s(List<String> keys) {
+      for (final k in keys) { if (j[k] != null) return (j[k] as String).trim(); }
+      return '';
+    }
+    return ApiTicketDetailFlight(
+      flightScheduleId: ((j['flightScheduleID'] ?? j['flightScheduleId']) as num? ?? 0).toInt(),
+      departureCity:    s(['departureCity', 'DepartureCity']),
+      arrivalCity:      s(['arrivalCity',   'ArrivalCity']),
+      departureDateTime: j['departureDateTime'] as String?,
+      arrivalDateTime:   j['arrivalDateTime']   as String?,
+      flightType:        j['flightType']         as String?,
+    );
+  }
+}
+
+class ApiTicketDetailPassenger {
+  final int passengerId;
+  final String firstName;
+  final String lastName;
+  final String? gender;
+  final String? documentationType;
+
+  const ApiTicketDetailPassenger({
+    required this.passengerId,
+    required this.firstName,
+    required this.lastName,
+    this.gender,
+    this.documentationType,
+  });
+
+  factory ApiTicketDetailPassenger.fromJson(Map<String, dynamic> j) =>
+      ApiTicketDetailPassenger(
+        passengerId:       ((j['passengerId'] ?? j['PassengerId']) as num? ?? 0).toInt(),
+        firstName:         (j['firstName']  ?? j['FirstName']  ?? '') as String,
+        lastName:          (j['lastName']   ?? j['LastName']   ?? '') as String,
+        gender:            (j['gender']     ?? j['Gender'])           as String?,
+        documentationType: (j['documentationType'] ?? j['DocumentationType']) as String?,
+      );
+}
+
+class ApiTicketDetailService {
+  final String serviceName;
+  final int quantity;
+  final double serviceFee;
+
+  const ApiTicketDetailService({
+    required this.serviceName,
+    required this.quantity,
+    required this.serviceFee,
+  });
+
+  factory ApiTicketDetailService.fromJson(Map<String, dynamic> j) =>
+      ApiTicketDetailService(
+        serviceName: (j['serviceName'] ?? j['ServiceName'] ?? '') as String,
+        quantity:    (j['quantity']    ?? j['Quantity']    ?? 1)  as int,
+        serviceFee:  ((j['serviceFee'] ?? j['ServiceFee']  ?? 0)  as num).toDouble(),
+      );
+}
+
+class ApiTicketDetailModel {
+  final int ticketId;
+  final int bookId;
+  final String? bookingStatus;
+  final String? paymentStatus;
+  final String? bookingReference;
+  final double ticketPrice;
+  final int passengersCount;
+  final List<ApiTicketDetailFlight> flights;
+  final List<ApiTicketDetailPassenger> passengers;
+  final List<ApiTicketDetailService> services;
+
+  const ApiTicketDetailModel({
+    required this.ticketId,
+    required this.bookId,
+    this.bookingStatus,
+    this.paymentStatus,
+    this.bookingReference,
+    required this.ticketPrice,
+    required this.passengersCount,
+    required this.flights,
+    required this.passengers,
+    required this.services,
+  });
+
+  factory ApiTicketDetailModel.fromJson(Map<String, dynamic> json) {
+    final summary = json['summary'] as Map<String, dynamic>? ?? json;
+    List<T> parseList<T>(String key, T Function(Map<String, dynamic>) fn) {
+      final raw = json[key];
+      if (raw is! List) return [];
+      return raw.map((e) => fn(e as Map<String, dynamic>)).toList();
+    }
+
+    return ApiTicketDetailModel(
+      ticketId:         ((summary['ticketID']    ?? summary['ticketId'])    as num? ?? 0).toInt(),
+      bookId:           ((summary['bookID']       ?? summary['bookId'])      as num? ?? 0).toInt(),
+      bookingStatus:    summary['bookingStatus']  as String?,
+      paymentStatus:    summary['paymentStatus']  as String?,
+      bookingReference: summary['bookingReference'] as String?,
+      ticketPrice:      (summary['ticketPrice']   as num? ?? 0).toDouble(),
+      passengersCount:  (summary['passengersCount'] as num? ?? 1).toInt(),
+      flights:    parseList('flights',    ApiTicketDetailFlight.fromJson),
+      passengers: parseList('passengers', ApiTicketDetailPassenger.fromJson),
+      services:   parseList('services',  ApiTicketDetailService.fromJson),
+    );
   }
 }

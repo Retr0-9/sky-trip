@@ -29,16 +29,22 @@ class _VanRentalScreenState extends State<VanRentalScreen> {
   // ─────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(title: Text(AppLocalizations.of(context)!.vanTitle)),
-      body: Column(children: [
-        _buildSearchForm(context),
-        if (_searched) _buildCategoryFilter(context),
-        Expanded(
-          child: _searched ? _buildResults() : _buildIllustration(context),
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text(AppLocalizations.of(context)!.vanTitle),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
         ),
-      ]),
+        body: Column(children: [
+          _buildSearchForm(context),
+          if (_searched) _buildCategoryFilter(context),
+          Expanded(
+            child: _searched ? _buildResults() : _buildIllustration(context),
+          ),
+        ]),
+      ),
     );
   }
 

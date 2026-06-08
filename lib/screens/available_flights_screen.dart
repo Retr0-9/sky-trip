@@ -18,6 +18,7 @@ class AvailableFlightsScreen extends StatefulWidget {
 class _AvailableFlightsScreenState extends State<AvailableFlightsScreen> {
   late BookingSearchModel _search;
   late List<FlightScheduleModel> _flights;
+  bool _isFallback = false;
   bool _loaded = false;
 
   @override
@@ -30,6 +31,7 @@ class _AvailableFlightsScreenState extends State<AvailableFlightsScreen> {
         (args?['search'] as BookingSearchModel?) ?? _fallbackSearch();
     _flights =
         (args?['flights'] as List<FlightScheduleModel>?) ?? [];
+    _isFallback = (args?['isFallback'] as bool?) ?? false;
 
     _loaded = true;
   }
@@ -62,6 +64,7 @@ class _AvailableFlightsScreenState extends State<AvailableFlightsScreen> {
         body: Column(
           children: [
             _buildSummaryBar(),
+            if (_isFallback && _flights.isNotEmpty) _buildFallbackBanner(),
             Expanded(
               child:
                   _flights.isEmpty ? _buildEmpty() : _buildList(),
@@ -115,6 +118,24 @@ class _AvailableFlightsScreenState extends State<AvailableFlightsScreen> {
           _chip('${_search.totalPassengers} ${AppLocalizations.of(context)!.availableFlightsPax}'),
         ],
       ),
+    );
+  }
+
+  Widget _buildFallbackBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      color: Colors.orange.withValues(alpha: 0.12),
+      child: Row(children: [
+        const Icon(Icons.info_outline, color: Colors.orange, size: 18),
+        const SizedBox(width: 8),
+        const Expanded(
+          child: Text(
+            'No flights matched your search. Showing other available flights instead.',
+            style: TextStyle(fontSize: 12, color: Colors.orange, fontWeight: FontWeight.w600),
+          ),
+        ),
+      ]),
     );
   }
 

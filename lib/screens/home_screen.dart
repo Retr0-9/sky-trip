@@ -2,15 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:skytrip/generated/l10n/app_localizations.dart';
 import '../widgets/offer_card.dart';
-import '../widgets/recent_search_card.dart';
 import '../widgets/section_header.dart';
-import '../data/dummy_offers.dart';
-import '../data/dummy_recent_searches.dart';
 import '../providers/user_provider.dart';
 import '../theme/app_theme.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final VoidCallback? onBookNow;
+  const HomeScreen({super.key, this.onBookNow});
+
+  static const _offers = [
+    _OfferData('Summer Sale', 'Up to 30% off on select routes', '30%', 'Aug 31, 2026', AppColors.cyan),
+    _OfferData('Early Bird', 'Book 60 days ahead & save', '20%', 'Dec 31, 2026', AppColors.purple),
+    _OfferData('Weekend Escape', 'Special fares every Friday', '15%', 'Ongoing', AppColors.orange),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +22,6 @@ class HomeScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final hour = DateTime.now().hour;
     final icon = hour < 12 ? Icons.wb_sunny : hour < 17 ? Icons.wb_sunny_outlined : Icons.nights_stay_outlined;
-
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -31,9 +34,7 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 l10n.homeGreeting(user.greeting, user.firstName),
-                style: AppTextStyles.bodyLarge.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+                style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textSecondary),
               ),
             ]),
           ),
@@ -41,33 +42,54 @@ class HomeScreen extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
             child: Text(
               l10n.homeReady,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
-              ),
+              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
             ),
           ),
 
-          // ── Recent Searches ──────────────────────────────
+          // ── Hero CTA ────────────────────────────────────
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: SectionHeader(
-              title: l10n.homeRecentSearches,
-              icon: Icons.history,
-              onSeeAll: () {},
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.cyan, AppColors.cyanDark],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: AppShadows.md,
+              ),
+              child: Row(children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('Ready to fly?',
+                      style: TextStyle(color: Colors.white, fontSize: 20,
+                          fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(l10n.bookingSubtitle,
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13)),
+                  const SizedBox(height: 14),
+                  ElevatedButton.icon(
+                    onPressed: onBookNow,
+                    icon: const Icon(Icons.search, size: 16),
+                    label: Text(l10n.bookingSearch),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: AppColors.cyanDark,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                    ),
+                  ),
+                ])),
+                const SizedBox(width: 12),
+                const Icon(Icons.flight_takeoff, color: Colors.white, size: 56),
+              ]),
             ),
           ),
-          const SizedBox(height: 10),
-          ...DummyRecentSearches.searches.map((search) => Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-            child: RecentSearchCard(
-              from: search.fromCode,
-              to: search.toCode,
-              passengers: search.totalPassengers,
-              onTap: () {},
-            ),
-          )),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 24),
 
           // ── Latest Offers ───────────────────────────────
           Padding(
@@ -79,14 +101,14 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          ...DummyOffers.offers.map((offer) => Padding(
+          ..._offers.map((o) => Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: OfferCard(
-              title: offer.title,
-              subtitle: offer.subtitle,
-              discount: offer.discount,
-              validUntil: offer.validUntil,
-              color: offer.color,
+              title: o.title,
+              subtitle: o.subtitle,
+              discount: o.discount,
+              validUntil: o.validUntil,
+              color: o.color,
               onTap: () {},
             ),
           )),
@@ -126,6 +148,12 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
+class _OfferData {
+  final String title, subtitle, discount, validUntil;
+  final Color color;
+  const _OfferData(this.title, this.subtitle, this.discount, this.validUntil, this.color);
+}
+
 class _DestCard extends StatelessWidget {
   final String city;
   final String imagePath;
@@ -158,12 +186,9 @@ class _DestCard extends StatelessWidget {
             ),
             Positioned(
               bottom: 10, left: 10,
-              child: Text(
-                city,
-                style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13,
-                ),
-              ),
+              child: Text(city,
+                  style: const TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
             ),
           ],
         ),

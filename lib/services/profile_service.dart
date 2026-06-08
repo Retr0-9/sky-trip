@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart' show MediaType;
 import 'api_client.dart';
 
 class ProfileData {
@@ -50,7 +52,7 @@ class ProfileData {
       thirdName:        json['thirdName']      as String?,
       phone:            json['phone']          as String?,
       gender:           json['gender']         as String?,
-      profileImageUrl:  json['profileImageUrl'] as String?,
+      profileImageUrl:  (json['profileImageUrl'] ?? json['ProfileImageUrl'] ?? json['profile_image_url']) as String?,
       countryName:      json['countryName']    as String?,
       countryId:        (json['countryId'] as int? ?? 0),
       birthDate: json['birthDate'] != null
@@ -75,17 +77,32 @@ class ProfileService {
     await ApiClient.put('/api/profile/me', fields, token);
   }
 
-  /// POST /api/profile/me/image  (multipart)
-  static Future<void> uploadAvatar({
+  /// POST /api/profile/me/image  (multipart) — returns absolute image URL or null
+  static Future<String?> uploadAvatar({
     required File image,
     required String token,
   }) async {
-    final file = await http.MultipartFile.fromPath('image', image.path);
-    await ApiClient.postMultipart(
+    final file = await http.MultipartFile.fromPath(
+      'image',
+      image.path,
+      filename: 'profile.jpg',
+      contentType: MediaType('image', 'jpeg'),
+    );
+    final res = await ApiClient.postMultipart(
       '/api/profile/me/image',
       {},
       {'image': file},
       token,
     );
+    try {
+      final body = jsonDecode(res.body) as Map<String, dynamic>?;
+      final raw = (body?['imageUrl'] ?? body?['ImageUrl'] ??
+                   body?['profileImageUrl'] ?? body?['ProfileImageUrl']) as String?;
+      if (raw == null) return null;
+      return raw.startsWith('http') ? raw
+          : 'https://bookingtrip-api-2026-cyh0f4dhfednh3fj.westeurope-01.azurewebsites.net$raw';
+    } catch (_) {
+      return null;
+    }
   }
 }

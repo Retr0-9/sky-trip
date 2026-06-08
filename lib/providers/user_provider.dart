@@ -194,6 +194,11 @@ import '../services/profile_service.dart';
     notifyListeners();
   }
 
+  void setProfileImageUrl(String url) {
+    _profileImageUrl = url;
+    notifyListeners();
+  }
+
   void addMiles(int miles) {
     _milesBalance += miles;
     notifyListeners();
@@ -214,7 +219,12 @@ import '../services/profile_service.dart';
       _email       = profile.email.isNotEmpty     ? profile.email     : _email;
       _phone            = profile.phone            ?? _phone;
       _nationality      = profile.countryName      ?? _nationality;
-      _profileImageUrl  = profile.profileImageUrl  ?? _profileImageUrl;
+      final rawUrl = profile.profileImageUrl;
+      if (rawUrl != null) {
+        _profileImageUrl = rawUrl.startsWith('http')
+            ? rawUrl
+            : 'https://bookingtrip-api-2026-cyh0f4dhfednh3fj.westeurope-01.azurewebsites.net$rawUrl';
+      }
       notifyListeners();
     } catch (_) {
       // Silently ignore — profile will show what login returned

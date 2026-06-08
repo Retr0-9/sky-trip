@@ -46,7 +46,7 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
       // Step 1 — create booking trip
       final bookId = await BookingService.createBookingTrip(
         clientId:   user.clientId,
-        tripTypeId: booking.selectedClassId ?? 1,
+        tripTypeId: booking.tripTypeId ?? 1,
         token:      token,
       );
       booking.setBookId(bookId);
@@ -61,6 +61,14 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
         token:            token,
       );
       booking.setTicketId(ticketId);
+
+      // Step 3 — link ticket to flight schedule
+      await BookingService.createTicketFlight(
+        ticketId:         ticketId,
+        flightScheduleId: _schedule!.flightScheduleId,
+        flightType:       'Outbound',
+        token:            token,
+      );
 
       if (!mounted) return;
       Navigator.pushNamed(context, '/passengers-form',

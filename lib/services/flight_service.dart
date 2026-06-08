@@ -50,6 +50,33 @@ class FlightService {
     return _parseList(res.body);
   }
 
+  /// POST /api/FlightSchedules/multicity
+  static Future<List<FlightScheduleModel>> searchMultiCity(
+    List<Map<String, String>> legs,
+    String token,
+  ) async {
+    final res = await ApiClient.post(
+      '/api/FlightSchedules/multicity',
+      {
+        'legs': legs.map((l) => {
+          'from': l['from'],
+          'to':   l['to'],
+          'date': l['date'],
+        }).toList(),
+        'maxOptionsPerLeg': 5,
+        'maxItineraries':   10,
+      },
+      token,
+    );
+    return _parseList(res.body);
+  }
+
+  /// GET /api/FlightSchedules/All — fallback list when a search returns no matches
+  static Future<List<FlightScheduleModel>> getAllFlights(String token) async {
+    final res = await ApiClient.get('/api/FlightSchedules/All', token);
+    return _parseList(res.body);
+  }
+
   /// GET /api/PassengerClass/All
   static Future<List<PassengerClassModel>> getPassengerClasses(
       String token) async {

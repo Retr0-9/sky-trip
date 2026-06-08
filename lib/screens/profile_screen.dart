@@ -20,6 +20,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   File? _localImage;
   bool _uploading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // Refresh profile image URL each time screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<UserProvider>().loadProfile();
+    });
+  }
+
   void _showImageOptions() {
     showModalBottomSheet(
       context: context,
@@ -93,7 +102,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       final token = context.read<UserProvider>().token;
-      await ProfileService.uploadAvatar(image: file, token: token);
+      final newUrl = await ProfileService.uploadAvatar(image: file, token: token);
+      if (!mounted) return;
+      if (newUrl != null) {
+        context.read<UserProvider>().setProfileImageUrl(newUrl);
+      } else {
+        await context.read<UserProvider>().loadProfile();
+      }
       if (!mounted) return;
       setState(() => _uploading = false);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(

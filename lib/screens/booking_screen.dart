@@ -32,6 +32,13 @@ class _BookingScreenState extends State<BookingScreen> {
   DateTime? _departureDate;
   DateTime? _returnDate;
 
+  // ── Multi-city legs ───────────────────────────────────────────
+  // Each leg: {'from': '', 'to': '', 'date': DateTime?}
+  final List<Map<String, dynamic>> _legs = [
+    {'from': '', 'to': '', 'date': null},
+    {'from': '', 'to': '', 'date': null},
+  ];
+
   // ── Passengers ───────────────────────────────────────────────
   int _adults = 1;
   int _youth = 0;
@@ -326,46 +333,129 @@ class _BookingScreenState extends State<BookingScreen> {
   bool get _isRoundTrip =>
       _selectedTripType?.name.toLowerCase().contains('round') ?? false;
 
+  bool get _isMultiCity =>
+      _selectedTripType?.name.toLowerCase().contains('multi') ?? false;
+
+  // ── Multi-city leg pickers ────────────────────────────────────
+  Future<void> _pickLegCity(int legIndex, {required bool isFrom}) async {
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) {
+        String query = '';
+        final cs = Theme.of(ctx).colorScheme;
+        return StatefulBuilder(builder: (ctx, setS) {
+          final filtered = _cities
+              .where((c) => c.toLowerCase().contains(query.toLowerCase()))
+              .toList();
+          return DraggableScrollableSheet(
+            expand: false, initialChildSize: 0.6, maxChildSize: 0.9,
+            builder: (_, ctrl) => Column(children: [
+              const SizedBox(height: 12),
+              Container(width: 40, height: 4,
+                  decoration: BoxDecoration(color: cs.outlineVariant,
+                      borderRadius: BorderRadius.circular(2))),
+              Padding(padding: const EdgeInsets.all(16),
+                child: TextField(autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context)!.bookingSearchCity,
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  onChanged: (v) => setS(() => query = v),
+                ),
+              ),
+              Expanded(child: ListView.builder(
+                controller: ctrl, itemCount: filtered.length,
+                itemBuilder: (_, i) => ListTile(
+                  leading: const Icon(Icons.flight_takeoff, color: AppColors.cyan),
+                  title: Text(filtered[i]),
+                  onTap: () => Navigator.pop(ctx, filtered[i]),
+                ),
+              )),
+            ]),
+          );
+        });
+      },
+    );
+    if (picked == null) return;
+    setState(() => _legs[legIndex][isFrom ? 'from' : 'to'] = picked);
+  }
+
+  Future<void> _pickLegDate(int legIndex) async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+            colorScheme: const ColorScheme.light(primary: AppColors.cyan)),
+        child: child!,
+      ),
+    );
+    if (picked != null) setState(() => _legs[legIndex]['date'] = picked);
+  }
+
   // ── Search ────────────────────────────────────────────────────
   Future<void> _search() async {
-    if (_fromCity.isEmpty || _toCity.isEmpty) {
-      _snack(AppLocalizations.of(context)!.bookingErrorSelectCities);
-      return;
-    }
-    if (_fromCity == _toCity) {
-      _snack(AppLocalizations.of(context)!.bookingErrorDifferentCities);
-      return;
-    }
-    if (_departureDate == null) {
-      _snack(AppLocalizations.of(context)!.bookingErrorSelectDeparture);
-      return;
-    }
-    if (_isRoundTrip && _returnDate == null) {
-      _snack(AppLocalizations.of(context)!.bookingErrorSelectReturn);
-      return;
+    if (_isMultiCity) {
+      for (int i = 0; i < _legs.length; i++) {
+        if ((_legs[i]['from'] as String).isEmpty || (_legs[i]['to'] as String).isEmpty) {
+          _snack('Please select cities for leg ${i + 1}.'); return;
+        }
+        if (_legs[i]['date'] == null) {
+          _snack('Please select a date for leg ${i + 1}.'); return;
+        }
+      }
+    } else {
+      if (_fromCity.isEmpty || _toCity.isEmpty) {
+        _snack(AppLocalizations.of(context)!.bookingErrorSelectCities); return;
+      }
+      if (_fromCity == _toCity) {
+        _snack(AppLocalizations.of(context)!.bookingErrorDifferentCities); return;
+      }
+      if (_departureDate == null) {
+        _snack(AppLocalizations.of(context)!.bookingErrorSelectDeparture); return;
+      }
+      if (_isRoundTrip && _returnDate == null) {
+        _snack(AppLocalizations.of(context)!.bookingErrorSelectReturn); return;
+      }
     }
 
     setState(() => _searchLoading = true);
 
     final token = context.read<UserProvider>().token;
+    final firstLeg = _isMultiCity ? _legs[0] : null;
     final search = BookingSearchModel(
-      fromCode: _fromCity,
-      fromCity: _fromCity,
-      toCode: _toCity,
-      toCity: _toCity,
-      departureDate: _departureDate!,
-      returnDate: _returnDate,
-      tripType: _selectedTripType?.name ?? 'one_way',
-      adults: _adults,
-      youth: _youth,
-      children: _children,
-      infants: _infants,
-      travelClass: _selectedClass?.name ?? 'Economy',
+      fromCode:      _isMultiCity ? firstLeg!['from'] as String : _fromCity,
+      fromCity:      _isMultiCity ? firstLeg!['from'] as String : _fromCity,
+      toCode:        _isMultiCity ? _legs.last['to'] as String  : _toCity,
+      toCity:        _isMultiCity ? _legs.last['to'] as String  : _toCity,
+      departureDate: _isMultiCity ? firstLeg!['date'] as DateTime : _departureDate!,
+      returnDate:    _returnDate,
+      tripType:      _selectedTripType?.name ?? 'one_way',
+      adults:        _adults,
+      youth:         _youth,
+      children:      _children,
+      infants:       _infants,
+      travelClass:   _selectedClass?.name ?? 'Economy',
     );
 
     try {
       List<FlightScheduleModel> results;
-      if (_isRoundTrip) {
+      if (_isMultiCity) {
+        final legs = _legs.map((l) => {
+          'from': l['from'] as String,
+          'to':   l['to']   as String,
+          'date': (l['date'] as DateTime).toIso8601String().substring(0, 10),
+        }).toList();
+        results = await FlightService.searchMultiCity(legs, token);
+      } else if (_isRoundTrip) {
         results = await FlightService.searchRoundTrip(
             _fromCity, _toCity, _departureDate!, _returnDate!, token);
       } else {
@@ -373,15 +463,24 @@ class _BookingScreenState extends State<BookingScreen> {
             _fromCity, _toCity, _departureDate!, token);
       }
 
+      bool isFallback = false;
+      if (results.isEmpty) {
+        try {
+          results = await FlightService.getAllFlights(token);
+          isFallback = results.isNotEmpty;
+        } catch (_) {
+          // Keep results empty — show the normal "no results" state
+        }
+      }
+
       if (!mounted) return;
       context.read<BookingProvider>().setSearch(search);
       Navigator.pushNamed(context, '/available-flights',
-          arguments: {'search': search, 'flights': results});
+          arguments: {'search': search, 'flights': results, 'isFallback': isFallback});
     } on AuthException catch (e) {
       _snack(e.message);
-    } catch (e, st) {
-      debugPrint('SEARCH ERROR: $e\n$st');
-      _snack(e.toString());
+    } catch (_) {
+      _snack(AppLocalizations.of(context)!.bookingErrorSearchFailed);
     } finally {
       if (mounted) setState(() => _searchLoading = false);
     }
@@ -463,7 +562,10 @@ class _BookingScreenState extends State<BookingScreen> {
               child: Padding(
                 padding: EdgeInsets.only(right: t == _tripTypes.last ? 0 : 8),
                 child: GestureDetector(
-                  onTap: () => setState(() => _selectedTripType = t),
+                  onTap: () {
+                    setState(() => _selectedTripType = t);
+                    context.read<BookingProvider>().setTripTypeId(t.tripTypeId);
+                  },
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
@@ -492,7 +594,54 @@ class _BookingScreenState extends State<BookingScreen> {
         ),
         const SizedBox(height: 24),
 
-        // ── From ──────────────────────────────────────────────────
+        // ── Multi-city legs ───────────────────────────────────────
+        if (_isMultiCity) ...[
+          ..._legs.asMap().entries.map((entry) {
+            final i   = entry.key;
+            final leg = entry.value;
+            final from = leg['from'] as String;
+            final to   = leg['to']   as String;
+            final date = leg['date'] as DateTime?;
+            return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text('Leg ${i + 1}', style: TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w600,
+                    color: cs.onSurface)),
+                if (_legs.length > 2)
+                  GestureDetector(
+                    onTap: () => setState(() => _legs.removeAt(i)),
+                    child: const Icon(Icons.remove_circle_outline,
+                        color: Colors.redAccent, size: 20),
+                  ),
+              ]),
+              const SizedBox(height: 8),
+              _cityTile(context, value: from,
+                  hint: AppLocalizations.of(context)!.bookingDepartureCityHint,
+                  onTap: () => _pickLegCity(i, isFrom: true)),
+              const SizedBox(height: 8),
+              _cityTile(context, value: to,
+                  hint: AppLocalizations.of(context)!.bookingArrivalCityHint,
+                  onTap: () => _pickLegCity(i, isFrom: false)),
+              const SizedBox(height: 8),
+              _dateTile(context,
+                  value: date != null ? _formatDate(date) : null,
+                  hint: AppLocalizations.of(context)!.bookingSelectDate,
+                  onTap: () => _pickLegDate(i)),
+              const SizedBox(height: 16),
+            ]);
+          }),
+          if (_legs.length < 5)
+            TextButton.icon(
+              onPressed: () => setState(() => _legs.add({'from': '', 'to': '', 'date': null})),
+              icon: const Icon(Icons.add_circle_outline, color: AppColors.cyan),
+              label: const Text('Add another leg',
+                  style: TextStyle(color: AppColors.cyan)),
+            ),
+          const SizedBox(height: 8),
+        ],
+
+        // ── From / To / Dates (one-way + round-trip) ─────────────
+        if (!_isMultiCity) ...[
         _label(context),
         const SizedBox(height: 8),
         _cityTile(context,
@@ -533,6 +682,7 @@ class _BookingScreenState extends State<BookingScreen> {
           ),
           const SizedBox(height: 16),
         ],
+        ], // end if (!_isMultiCity)
 
         // ── Passengers + Class ────────────────────────────────────
         Row(children: [

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'api_client.dart';
 import '../models/api_ticket_model.dart';
+export '../models/api_ticket_model.dart' show ApiTicketDetailModel;
 
 class AddPassengerResult {
   final int passengerId;
@@ -151,15 +152,41 @@ class BookingService {
     await ApiClient.post('/api/BookingTrip/$bookId/confirm', {}, token);
   }
 
-  /// GET /api/InfoTickets/my
-  static Future<List<ApiTicketModel>> fetchClientTickets({
-    required int clientId,
+  /// POST /api/TicketFlights — links a ticket to a flight schedule
+  static Future<void> createTicketFlight({
+    required int ticketId,
+    required int flightScheduleId,
+    required String flightType,
     required String token,
   }) async {
-    final res = await ApiClient.get('/api/InfoTickets/my', token);
+    await ApiClient.post(
+      '/api/TicketFlights',
+      {
+        'ticketId':         ticketId,
+        'flightScheduleId': flightScheduleId,
+        'flightType':       flightType,
+      },
+      token,
+    );
+  }
+
+  /// GET /api/tickets/my/paid — richer ticket list with booking/payment status
+  static Future<List<ApiTicketModel>> fetchPaidTickets({
+    required String token,
+  }) async {
+    final res = await ApiClient.get('/api/tickets/my/paid', token);
     final list = ApiClient.decodeList(res);
     return list
         .map((j) => ApiTicketModel.fromJson(j as Map<String, dynamic>))
         .toList();
+  }
+
+  /// GET /api/tickets/my/{ticketId} — full detail: flights, passengers, services
+  static Future<ApiTicketDetailModel> fetchTicketDetail({
+    required int ticketId,
+    required String token,
+  }) async {
+    final res = await ApiClient.get('/api/tickets/my/$ticketId', token);
+    return ApiTicketDetailModel.fromJson(ApiClient.decodeMap(res));
   }
 }

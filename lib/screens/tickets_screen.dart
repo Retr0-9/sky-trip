@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:skytrip/generated/l10n/app_localizations.dart';
 import 'package:skytrip/models/booked_vehicle_model.dart';
-import '../widgets/ticket_card.dart';
-import '../widgets/section_header.dart';
-import '../models/ticket_model.dart';
 import '../models/hotel_booking_model.dart';
 import '../providers/hotel_booking_provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/vehicle_provider.dart';
 import '../services/booking_service.dart';
 import '../services/auth_service.dart';
+import '../models/api_ticket_model.dart';
+import '../theme/app_theme.dart';
 
 class TicketsScreen extends StatefulWidget {
   const TicketsScreen({super.key});
@@ -23,7 +22,7 @@ class _TicketsScreenState extends State<TicketsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  List<TicketModel>? _flightTickets;
+  List<ApiTicketModel>? _flightTickets;
   bool _loadingTickets = false;
   String? _ticketsError;
 
@@ -36,33 +35,32 @@ class _TicketsScreenState extends State<TicketsScreen>
 
   Future<void> _fetchFlightTickets() async {
     final user = context.read<UserProvider>();
-    setState(() {
-      _loadingTickets = true;
-      _ticketsError = null;
-    });
+    setState(() { _loadingTickets = true; _ticketsError = null; });
     try {
-      final apiTickets = await BookingService.fetchClientTickets(
-        clientId: user.clientId,
-        token: user.token,
-      );
+      final apiTickets = await BookingService.fetchPaidTickets(token: user.token);
       if (!mounted) return;
       setState(() {
-        _flightTickets = apiTickets.map((t) => t.toTicketModel()).toList();
+        _flightTickets = apiTickets;
         _loadingTickets = false;
       });
     } on AuthException catch (e) {
       if (!mounted) return;
-      setState(() {
-        _ticketsError = e.message;
-        _loadingTickets = false;
-      });
+      setState(() { _ticketsError = e.message; _loadingTickets = false; });
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _ticketsError = 'Could not load tickets. Pull down to retry.';
-        _loadingTickets = false;
-      });
+      setState(() { _ticketsError = 'Could not load tickets. Pull down to retry.'; _loadingTickets = false; });
     }
+  }
+
+  void _showTicketDetail(BuildContext context, ApiTicketModel ticket) {
+    final token = context.read<UserProvider>().token;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => _TicketDetailSheet(ticketId: ticket.ticketId, token: token),
+    );
   }
 
   @override
@@ -168,48 +166,169 @@ class _TicketsScreenState extends State<TicketsScreen>
     );
   }
 
-  Widget _buildFlightList(BuildContext context, List<TicketModel> tickets) {
-    final l10n = AppLocalizations.of(context)!;
+  // Groups a ticket into upcoming / completed / cancelled
+  String _group(ApiTicketModel t) {
+    final s = (t.bookingStatus ?? '').toLowerCase();
+    if (s == 'completed') return 'completed';
+    if (s == 'cancelled') return 'cancelled';
+    return 'upcoming';
+  }
 
+  Widget _buildFlightList(BuildContext context, List<ApiTicketModel> tickets) {
+    final l10n = AppLocalizations.of(context)!;
     if (tickets.isEmpty) {
       return _buildEmpty(context, Icons.flight_takeoff, l10n.ticketsNoUpcoming);
     }
 
+    final upcoming  = tickets.where((t) => _group(t) == 'upcoming').toList();
+    final completed = tickets.where((t) => _group(t) == 'completed').toList();
+    final cancelled = tickets.where((t) => _group(t) == 'cancelled').toList();
+
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       children: [
-        SectionHeader(
-          title:
-              '${tickets.length} ${tickets.length > 1 ? l10n.ticketsFlightPlural : l10n.ticketsFlightSingular}',
-          icon: Icons.flight,
-        ),
-        const SizedBox(height: 12),
-        ...tickets.map(
-          (ticket) => Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: TicketCard(
-              from: ticket.fromCode,
-              fromCity: ticket.fromCity,
-              to: ticket.toCode,
-              toCity: ticket.toCity,
-              date: ticket.date,
-              time: ticket.time,
-              flightNumber: ticket.flightNumber,
-              seatNumber: ticket.seatNumber,
-              status: _mapStatus(ticket.status),
-              icon: Icons.flight,
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(l10n.ticketDetail(ticket.id.toString())),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
+        if (upcoming.isNotEmpty) ...[
+          _sectionHeader(context, 'Upcoming', Icons.flight_takeoff, AppColors.cyan, upcoming.length),
+          const SizedBox(height: 10),
+          ...upcoming.map((t) => _bookingCard(context, t)),
+          const SizedBox(height: 16),
+        ],
+        if (completed.isNotEmpty) ...[
+          _sectionHeader(context, 'Completed', Icons.check_circle_outline, Colors.green, completed.length),
+          const SizedBox(height: 10),
+          ...completed.map((t) => _bookingCard(context, t)),
+          const SizedBox(height: 16),
+        ],
+        if (cancelled.isNotEmpty) ...[
+          _sectionHeader(context, 'Cancelled', Icons.cancel_outlined, Colors.red, cancelled.length),
+          const SizedBox(height: 10),
+          ...cancelled.map((t) => _bookingCard(context, t)),
+        ],
       ],
     );
+  }
+
+  Widget _sectionHeader(BuildContext context, String title, IconData icon, Color color, int count) {
+    final theme = Theme.of(context);
+    return Row(children: [
+      Icon(icon, size: 18, color: color),
+      const SizedBox(width: 8),
+      Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: color)),
+      const SizedBox(width: 6),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text('$count', style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold)),
+      ),
+    ]);
+  }
+
+  Widget _bookingCard(BuildContext context, ApiTicketModel t) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final group  = _group(t);
+    final statusColor = group == 'completed' ? Colors.green
+        : group == 'cancelled' ? Colors.red : AppColors.cyan;
+    final ps = t.paymentStatus ?? '';
+
+    // Format booking date
+    String dateStr = '--';
+    if (t.bookingDate != null) {
+      const m = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      final d = t.bookingDate!;
+      dateStr = '${m[d.month]} ${d.day}, ${d.year}';
+    }
+
+    return GestureDetector(
+      onTap: () => _showTicketDetail(context, t),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: isDark ? theme.cardColor : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+          boxShadow: [BoxShadow(
+            color: isDark ? Colors.black26 : Colors.grey.shade200,
+            blurRadius: 8, offset: const Offset(0, 3),
+          )],
+        ),
+        child: Column(children: [
+          // ── Cyan header bar ──
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.08),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+            ),
+            child: Row(children: [
+              Icon(Icons.confirmation_number_outlined, color: statusColor, size: 18),
+              const SizedBox(width: 8),
+              Text('Booking #${t.ticketId}',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: statusColor, fontSize: 14)),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  t.bookingStatus ?? 'Pending',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: statusColor),
+                ),
+              ),
+            ]),
+          ),
+          // ── Details ──
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(children: [
+              _cardInfo(context, Icons.people_outline, 'Passengers', '${t.passengersCount}'),
+              const SizedBox(width: 16),
+              _cardInfo(context, Icons.calendar_today_outlined, 'Booked', dateStr),
+              const SizedBox(width: 16),
+              _cardInfo(context, Icons.payment_outlined, 'Payment', ps.isEmpty ? '--' : ps),
+              const Spacer(),
+              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Text('JOD ${t.ticketPrice.toStringAsFixed(2)}',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.cyan)),
+                const Text('total', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+              ]),
+            ]),
+          ),
+          // ── Tap hint ──
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: theme.dividerColor.withValues(alpha: 0.08),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(14)),
+            ),
+            child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Text('Tap to view details', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+              SizedBox(width: 4),
+              Icon(Icons.keyboard_arrow_down, size: 14, color: AppColors.textSecondary),
+            ]),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  Widget _cardInfo(BuildContext context, IconData icon, String label, String value) {
+    final theme = Theme.of(context);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        Icon(icon, size: 12, color: theme.hintColor),
+        const SizedBox(width: 4),
+        Text(label, style: TextStyle(fontSize: 10, color: theme.hintColor)),
+      ]),
+      const SizedBox(height: 2),
+      Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+    ]);
   }
 
   // ═══════════════════════════════════════════════
@@ -570,14 +689,237 @@ class _TicketsScreenState extends State<TicketsScreen>
     );
   }
 
-  TicketStatus _mapStatus(TicketStatusType type) {
-    switch (type) {
-      case TicketStatusType.upcoming:
-        return TicketStatus.upcoming;
-      case TicketStatusType.completed:
-        return TicketStatus.completed;
-      case TicketStatusType.cancelled:
-        return TicketStatus.cancelled;
+}
+
+// ── Ticket detail bottom sheet ────────────────────────────────────────────────
+
+class _TicketDetailSheet extends StatefulWidget {
+  final int ticketId;
+  final String token;
+
+  const _TicketDetailSheet({
+    required this.ticketId,
+    required this.token,
+  });
+
+  @override
+  State<_TicketDetailSheet> createState() => _TicketDetailSheetState();
+}
+
+class _TicketDetailSheetState extends State<_TicketDetailSheet> {
+  ApiTicketDetailModel? _detail;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final d = await BookingService.fetchTicketDetail(
+          ticketId: widget.ticketId, token: widget.token);
+      if (mounted) setState(() { _detail = d; _loading = false; });
+    } catch (_) {
+      if (mounted) setState(() { _error = 'Could not load details.'; _loading = false; });
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.6,
+      maxChildSize: 0.92,
+      builder: (_, ctrl) => Column(children: [
+        const SizedBox(height: 12),
+        Container(width: 40, height: 4,
+            decoration: BoxDecoration(color: cs.outlineVariant,
+                borderRadius: BorderRadius.circular(2))),
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(children: [
+            const Icon(Icons.confirmation_number_outlined, color: AppColors.cyan),
+            const SizedBox(width: 8),
+            Text('Booking #${widget.ticketId}',
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          ]),
+        ),
+        const SizedBox(height: 4),
+        if (_loading)
+          const Expanded(child: Center(child: CircularProgressIndicator(color: AppColors.cyan)))
+        else if (_error != null)
+          Expanded(child: Center(child: Text(_error!, style: const TextStyle(color: AppColors.error))))
+        else
+          Expanded(child: ListView(controller: ctrl, padding: const EdgeInsets.all(20), children: [
+            _statusRow(cs),
+            const SizedBox(height: 16),
+            if (_detail != null && _detail!.flights.isNotEmpty) ...[
+              _sectionTitle('Flights', Icons.flight),
+              const SizedBox(height: 8),
+              ..._detail!.flights.map(_flightTile),
+              const SizedBox(height: 16),
+            ],
+            if (_detail != null && _detail!.passengers.isNotEmpty) ...[
+              _sectionTitle('Passengers', Icons.people_outline),
+              const SizedBox(height: 8),
+              ..._detail!.passengers.map(_passengerTile),
+              const SizedBox(height: 16),
+            ],
+            if (_detail != null && _detail!.services.isNotEmpty) ...[
+              _sectionTitle('Services', Icons.room_service_outlined),
+              const SizedBox(height: 8),
+              ..._detail!.services.map(_serviceTile),
+              const SizedBox(height: 16),
+            ],
+            _priceRow(context),
+            if ((_detail?.bookingStatus ?? '').toLowerCase() == 'confirmed') ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(
+                      context,
+                      '/boarding-pass',
+                      arguments: _detail,
+                    );
+                  },
+                  icon: const Icon(Icons.airplane_ticket_outlined),
+                  label: const Text('Show Boarding Pass'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.cyan,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
+          ])),
+      ]),
+    );
+  }
+
+  Widget _statusRow(ColorScheme cs) {
+    final status = _detail?.paymentStatus ?? '';
+    final isPaid = status.toLowerCase() == 'paid';
+    return Row(children: [
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isPaid ? Colors.green.withValues(alpha: 0.12) : Colors.orange.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(isPaid ? Icons.check_circle : Icons.hourglass_bottom,
+              size: 14, color: isPaid ? Colors.green : Colors.orange),
+          const SizedBox(width: 6),
+          Text(status.isEmpty ? 'Pending' : status,
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
+                  color: isPaid ? Colors.green : Colors.orange)),
+        ]),
+      ),
+      if ((_detail?.bookingReference ?? '').isNotEmpty) ...[
+        const SizedBox(width: 12),
+        Text('Ref: ${_detail!.bookingReference}',
+            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+      ],
+    ]);
+  }
+
+  Widget _sectionTitle(String title, IconData icon) => Row(children: [
+    Icon(icon, size: 16, color: AppColors.cyan),
+    const SizedBox(width: 6),
+    Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+  ]);
+
+  Widget _flightTile(ApiTicketDetailFlight f) {
+    final dep = f.departureDateTime != null
+        ? _fmtDt(f.departureDateTime!) : '--:--';
+    final arr = f.arrivalDateTime != null
+        ? _fmtDt(f.arrivalDateTime!) : '--:--';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.cyanLight,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('${f.departureCity} → ${f.arrivalCity}',
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+          Text('$dep → $arr',
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+        ])),
+        if (f.flightType != null)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: AppColors.cyan.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(f.flightType!,
+                style: const TextStyle(fontSize: 11, color: AppColors.cyanDark,
+                    fontWeight: FontWeight.w600)),
+          ),
+      ]),
+    );
+  }
+
+  Widget _passengerTile(ApiTicketDetailPassenger p) => Padding(
+    padding: const EdgeInsets.only(bottom: 6),
+    child: Row(children: [
+      const Icon(Icons.person_outline, size: 16, color: AppColors.cyan),
+      const SizedBox(width: 8),
+      Expanded(child: Text('${p.firstName} ${p.lastName}',
+          style: const TextStyle(fontSize: 13))),
+      if (p.gender != null)
+        Text(p.gender!, style: const TextStyle(fontSize: 12,
+            color: AppColors.textSecondary)),
+    ]),
+  );
+
+  Widget _serviceTile(ApiTicketDetailService s) => Padding(
+    padding: const EdgeInsets.only(bottom: 6),
+    child: Row(children: [
+      const Icon(Icons.check_circle_outline, size: 16, color: AppColors.cyan),
+      const SizedBox(width: 8),
+      Expanded(child: Text(s.serviceName,
+          style: const TextStyle(fontSize: 13))),
+      Text('×${s.quantity}',
+          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+      const SizedBox(width: 8),
+      Text('JOD ${(s.serviceFee * s.quantity).toStringAsFixed(2)}',
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+    ]),
+  );
+
+  Widget _priceRow(BuildContext context) {
+    final price = _detail?.ticketPrice ?? 0.0;
+    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      const Text('Total Paid', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+      Text('JOD ${price.toStringAsFixed(2)}',
+          style: const TextStyle(fontWeight: FontWeight.bold,
+              fontSize: 18, color: AppColors.cyan)),
+    ]);
+  }
+
+  String _fmtDt(String iso) {
+    final dt = DateTime.tryParse(iso);
+    if (dt == null) return iso;
+    final h = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+    final m = dt.minute.toString().padLeft(2, '0');
+    final s = dt.hour >= 12 ? 'PM' : 'AM';
+    return '$h:$m $s';
   }
 }

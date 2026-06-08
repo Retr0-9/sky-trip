@@ -19,11 +19,11 @@ class MainScaffold extends StatefulWidget {
 class _MainScaffoldState extends State<MainScaffold> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = const [
-    HomeScreen(),
-    BookingScreen(),
-    TicketsScreen(),
-    ProfileScreen(),
+  late final List<Widget> _screens = [
+    HomeScreen(onBookNow: () => _onTabTapped(1)),
+    const BookingScreen(),
+    const TicketsScreen(),
+    const ProfileScreen(),
   ];
 
   void _onTabTapped(int index) {

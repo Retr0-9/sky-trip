@@ -27,6 +27,7 @@ class BookingProvider extends ChangeNotifier {
   int? _bookId;
   int? _ticketId;
   int? _selectedClassId;
+  int? _tripTypeId;
 
   // Services — loaded from API + user selections (serviceId → quantity)
   List<ServiceModel> _availableServices = [];
@@ -50,6 +51,7 @@ class BookingProvider extends ChangeNotifier {
   int? get bookId                         => _bookId;
   int? get ticketId                       => _ticketId;
   int? get selectedClassId                => _selectedClassId;
+  int? get tripTypeId                     => _tripTypeId;
   List<ServiceModel>  get availableServices => List.unmodifiable(_availableServices);
   Map<int, int>       get selectedServices  => Map.unmodifiable(_selectedServices);
 
@@ -135,6 +137,11 @@ class BookingProvider extends ChangeNotifier {
 
   void setSelectedClassId(int id) {
     _selectedClassId = id;
+    notifyListeners();
+  }
+
+  void setTripTypeId(int id) {
+    _tripTypeId = id;
     notifyListeners();
   }
 
@@ -228,6 +235,7 @@ class BookingProvider extends ChangeNotifier {
     _bookId = null;
     _ticketId = null;
     _selectedClassId = null;
+    _tripTypeId = null;
     _availableServices = [];
     _selectedServices = {};
     _mealCount = 0;
