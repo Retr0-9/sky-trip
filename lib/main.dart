@@ -24,6 +24,7 @@ import 'package:skytrip/screens/van_rental_screen.dart';
 import 'package:skytrip/screens/settings_screen.dart';
 import 'package:skytrip/screens/contact_us_screen.dart';
 import 'package:skytrip/screens/boarding_pass_screen.dart';
+import 'package:skytrip/screens/sign_up_screen.dart';
 import 'package:app_links/app_links.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -144,6 +145,7 @@ class _SkyTripAppState extends State<SkyTripApp> {
         '/settings':      (context) => const SettingsScreen(),
         '/contact-us':    (context) => const ContactUsScreen(),
         '/boarding-pass': (context) => const BoardingPassScreen(),
+        '/sign-up':       (context) => const SignUpScreen(),
       },
     );
   }

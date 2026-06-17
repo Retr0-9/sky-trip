@@ -97,7 +97,7 @@ class HomeScreen extends StatelessWidget {
             child: SectionHeader(
               title: l10n.homeLatestOffers,
               icon: Icons.trending_up,
-              onSeeAll: () {},
+              onSeeAll: onBookNow,
             ),
           ),
           const SizedBox(height: 10),
@@ -109,7 +109,7 @@ class HomeScreen extends StatelessWidget {
               discount: o.discount,
               validUntil: o.validUntil,
               color: o.color,
-              onTap: () {},
+              onTap: onBookNow,
             ),
           )),
 
@@ -121,7 +121,7 @@ class HomeScreen extends StatelessWidget {
             child: SectionHeader(
               title: l10n.homeFeaturedDestinations,
               icon: Icons.star_border,
-              onSeeAll: () {},
+              onSeeAll: onBookNow,
             ),
           ),
           const SizedBox(height: 10),
@@ -130,13 +130,13 @@ class HomeScreen extends StatelessWidget {
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: const [
-                _DestCard(city: 'Dubai',  imagePath: 'lib/assets/cites_images/dubai.jpg'),
-                _DestCard(city: 'London', imagePath: 'lib/assets/cites_images/london.jpg'),
-                _DestCard(city: 'Paris',  imagePath: 'lib/assets/cites_images/paris.jpg'),
-                _DestCard(city: 'Cairo',  imagePath: 'lib/assets/cites_images/cairo.jpg'),
-                _DestCard(city: 'Riyadh', imagePath: 'lib/assets/cites_images/riyadh.jpg'),
-                _DestCard(city: 'Amman',  imagePath: 'lib/assets/cites_images/amman.jpg'),
+              children: [
+                _DestCard(city: 'Dubai',  imagePath: 'lib/assets/cites_images/dubai.jpg',  onTap: onBookNow),
+                _DestCard(city: 'London', imagePath: 'lib/assets/cites_images/london.jpg', onTap: onBookNow),
+                _DestCard(city: 'Paris',  imagePath: 'lib/assets/cites_images/paris.jpg',  onTap: onBookNow),
+                _DestCard(city: 'Cairo',  imagePath: 'lib/assets/cites_images/cairo.jpg',  onTap: onBookNow),
+                _DestCard(city: 'Riyadh', imagePath: 'lib/assets/cites_images/riyadh.jpg', onTap: onBookNow),
+                _DestCard(city: 'Amman',  imagePath: 'lib/assets/cites_images/amman.jpg',  onTap: onBookNow),
               ],
             ),
           ),
@@ -157,12 +157,15 @@ class _OfferData {
 class _DestCard extends StatelessWidget {
   final String city;
   final String imagePath;
+  final VoidCallback? onTap;
 
-  const _DestCard({required this.city, required this.imagePath});
+  const _DestCard({required this.city, required this.imagePath, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       width: 110,
       margin: const EdgeInsets.only(right: 12),
       decoration: BoxDecoration(
@@ -192,6 +195,7 @@ class _DestCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

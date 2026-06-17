@@ -1,7 +1,7 @@
 name: skytrip
 description: A flight booking app like Royal Jordanian
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.5+2
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

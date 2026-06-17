@@ -237,8 +237,7 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
   // ── File picker ───────────────────────────────────────────────
   Future<void> _pickDocument() async {
     final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      type: FileType.image,
     );
     if (result != null && result.files.single.path != null) {
       setState(() => _docFile = File(result.files.single.path!));

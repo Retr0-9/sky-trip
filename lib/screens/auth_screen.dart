@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:skytrip/generated/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../providers/user_provider.dart';
 import 'package:skytrip/services/auth_service.dart';
@@ -95,7 +94,7 @@ class _AuthScreenState extends State<AuthScreen>
         return;
       }
     } else {
-      _showError('Registration coming soon. Please sign in.');
+      Navigator.pushNamed(context, '/sign-up');
       return;
     }
 
@@ -147,7 +146,16 @@ class _AuthScreenState extends State<AuthScreen>
                 opacity: _fadeAnim,
                 child: SlideTransition(
                   position: _slideAnim,
-                  child: _buildCard(),
+                  child: Column(
+                    children: [
+                      _buildCard(),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'v1.0.5',
+                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -223,13 +231,6 @@ class _AuthScreenState extends State<AuthScreen>
 
           const SizedBox(height: 6),
           _buildSubmitButton(),
-
-          if (!_isStaffMode) ...[
-            const SizedBox(height: 18),
-            _buildDivider(),
-            const SizedBox(height: 18),
-            _buildGoogleButton(),
-          ],
 
           const SizedBox(height: 20),
           if (!_isStaffMode) _buildToggleRow(),
@@ -366,53 +367,6 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  Widget _buildDivider() {
-    return Row(children: [
-      const Expanded(child: Divider(height: 1)),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Text('or', style: AppTextStyles.bodySmall),
-      ),
-      const Expanded(child: Divider(height: 1)),
-    ]);
-  }
-
-  Widget _buildGoogleButton() {
-    final theme = Theme.of(context);
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton(
-        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.authGoogleSignIn),
-            behavior: SnackBarBehavior.floating,
-          ),
-        ),
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          side: BorderSide(color: theme.dividerColor),
-          shape: const RoundedRectangleBorder(borderRadius: AppRadius.md),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 20, height: 20,
-              decoration: const BoxDecoration(shape: BoxShape.circle),
-              child: Icon(Icons.language, size: 20,
-                  color: theme.textTheme.bodySmall?.color),
-            ),
-            const SizedBox(width: 10),
-            Text('Continue with Google',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                )),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildToggleRow() {
     final question = _mode == _AuthMode.signIn
         ? "Don't have an account?"
@@ -422,8 +376,13 @@ class _AuthScreenState extends State<AuthScreen>
       Text(question, style: AppTextStyles.bodySmall),
       const SizedBox(width: 4),
       GestureDetector(
-        onTap: () => _switchMode(
-            _mode == _AuthMode.signIn ? _AuthMode.signUp : _AuthMode.signIn),
+        onTap: () {
+          if (_mode == _AuthMode.signIn) {
+            Navigator.pushNamed(context, '/sign-up');
+          } else {
+            _switchMode(_AuthMode.signIn);
+          }
+        },
         child: Text(action,
             style: const TextStyle(
                 color: AppColors.cyan,
