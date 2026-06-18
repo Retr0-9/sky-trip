@@ -70,7 +70,7 @@ class BookingProvider extends ChangeNotifier {
 
   /// Unit price for selected flight (prefers API schedule)
   double get flightPrice =>
-      _selectedSchedule?.totalPrice ?? _selectedFlight?.price ?? 0.0;
+      _selectedSchedule?.basePrice ?? _selectedFlight?.price ?? 0.0;
 
   String get currency => _selectedFlight?.currency ?? 'JOD';
 

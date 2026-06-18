@@ -239,7 +239,7 @@ class _FlightScheduleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final user = context.watch<UserProvider>();
-    final convertedPrice = user.convertPrice(schedule.totalPrice);
+    final convertedPrice = user.convertPrice(schedule.basePrice);
     final totalPrice = convertedPrice * passengerCount;
 
     return GestureDetector(

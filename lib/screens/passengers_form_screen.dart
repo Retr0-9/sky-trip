@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/flight_schedule_model.dart';
@@ -234,13 +235,39 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
     );
   }
 
-  // ── File picker ───────────────────────────────────────────────
+  // ── Document picker (gallery or camera) ──────────────────────
   Future<void> _pickDocument() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
+    final source = await showModalBottomSheet<String>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(
+            leading: const Icon(Icons.photo_library_outlined),
+            title: const Text('Choose from Gallery'),
+            onTap: () => Navigator.pop(ctx, 'gallery'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.camera_alt_outlined),
+            title: const Text('Take a Photo'),
+            onTap: () => Navigator.pop(ctx, 'camera'),
+          ),
+        ]),
+      ),
     );
-    if (result != null && result.files.single.path != null) {
-      setState(() => _docFile = File(result.files.single.path!));
+    if (source == null) return;
+
+    if (source == 'camera') {
+      final picker = ImagePicker();
+      final photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+      if (photo != null) setState(() => _docFile = File(photo.path));
+    } else {
+      final result = await FilePicker.platform.pickFiles(type: FileType.image);
+      if (result != null && result.files.single.path != null) {
+        setState(() => _docFile = File(result.files.single.path!));
+      }
     }
   }
 
@@ -487,7 +514,7 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
       const SizedBox(height: 16),
 
       // Document file
-      _label('Upload Document (PDF / Photo)'),
+      _label('Upload Document (Photo)'),
       const SizedBox(height: 8),
       GestureDetector(
         onTap: _pickDocument,
@@ -515,7 +542,7 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
             Text(
               _docFile != null
                   ? _docFile!.path.split('/').last
-                  : 'Tap to upload PDF or photo',
+                  : 'Tap to upload or take a photo',
               style: TextStyle(
                 color: _docFile != null
                     ? AppColors.textPrimary

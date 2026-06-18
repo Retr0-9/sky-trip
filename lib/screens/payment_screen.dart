@@ -193,7 +193,7 @@ class _PaymentScreenState extends State<PaymentScreen>
     final user       = context.watch<UserProvider>();
     final passengers = _search?.totalPassengers ?? booking.passengerCount;
     final schedule   = _schedule ?? booking.selectedSchedule;
-    final price      = schedule?.totalPrice ?? 0.0;
+    final price      = schedule?.basePrice ?? 0.0;
     final convertedPrice = user.convertPrice(price);
     final baseFare   = convertedPrice * passengers;
     final taxes      = baseFare * 0.15;

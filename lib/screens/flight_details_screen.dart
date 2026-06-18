@@ -56,7 +56,7 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
       final ticketId = await BookingService.createInfoTicket(
         bookId:           bookId,
         passengerClassId: booking.selectedClassId ?? 1,
-        ticketPrice:      _schedule!.totalPrice * passengers,
+        ticketPrice:      _schedule!.basePrice * passengers,
         passengersCount:  passengers,
         token:            token,
       );
@@ -101,7 +101,7 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
     final arrCity   = s?.arrivalCity    ?? '—';
     final depTime   = s?.departureDisplay ?? '—';
     final arrTime   = s?.arrivalDisplay   ?? '—';
-    final price     = s?.totalPrice       ?? 0.0;
+    final price     = s?.basePrice        ?? 0.0;
     final convertedPrice = user.convertPrice(price);
     final baseFare  = convertedPrice * passengers;
     final taxes     = baseFare * 0.15;
