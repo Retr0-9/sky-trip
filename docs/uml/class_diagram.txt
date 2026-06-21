@@ -1,0 +1,572 @@
+@startuml SkyTrip_ClassDiagram_Models
+
+title SkyTrip — Class Diagram (Data Models)
+
+skinparam class {
+  BackgroundColor #E8F6F8
+  BorderColor #5BB8C8
+  ArrowColor #333333
+  HeaderBackgroundColor #5BB8C8
+  FontColor #0f172a
+}
+skinparam enum {
+  BackgroundColor #FFF3E0
+  BorderColor #FB923C
+  HeaderBackgroundColor #FB923C
+}
+
+' ═══════════════════════════════════════
+' ENUMS
+' ═══════════════════════════════════════
+
+enum PassengerType {
+  adult
+  youth
+  child
+  infant
+}
+
+enum TicketStatusType {
+  upcoming
+  completed
+  cancelled
+}
+
+' ═══════════════════════════════════════
+' FLIGHT MODELS
+' ═══════════════════════════════════════
+
+class FlightModel {
+  + id : String
+  + airline : String
+  + flightNumber : String
+  + fromCode : String
+  + fromCity : String
+  + toCode : String
+  + toCity : String
+  + departureTime : String
+  + arrivalTime : String
+  + duration : String
+  + stops : String
+  + price : double
+  + currency : String
+  + travelClass : String
+  + availableSeats : int
+}
+
+class FlightScheduleModel {
+  + flightScheduleId : int
+  + departureCity : String
+  + arrivalCity : String
+  + departureTime : String
+  + arrivalTime : String
+  + flightDate : DateTime
+  + basePrice : double
+  + classFee : double
+  + totalPrice : double
+  --
+  + departureDisplay : String <<getter>>
+  + arrivalDisplay : String <<getter>>
+  + {static} fromJson(json : Map) : FlightScheduleModel
+}
+
+' ═══════════════════════════════════════
+' BOOKING & SEARCH MODELS
+' ═══════════════════════════════════════
+
+class BookingSearchModel {
+  + fromCode : String
+  + fromCity : String
+  + toCode : String
+  + toCity : String
+  + departureDate : DateTime
+  + returnDate : DateTime?
+  + tripType : String
+  + adults : int
+  + youth : int
+  + children : int
+  + infants : int
+  + travelClass : String
+  --
+  + totalPassengers : int <<getter>>
+}
+
+class PassengerModel {
+  + firstName : String
+  + lastName : String
+  + email : String
+  + phone : String
+  + dateOfBirth : DateTime?
+  + gender : String
+  + issuedCountry : String
+  + documentType : String
+  + type : PassengerType
+  --
+  + fullName : String <<getter>>
+  + typeLabel : String <<getter>>
+}
+
+class SelectedService {
+  + name : String
+  + price : double
+  + quantity : int
+  --
+  + total : double <<getter>>
+}
+
+class BookingModel {
+  + flight : FlightModel
+  + passengers : List<PassengerModel>
+  + services : List<SelectedService>
+  + selectedSeat : String?
+  --
+  + flightTotal : double <<getter>>
+  + servicesTotal : double <<getter>>
+  + grandTotal : double <<getter>>
+}
+
+' ═══════════════════════════════════════
+' REFERENCE MODELS (API)
+' ═══════════════════════════════════════
+
+class ServiceModel {
+  + serviceId : int
+  + name : String
+  + fees : double
+  --
+  + {static} fromJson(json : Map) : ServiceModel
+}
+
+class PassengerClassModel {
+  + classId : int
+  + name : String
+  + fees : double
+  --
+  + {static} fromJson(json : Map) : PassengerClassModel
+}
+
+class TripTypeModel {
+  + tripTypeId : int
+  + name : String
+  --
+  + {static} fromJson(json : Map) : TripTypeModel
+}
+
+class CountryModel {
+  + countryId : int
+  + countryName : String
+  --
+  + {static} fromJson(json : Map) : CountryModel
+}
+
+' ═══════════════════════════════════════
+' TICKET MODELS
+' ═══════════════════════════════════════
+
+class TicketModel {
+  + id : String
+  + fromCode : String
+  + fromCity : String
+  + toCode : String
+  + toCity : String
+  + date : String
+  + time : String
+  + flightNumber : String
+  + seatNumber : String
+  + status : TicketStatusType
+  + totalPaid : double
+  + currency : String
+}
+
+class ApiTicketModel {
+  + ticketId : int
+  + bookId : int
+  + ticketPrice : double
+  + passengersCount : int
+  + departureCity : String?
+  + arrivalCity : String?
+  + flightDate : DateTime?
+  + departureTime : String?
+  + arrivalTime : String?
+  + flightNumber : String?
+  + seatNumber : String?
+  + bookingStatus : String?
+  + paymentStatus : String?
+  + amount : double?
+  + currency : String?
+  + bookingDate : DateTime?
+  + isActive : bool
+  --
+  + toTicketModel() : TicketModel
+  + {static} fromJson(json : Map) : ApiTicketModel
+}
+
+class ApiTicketDetailModel {
+  + ticketId : int
+  + bookId : int
+  + bookingStatus : String?
+  + paymentStatus : String?
+  + bookingReference : String?
+  + ticketPrice : double
+  + passengersCount : int
+  + flights : List<ApiTicketDetailFlight>
+  + passengers : List<ApiTicketDetailPassenger>
+  + services : List<ApiTicketDetailService>
+  --
+  + {static} fromJson(json : Map) : ApiTicketDetailModel
+}
+
+class ApiTicketDetailFlight {
+  + flightScheduleId : int
+  + departureCity : String
+  + arrivalCity : String
+  + departureDateTime : String?
+  + arrivalDateTime : String?
+  + flightType : String?
+  --
+  + {static} fromJson(json : Map) : ApiTicketDetailFlight
+}
+
+class ApiTicketDetailPassenger {
+  + passengerId : int
+  + firstName : String
+  + lastName : String
+  + gender : String?
+  + documentationType : String?
+  --
+  + {static} fromJson(json : Map) : ApiTicketDetailPassenger
+}
+
+class ApiTicketDetailService {
+  + serviceName : String
+  + quantity : int
+  + serviceFee : double
+  --
+  + {static} fromJson(json : Map) : ApiTicketDetailService
+}
+
+' ═══════════════════════════════════════
+' VEHICLE & HOTEL MODELS
+' ═══════════════════════════════════════
+
+class Vehicle {
+  + name : String
+  + type : String
+  + rating : double
+  + seats : int
+  + bags : int
+  + features : List<String>
+  + price : double
+}
+
+class BookedVehicleModel <<HiveObject>> {
+  + id : String
+  + vehicleName : String
+  + vehicleType : String
+  + seats : int
+  + bags : int
+  + rating : double
+  + price : double
+  + features : List<String>
+  + pickupLocation : String
+  + dropLocation : String
+  + pickupDate : String
+  + returnDate : String
+  + days : int
+  + totalPrice : double
+  --
+  + toJson() : Map<String, dynamic>
+  + {static} fromJson(json : Map) : BookedVehicleModel
+}
+
+class HotelBookingModel <<HiveObject>> {
+  + id : String
+  + hotelName : String
+  + location : String
+  + checkInDate : DateTime
+  + checkOutDate : DateTime
+  + numberOfGuests : int
+  + numberOfRooms : int
+  + roomType : String
+  + pricePerNight : double
+  --
+  + toJson() : Map<String, dynamic>
+  + {static} fromJson(json : Map) : HotelBookingModel
+}
+
+' ═══════════════════════════════════════
+' RELATIONSHIPS
+' ═══════════════════════════════════════
+
+PassengerModel --> PassengerType : type
+TicketModel --> TicketStatusType : status
+ApiTicketModel --> TicketModel : toTicketModel()
+
+BookingModel "1" *-- "1" FlightModel : flight
+BookingModel "1" *-- "1..*" PassengerModel : passengers
+BookingModel "1" *-- "0..*" SelectedService : services
+
+ApiTicketDetailModel "1" *-- "1..*" ApiTicketDetailFlight : flights
+ApiTicketDetailModel "1" *-- "1..*" ApiTicketDetailPassenger : passengers
+ApiTicketDetailModel "1" *-- "0..*" ApiTicketDetailService : services
+
+BookedVehicleModel ..> Vehicle : created from
+
+FlightModel .right.> FlightScheduleModel : legacy ←→ API\n(coexist during migration)
+
+@enduml
+
+
+' ═══════════════════════════════════════════════════════════
+' PROVIDERS & SERVICES CLASS DIAGRAM
+' ═══════════════════════════════════════════════════════════
+
+
+@startuml SkyTrip_ClassDiagram_ProvidersServices
+
+title SkyTrip — Class Diagram (Providers & Services)
+
+skinparam class {
+  BackgroundColor #E8F6F8
+  BorderColor #5BB8C8
+  ArrowColor #333333
+  HeaderBackgroundColor #5BB8C8
+  FontColor #0f172a
+}
+
+' ═══════════════════════════════════════
+' PROVIDERS
+' ═══════════════════════════════════════
+
+abstract class ChangeNotifier {
+  + notifyListeners() : void
+}
+
+class BookingProvider <<ChangeNotifier>> {
+  - _search : BookingSearchModel?
+  - _selectedFlight : FlightModel?
+  - _selectedSchedule : FlightScheduleModel?
+  - _passengers : List<PassengerModel>
+  - _selectedSeat : String?
+  - _bookId : int?
+  - _ticketId : int?
+  - _selectedClassId : int?
+  - _tripTypeId : int?
+  - _availableServices : List<ServiceModel>
+  - _selectedServices : Map<int, int>
+  - _isInBookingFlow : bool
+  --
+  + setSearch(search : BookingSearchModel) : void
+  + selectFlight(flight : FlightModel) : void
+  + selectSchedule(schedule : FlightScheduleModel) : void
+  + setBookId(id : int) : void
+  + setTicketId(id : int) : void
+  + setSelectedClassId(id : int) : void
+  + setTripTypeId(id : int) : void
+  + addPassenger(p : PassengerModel) : void
+  + updatePassenger(i : int, p : PassengerModel) : void
+  + clearPassengers() : void
+  + selectSeat(seatId : String) : void
+  + setAvailableServices(s : List<ServiceModel>) : void
+  + setServiceQuantity(serviceId : int, qty : int) : void
+  + getServiceQuantity(serviceId : int) : int
+  + clearSelectedServices() : void
+  + resetBooking() : void
+  --
+  + flightPrice : double <<getter>>
+  + baseFare : double <<getter>>
+  + taxes : double <<getter>>
+  + servicesTotal : double <<getter>>
+  + grandTotal : double <<getter>>
+  + isInBookingFlow : bool <<getter>>
+}
+
+class UserProvider <<ChangeNotifier>> {
+  - _isLoggedIn : bool
+  - _token : String
+  - _userId : int?
+  - _personId : int?
+  - _clientId : int?
+  - _role : String
+  - _firstName : String
+  - _lastName : String
+  - _email : String
+  - _phone : String
+  - _nationality : String
+  - _passportNumber : String
+  - _preferredClass : String
+  - _profileImageUrl : String?
+  - _milesBalance : int
+  - _themeMode : ThemeMode
+  - _locale : Locale
+  - _currency : String
+  - _conversionRates : Map<String, double>
+  --
+  + login(token, userId, personId, clientId, email, role) : void
+  + logout() : void
+  + updateProfile(fields) : void
+  + loadProfile(token : String) : Future<void>
+  + setProfileImageUrl(url : String) : void
+  + addMiles(amount : int) : void
+  + toggleTheme() : void
+  + loadTheme() : Future<void>
+  + changeLanguage(locale : Locale) : void
+  + loadLanguage() : Future<void>
+  + setCurrency(currency : String) : void
+  + loadCurrency() : Future<void>
+  + convertPrice(amount : double) : double
+}
+
+class VehicleProvider <<ChangeNotifier>> {
+  - _vehicles : List<Vehicle>
+  - _bookedVehicles : List<BookedVehicleModel>
+  - _selectedType : String
+  --
+  + init() : Future<void>
+  + setType(type : String) : void
+  + addBookedVehicle(v : BookedVehicleModel) : void
+  + removeBookedVehicle(id : String) : void
+  + filteredVehicles : List<Vehicle> <<getter>>
+}
+
+class HotelBookingProvider <<ChangeNotifier>> {
+  - _bookings : List<HotelBookingModel>
+  --
+  + init() : Future<void>
+  + addBooking(b : HotelBookingModel) : void
+  + removeBooking(id : String) : void
+  + allHotelBookings : List<HotelBookingModel> <<getter>>
+}
+
+' ═══════════════════════════════════════
+' SERVICES
+' ═══════════════════════════════════════
+
+class ApiClient <<static>> {
+  - {static} baseUrl : String
+  --
+  + {static} get(path : String, token : String) : Future<Response>
+  + {static} post(path : String, body : Map, token : String) : Future<Response>
+  + {static} postMultipart(path, fields, files, token) : Future<Response>
+  + {static} put(path : String, body : Map, token : String) : Future<Response>
+  + {static} delete(path : String, token : String) : Future<Response>
+  + {static} decodeMap(res : Response) : Map<String, dynamic>
+  + {static} decodeList(res : Response) : List<dynamic>
+}
+
+class AuthService <<static>> {
+  + {static} login(email : String, password : String) : Future<LoginResult>
+}
+
+class FlightService <<static>> {
+  + {static} getCities(token : String) : Future<List<String>>
+  + {static} searchOneWay(from, to, date, token) : Future<List<FlightScheduleModel>>
+  + {static} searchRoundTrip(from, to, dept, ret, token) : Future<List<FlightScheduleModel>>
+  + {static} searchMultiCity(legs, token) : Future<List<FlightScheduleModel>>
+  + {static} getAllFlights(token : String) : Future<List<FlightScheduleModel>>
+  + {static} getPassengerClasses(token) : Future<List<PassengerClassModel>>
+  + {static} getTripTypes(token : String) : Future<List<TripTypeModel>>
+}
+
+class BookingService <<static>> {
+  + {static} createBookingTrip(clientId, tripTypeId, token) : Future<int>
+  + {static} createInfoTicket(bookId, classId, price, count, token) : Future<int>
+  + {static} addPassenger(bookId, data, token) : Future<AddPassengerResult>
+  + {static} confirmBooking(bookId, token) : Future<void>
+  + {static} createTicketFlight(ticketId, scheduleId, flightType, token) : Future<void>
+  + {static} fetchPaidTickets(token : String) : Future<List<ApiTicketModel>>
+  + {static} fetchTicketDetail(ticketId, token) : Future<ApiTicketDetailModel>
+}
+
+class PaymentService <<static>> {
+  + {static} createCheckoutSession(ticketId, token) : Future<String>
+  + {static} getPaymentStatus(ticketId, token) : Future<String>
+}
+
+class ProfileService <<static>> {
+  + {static} getMyProfile(token : String) : Future<ProfileData>
+  + {static} updateProfile(fields, token) : Future<void>
+  + {static} uploadAvatar(image, token) : Future<String?>
+}
+
+class ExtrasService <<static>> {
+  + {static} getAllServices(token : String) : Future<List<ServiceModel>>
+  + {static} addService(ticketId, serviceId, qty, token) : Future<void>
+  + {static} removeAllServices(ticketId, token) : Future<void>
+}
+
+class CountryService <<static>> {
+  + {static} getAllCountries(token : String) : Future<List<CountryModel>>
+}
+
+class LoginResult {
+  + token : String
+  + userId : int
+  + personId : int
+  + clientId : int
+  + email : String
+  + role : String
+}
+
+class AuthException {
+  + message : String
+}
+
+class ProfileData {
+  + userId : int
+  + personId : int
+  + clientId : int
+  + email : String
+  + role : String
+  + firstName : String
+  + lastName : String
+  + phone : String
+  + gender : String
+  + profileImageUrl : String?
+  + countryName : String?
+  + countryId : int?
+  + birthDate : DateTime?
+}
+
+class AddPassengerResult {
+  + passengerId : int
+  + personId : int
+  + documentationId : int
+  + current : int
+  + total : int
+}
+
+' ═══════════════════════════════════════
+' RELATIONSHIPS
+' ═══════════════════════════════════════
+
+BookingProvider --|> ChangeNotifier
+UserProvider --|> ChangeNotifier
+VehicleProvider --|> ChangeNotifier
+HotelBookingProvider --|> ChangeNotifier
+
+AuthService ..> ApiClient : uses
+FlightService ..> ApiClient : uses
+BookingService ..> ApiClient : uses
+PaymentService ..> ApiClient : uses
+ProfileService ..> ApiClient : uses
+ExtrasService ..> ApiClient : uses
+CountryService ..> ApiClient : uses
+
+AuthService ..> LoginResult : returns
+AuthService ..> AuthException : throws
+ProfileService ..> ProfileData : returns
+BookingService ..> AddPassengerResult : returns
+
+BookingProvider o-- BookingSearchModel : _search
+BookingProvider o-- FlightModel : _selectedFlight
+BookingProvider o-- FlightScheduleModel : _selectedSchedule
+BookingProvider o-- PassengerModel : _passengers
+BookingProvider o-- ServiceModel : _availableServices
+
+UserProvider ..> ProfileService : loadProfile()
+VehicleProvider o-- Vehicle : _vehicles
+VehicleProvider o-- BookedVehicleModel : _bookedVehicles
+HotelBookingProvider o-- HotelBookingModel : _bookings
+
+@enduml

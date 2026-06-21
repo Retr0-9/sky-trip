@@ -1,0 +1,258 @@
+@startuml SkyTrip_UseCase_ClientApp
+
+title SkyTrip — Use Case Diagram (Client Mobile App)
+
+left to right direction
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #E8F6F8
+  BorderColor #5BB8C8
+  ArrowColor #333333
+}
+skinparam actor {
+  BackgroundColor #5BB8C8
+  BorderColor #333333
+}
+
+actor "Guest" as guest
+actor "Registered User" as user
+actor "Stripe API" as stripe <<External>>
+actor "Azure REST API" as api <<External>>
+
+guest -|> user : extends
+
+rectangle "SkyTrip Mobile App" {
+
+  ' ── Authentication ──
+  package "Authentication" {
+    usecase "Register Account" as UC_REGISTER
+    usecase "Login" as UC_LOGIN
+    usecase "Logout" as UC_LOGOUT
+  }
+
+  ' ── Flight Booking ──
+  package "Flight Booking" {
+    usecase "Search Flights\n(One-way / Round-trip / Multi-city)" as UC_SEARCH
+    usecase "View Available Flights" as UC_VIEW_FLIGHTS
+    usecase "Select Flight" as UC_SELECT_FLIGHT
+    usecase "View Flight Details" as UC_FLIGHT_DETAILS
+    usecase "Add Passengers" as UC_PASSENGERS
+    usecase "Upload Passport / ID" as UC_UPLOAD_DOC
+    usecase "Select Extra Services\n(Meals, Wheelchair, Assistance)" as UC_SERVICES
+    usecase "Select Seat" as UC_SEAT
+    usecase "Make Payment" as UC_PAYMENT
+    usecase "View Payment Status" as UC_PAY_STATUS
+    usecase "Cancel Booking Flow" as UC_CANCEL_BOOKING
+  }
+
+  ' ── Tickets ──
+  package "Tickets & Boarding" {
+    usecase "View My Tickets" as UC_TICKETS
+    usecase "View Ticket Details" as UC_TICKET_DETAIL
+    usecase "View Boarding Pass\nwith QR Code" as UC_BOARDING
+  }
+
+  ' ── Hotel Booking ──
+  package "Hotel Booking" {
+    usecase "Search Hotels" as UC_HOTEL_SEARCH
+    usecase "Book Hotel" as UC_HOTEL_BOOK
+    usecase "View Hotel Bookings" as UC_HOTEL_VIEW
+    usecase "Cancel Hotel Booking" as UC_HOTEL_CANCEL
+  }
+
+  ' ── Van Rental ──
+  package "Van Rental" {
+    usecase "Browse Vehicles\n(Economy / SUV / Van / Luxury)" as UC_VAN_BROWSE
+    usecase "Book Vehicle" as UC_VAN_BOOK
+    usecase "View Vehicle Bookings" as UC_VAN_VIEW
+    usecase "Cancel Vehicle Booking" as UC_VAN_CANCEL
+  }
+
+  ' ── Profile & Settings ──
+  package "Profile & Settings" {
+    usecase "View Profile" as UC_PROFILE
+    usecase "Update Profile Info" as UC_PROFILE_UPDATE
+    usecase "Upload Profile Photo" as UC_PROFILE_PHOTO
+    usecase "Change Language\n(EN / AR)" as UC_LANG
+    usecase "Change Currency\n(JOD / USD / EUR / GBP / AED)" as UC_CURRENCY
+    usecase "Toggle Theme\n(Light / Dark)" as UC_THEME
+    usecase "Contact Support" as UC_CONTACT
+  }
+}
+
+' ── Guest Associations ──
+guest --> UC_REGISTER
+guest --> UC_LOGIN
+
+' ── User Associations ──
+user --> UC_LOGOUT
+user --> UC_SEARCH
+user --> UC_VIEW_FLIGHTS
+user --> UC_SELECT_FLIGHT
+user --> UC_FLIGHT_DETAILS
+user --> UC_PASSENGERS
+user --> UC_SERVICES
+user --> UC_SEAT
+user --> UC_PAYMENT
+user --> UC_PAY_STATUS
+user --> UC_CANCEL_BOOKING
+user --> UC_TICKETS
+user --> UC_TICKET_DETAIL
+user --> UC_BOARDING
+user --> UC_HOTEL_SEARCH
+user --> UC_HOTEL_BOOK
+user --> UC_HOTEL_VIEW
+user --> UC_HOTEL_CANCEL
+user --> UC_VAN_BROWSE
+user --> UC_VAN_BOOK
+user --> UC_VAN_VIEW
+user --> UC_VAN_CANCEL
+user --> UC_PROFILE
+user --> UC_PROFILE_UPDATE
+user --> UC_PROFILE_PHOTO
+user --> UC_LANG
+user --> UC_CURRENCY
+user --> UC_THEME
+user --> UC_CONTACT
+
+' ── Include / Extend Relations ──
+UC_PASSENGERS ..> UC_UPLOAD_DOC : <<include>>
+UC_PAYMENT ..> UC_PAY_STATUS : <<include>>
+UC_TICKET_DETAIL ..> UC_BOARDING : <<extend>>
+UC_SELECT_FLIGHT ..> UC_FLIGHT_DETAILS : <<include>>
+
+' ── External System Associations ──
+UC_PAYMENT --> stripe
+UC_LOGIN --> api
+UC_SEARCH --> api
+UC_FLIGHT_DETAILS --> api
+UC_PASSENGERS --> api
+UC_SERVICES --> api
+UC_PAY_STATUS --> api
+UC_PROFILE_UPDATE --> api
+UC_PROFILE_PHOTO --> api
+UC_TICKETS --> api
+
+@enduml
+
+
+' ═══════════════════════════════════════════════════════════
+' ADMIN & EMPLOYEE WEB DASHBOARD USE CASE DIAGRAM
+' ═══════════════════════════════════════════════════════════
+
+
+@startuml SkyTrip_UseCase_AdminDashboard
+
+title SkyTrip — Use Case Diagram (Admin & Employee Web Dashboard)
+
+left to right direction
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #EDE9FE
+  BorderColor #7C3AED
+  ArrowColor #333333
+}
+skinparam actor {
+  BackgroundColor #7C3AED
+  BorderColor #333333
+}
+
+actor "Airline Employee" as employee
+actor "Airline Admin" as admin
+actor "Azure REST API" as api <<External>>
+actor "Email Service" as email <<External>>
+
+admin -|> employee : extends
+
+rectangle "SkyTrip Web Dashboard" {
+
+  ' ── Dashboard Authentication ──
+  package "Authentication" {
+    usecase "Login\n(via Login.html)" as UC_DASH_LOGIN
+    usecase "Logout" as UC_DASH_LOGOUT
+  }
+
+  ' ── Shared: Employee + Admin ──
+  package "Flight Operations" {
+    usecase "View All Flight Schedules" as UC_VIEW_FLIGHTS
+    usecase "Search & Filter Flights\n(All / Today)" as UC_FILTER_FLIGHTS
+    usecase "Update Flight Schedule\n(cities, date, times, price)" as UC_UPDATE_FLIGHT
+    usecase "Create Flight Schedule" as UC_CREATE_FLIGHT
+    usecase "Delete Flight Schedule" as UC_DELETE_FLIGHT
+  }
+
+  package "Booking Operations" {
+    usecase "View All Bookings" as UC_VIEW_BOOKINGS
+    usecase "Filter Bookings\n(All / Pending / Confirmed)" as UC_FILTER_BOOKINGS
+    usecase "Review Booking\n(Passengers & Document Previews)" as UC_REVIEW_BOOKING
+    usecase "Confirm Booking" as UC_CONFIRM_BOOKING
+    usecase "Delete Booking" as UC_DELETE_BOOKING
+    usecase "Send Confirmation Email\nto Client" as UC_SEND_CONFIRM_EMAIL
+    usecase "Send Cancellation Email\nto Client" as UC_SEND_CANCEL_EMAIL
+  }
+
+  package "Ticket Operations\n(Employee)" {
+    usecase "View Ticket Info\nby Booking" as UC_TICKET_INFO
+  }
+
+  ' ── Admin Only ──
+  package "User & Role Management\n(Admin Only)" {
+    usecase "View Dashboard Statistics\n(Flights, Employees, Bookings, Admins)" as UC_STATS
+    usecase "View All Users & Employees" as UC_VIEW_USERS
+    usecase "Filter Users by Role\n(Admin / Employee / Client)" as UC_FILTER_USERS
+    usecase "Assign Role to User\n(Admin / Employee / Client)" as UC_ASSIGN_ROLE
+  }
+
+  package "Search" {
+    usecase "Search Dashboard Data\n(flights, bookings, users)" as UC_SEARCH
+  }
+}
+
+' ── Employee Associations ──
+employee --> UC_DASH_LOGIN
+employee --> UC_DASH_LOGOUT
+employee --> UC_VIEW_FLIGHTS
+employee --> UC_FILTER_FLIGHTS
+employee --> UC_UPDATE_FLIGHT
+employee --> UC_VIEW_BOOKINGS
+employee --> UC_FILTER_BOOKINGS
+employee --> UC_REVIEW_BOOKING
+employee --> UC_CONFIRM_BOOKING
+employee --> UC_TICKET_INFO
+employee --> UC_SEARCH
+
+' ── Admin Associations (additional to inherited) ──
+admin --> UC_CREATE_FLIGHT
+admin --> UC_DELETE_FLIGHT
+admin --> UC_DELETE_BOOKING
+admin --> UC_SEND_CONFIRM_EMAIL
+admin --> UC_SEND_CANCEL_EMAIL
+admin --> UC_STATS
+admin --> UC_VIEW_USERS
+admin --> UC_FILTER_USERS
+admin --> UC_ASSIGN_ROLE
+
+' ── Include / Extend Relations ──
+UC_REVIEW_BOOKING ..> UC_CONFIRM_BOOKING : <<extend>>
+UC_CONFIRM_BOOKING ..> UC_SEND_CONFIRM_EMAIL : <<include>>
+UC_DELETE_BOOKING ..> UC_SEND_CANCEL_EMAIL : <<include>>
+
+' ── External System Associations ──
+UC_DASH_LOGIN --> api
+UC_VIEW_FLIGHTS --> api
+UC_UPDATE_FLIGHT --> api
+UC_CREATE_FLIGHT --> api
+UC_DELETE_FLIGHT --> api
+UC_VIEW_BOOKINGS --> api
+UC_REVIEW_BOOKING --> api
+UC_CONFIRM_BOOKING --> api
+UC_DELETE_BOOKING --> api
+UC_VIEW_USERS --> api
+UC_ASSIGN_ROLE --> api
+UC_TICKET_INFO --> api
+UC_SEND_CONFIRM_EMAIL --> email
+UC_SEND_CANCEL_EMAIL --> email
+
+@enduml

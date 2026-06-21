@@ -1,0 +1,542 @@
+@startuml SkyTrip_Sequence_Login
+
+title Sequence Diagram — User Login & Profile Load
+
+actor User
+participant "AuthScreen" as Auth
+participant "AuthService" as AS
+participant "Azure API" as API
+participant "UserProvider" as UP
+participant "ProfileService" as PS
+participant "MainScaffold" as Main
+
+User -> Auth : Enter email & password
+Auth -> Auth : Validate input fields
+
+alt Validation fails
+  Auth --> User : Show validation error
+else Validation passes
+  Auth -> AS : login(email, password)
+  AS -> API : POST /api/Login/login\n{email, password}
+
+  alt 401 / Network Error
+    API --> AS : Error response
+    AS --> Auth : throw AuthException
+    Auth --> User : Show error SnackBar
+  else 200 OK
+    API --> AS : {token, userId, personId,\nclientId, email, role}
+    AS --> Auth : LoginResult
+    Auth -> UP : login(token, userId, personId,\nclientId, email, role)
+    UP -> UP : Store auth state\n+ notifyListeners()
+
+    Auth -> UP : loadProfile(token)
+    UP -> PS : getMyProfile(token)
+    PS -> API : GET /api/profile/me
+    API --> PS : ProfileData
+    PS --> UP : ProfileData
+    UP -> UP : Update firstName, lastName,\nphone, nationality, etc.
+
+    Auth -> Main : Navigator.pushReplacementNamed('/home')
+    Main --> User : Show Home Screen
+  end
+end
+
+@enduml
+
+
+' ═══════════════════════════════════════════════════════════
+
+
+@startuml SkyTrip_Sequence_FlightBooking
+
+title Sequence Diagram — Complete Flight Booking Flow
+
+actor User
+participant "BookingScreen" as BS
+participant "FlightService" as FS
+participant "AvailableFlightsScreen" as AFS
+participant "FlightDetailsScreen" as FDS
+participant "BookingService" as BKS
+participant "BookingProvider" as BP
+participant "Azure API" as API
+
+== Step 1: Search Flights ==
+
+User -> BS : Select trip type, cities,\ndates, passengers, class
+BS -> FS : searchOneWay(from, to, date, token)\nor searchRoundTrip() / searchMultiCity()
+FS -> API : POST /api/FlightSchedules/oneway\n{from, to, date}
+API --> FS : List<FlightScheduleModel>
+FS --> BS : Flight results
+
+BS -> BP : setSearch(BookingSearchModel)
+BS -> AFS : Navigate to /available-flights\n(pass flights list)
+
+== Step 2: Select Flight ==
+
+AFS --> User : Display flight cards\nwith prices & times
+User -> AFS : Tap a flight card
+AFS -> BP : selectSchedule(FlightScheduleModel)
+AFS -> FDS : Navigate to /flight-details
+
+== Step 3: Confirm & Create Booking ==
+
+FDS --> User : Show flight summary & price breakdown
+User -> FDS : Tap "Continue"
+
+FDS -> BKS : createBookingTrip(clientId, tripTypeId, token)
+BKS -> API : POST /api/BookingTrip
+API --> BKS : bookId
+BKS --> FDS : bookId
+FDS -> BP : setBookId(bookId)
+
+FDS -> BKS : createInfoTicket(bookId, classId, price, count, token)
+BKS -> API : POST /api/InfoTickets
+API --> BKS : ticketId
+BKS --> FDS : ticketId
+FDS -> BP : setTicketId(ticketId)
+
+FDS -> BKS : createTicketFlight(ticketId, scheduleId, flightType, token)
+BKS -> API : POST /api/TicketFlights
+API --> BKS : 200 OK
+
+FDS -> FDS : Navigate to /passengers-form
+
+@enduml
+
+
+' ═══════════════════════════════════════════════════════════
+
+
+@startuml SkyTrip_Sequence_Passengers_Services
+
+title Sequence Diagram — Passengers, Services & Seat Selection
+
+actor User
+participant "PassengersFormScreen" as PFS
+participant "CountryService" as CS
+participant "BookingService" as BKS
+participant "BookingProvider" as BP
+participant "ServicesScreen" as SS
+participant "ExtrasService" as ES
+participant "SeatMapScreen" as SMS
+participant "Azure API" as API
+
+== Step 4: Add Passengers ==
+
+PFS -> CS : getAllCountries(token)
+CS -> API : GET /api/Country/All
+API --> CS : List<CountryModel>
+CS --> PFS : Countries for dropdown
+
+loop For each passenger (adults + youth + children + infants)
+  User -> PFS : Fill passenger form\n(name, DOB, gender, doc type)
+  User -> PFS : Upload passport / ID photo
+  PFS -> BKS : addPassenger(bookId, formData, docFile, token)
+  BKS -> API : POST /api/bookings/{bookId}/passengers\n(multipart: fields + DocumentFile)
+  API --> BKS : {passengerId, personId,\ndocumentationId, current, total}
+  BKS --> PFS : AddPassengerResult
+  PFS -> BP : addPassenger(PassengerModel)
+end
+
+PFS -> SS : Navigate to /services
+
+== Step 5: Select Extra Services ==
+
+SS -> ES : getAllServices(token)
+ES -> API : GET /api/Services/All
+API --> ES : List<ServiceModel>
+ES --> SS : Available services
+
+SS --> User : Display services list\nwith prices & quantities
+User -> SS : Adjust service quantities
+
+loop For each selected service
+  SS -> ES : addService(ticketId, serviceId, qty, token)
+  ES -> API : POST /api/tickets/{ticketId}/services
+  API --> ES : 200 OK
+end
+
+SS -> BP : setServiceQuantity(serviceId, qty)
+
+alt User opted for seat selection
+  SS -> SMS : Navigate to /seat-map
+
+  == Step 6: Select Seat ==
+
+  SMS --> User : Display 12×6 seat grid\n(A-F columns)
+  User -> SMS : Tap desired seat
+  SMS -> BP : selectSeat(seatId)
+  SMS -> SMS : Navigate to /payment
+else No seat selection
+  SS -> SS : Navigate to /payment
+end
+
+@enduml
+
+
+' ═══════════════════════════════════════════════════════════
+
+
+@startuml SkyTrip_Sequence_Payment
+
+title Sequence Diagram — Payment & Confirmation
+
+actor User
+participant "PaymentScreen" as PS
+participant "PaymentService" as PAS
+participant "Stripe" as Stripe
+participant "PaymentSuccessScreen" as PSS
+participant "BookingProvider" as BP
+participant "Azure API" as API
+participant "TicketsScreen" as TS
+
+== Step 7: Initiate Payment ==
+
+PS --> User : Show price breakdown\n(baseFare + taxes + services)
+User -> PS : Tap "Pay Now"
+
+PS -> PAS : createCheckoutSession(ticketId, token)
+PAS -> API : POST /api/payments/checkout-session\n{ticketId}
+API --> PAS : Stripe checkout URL
+PAS --> PS : checkoutUrl
+
+PS -> Stripe : launchUrl(checkoutUrl)\n(Chrome Custom Tab)
+Stripe --> User : Stripe payment page
+
+alt User completes payment
+  User -> Stripe : Enter card details & pay
+  Stripe -> Stripe : Process payment
+  Stripe --> User : Redirect via deep link\nskytrip://payment-success?ticketId=XXX
+
+  == Step 8: Confirm Payment ==
+
+  User -> PSS : Deep link opens app
+  PSS -> PSS : Start polling timer (every 1.5s)
+
+  loop Poll up to 25 seconds
+    PSS -> PAS : getPaymentStatus(ticketId, token)
+    PAS -> API : GET /api/payments/my/status/{ticketId}
+    API --> PAS : {isConfirmed, paymentStatus,\nbookingStatus}
+
+    alt Status == "Paid"
+      PAS --> PSS : "Paid"
+      PSS --> User : Show success animation\n& booking reference
+      PSS -> BP : resetBooking()
+      User -> TS : Navigate to /tickets
+    else Status == "Pending"
+      PAS --> PSS : "Pending"
+      PSS -> PSS : Continue polling
+    end
+  end
+
+else User cancels
+  Stripe --> User : Redirect via deep link\nskytrip://payment-cancel
+  User -> PS : Show cancellation screen\nwith "Retry" button
+end
+
+@enduml
+
+
+' ═══════════════════════════════════════════════════════════
+
+
+@startuml SkyTrip_Sequence_HotelBooking
+
+title Sequence Diagram — Hotel Booking
+
+actor User
+participant "MainScaffold" as MS
+participant "HotelBookingScreen" as HBS
+participant "HotelBookingProvider" as HBP
+participant "SharedPreferences" as SP
+participant "TicketsScreen" as TS
+
+User -> MS : Open side drawer
+User -> MS : Tap "Hotel Booking"
+MS -> HBS : Navigate to /hotel-booking
+
+HBS --> User : Show booking form\n(destination, dates, rooms, guests)
+User -> HBS : Fill form & tap "Search"
+HBS -> HBS : Display dummy hotel results\n(5 hardcoded hotels)
+HBS --> User : Show hotel cards with prices
+
+User -> HBS : Tap "Book" on a hotel
+HBS -> HBS : Create HotelBookingModel\n(id, name, location, dates,\nguests, rooms, type, price)
+HBS -> HBP : addBooking(hotelBookingModel)
+HBP -> SP : Save to SharedPreferences\n(key: hotel_bookings_list)
+HBP -> HBP : notifyListeners()
+HBS --> User : Show confirmation SnackBar
+
+User -> TS : Navigate to Tickets tab
+TS --> User : Hotels tab shows\nall hotel bookings
+
+note right of User
+  To cancel:
+  User swipes / taps delete
+  → HBP.removeBooking(id)
+  → Persists removal to SP
+end note
+
+@enduml
+
+
+' ═══════════════════════════════════════════════════════════
+
+
+@startuml SkyTrip_Sequence_VanRental
+
+title Sequence Diagram — Van Rental
+
+actor User
+participant "MainScaffold" as MS
+participant "VanRentalScreen" as VRS
+participant "VehicleProvider" as VP
+participant "SharedPreferences" as SP
+participant "TicketsScreen" as TS
+
+User -> MS : Open side drawer
+User -> MS : Tap "Van Rental"
+MS -> VRS : Navigate to /van-rental
+
+VRS --> User : Show rental form\n(pickup/drop location, dates)
+
+User -> VRS : Fill form fields
+User -> VRS : Select category filter\n(All / Economy / SUV / Van / Luxury)
+VRS -> VP : setType(category)
+VP -> VP : Filter vehicles list
+VP --> VRS : filteredVehicles
+VRS --> User : Display matching vehicles\nwith details & pricing
+
+User -> VRS : Tap "Book" on a vehicle
+VRS -> VRS : Calculate total\n(pricePerDay × days)
+VRS -> VRS : Create BookedVehicleModel\n(vehicle details + rental period)
+VRS -> VP : addBookedVehicle(model)
+VP -> SP : Save to SharedPreferences\n(key: vehicle_bookings_list)
+VP -> VP : notifyListeners()
+VRS --> User : Show confirmation SnackBar
+
+User -> TS : Navigate to Tickets tab
+TS --> User : Vehicles tab shows\nall vehicle bookings
+
+note right of User
+  To cancel:
+  User swipes / taps delete
+  → VP.removeBookedVehicle(id)
+  → Persists removal to SP
+end note
+
+@enduml
+
+
+' ═══════════════════════════════════════════════════════════
+
+
+@startuml SkyTrip_Sequence_ProfileManagement
+
+title Sequence Diagram — Profile Management
+
+actor User
+participant "ProfileScreen" as PS
+participant "ProfileService" as PRS
+participant "UserProvider" as UP
+participant "Azure API" as API
+
+== View Profile ==
+
+User -> PS : Navigate to Profile tab
+PS -> UP : Read cached profile data
+PS --> User : Display name, email, phone,\nnationality, passport, miles, photo
+
+== Update Profile Photo ==
+
+User -> PS : Tap profile image
+PS --> User : Show picker (Camera / Gallery)
+User -> PS : Select image
+PS -> PRS : uploadAvatar(imageFile, token)
+PRS -> API : POST /api/profile/me/image\n(multipart: image file)
+API --> PRS : imageUrl
+PRS --> PS : imageUrl
+PS -> UP : setProfileImageUrl(url)
+PS --> User : Display updated photo
+
+== Update Profile Info ==
+
+User -> PS : Edit fields (phone, name, etc.)
+User -> PS : Tap "Save"
+PS -> PRS : updateProfile(fields, token)
+PRS -> API : PUT /api/profile/me\n{updated fields}
+API --> PRS : 200 OK
+PRS --> PS : Success
+PS -> UP : updateProfile(fields)
+PS --> User : Show success message
+
+@enduml
+
+
+' ═══════════════════════════════════════════════════════════
+
+
+@startuml SkyTrip_Sequence_EmployeeDashboard
+
+title Sequence Diagram — Employee Dashboard Operations
+
+actor "Airline Employee" as Emp
+participant "Employee.html\n(Web Dashboard)" as EMP
+participant "Azure API" as API
+
+== Dashboard Initialization ==
+
+Emp -> EMP : Login (token from Login.html)
+EMP -> EMP : Read token from localStorage
+EMP -> API : GET /api/UserAccount/me
+API --> EMP : User info (name, role)
+
+EMP -> API : GET /api/FlightSchedules/All
+EMP -> API : GET /api/BookingTrip
+EMP -> API : GET /api/Services/All
+EMP -> API : GET /api/FlightSchedules/Cities
+API --> EMP : Flights, Bookings,\nServices, Cities data
+EMP --> Emp : Render dashboard\n(stats + flights table)
+
+== Update Flight Schedule ==
+
+Emp -> EMP : Click "Update" on a flight row
+EMP --> Emp : Open flight editor drawer\n(pre-filled with current data)
+Emp -> EMP : Modify fields\n(cities, date, times, base price)
+Emp -> EMP : Click "Save changes"
+EMP -> API : PUT /api/FlightSchedules/{id}\n{departureCity, arrivalCity,\ndepartureTime, arrivalTime,\nflightDate, basePrice}
+API --> EMP : 200 OK
+EMP --> Emp : Toast "Flight updated successfully"
+EMP -> EMP : Reload dashboard data
+
+== Review Booking (Passengers & Documents) ==
+
+Emp -> EMP : Switch to Bookings tab
+EMP --> Emp : Display bookings table\n(filterable: All / Pending / Confirmed)
+Emp -> EMP : Click "Review" on a booking
+EMP -> API : GET /api/bookings/{bookId}/passengers
+API --> EMP : {bookId, ticketId,\nexpectedPassengers, createdPassengers,\npassengers: [{name, gender, birthDate,\ndocumentationType, issueCountryId,\nexpirationDate, hasDocument,\ndocumentImageBase64}]}
+EMP --> Emp : Open review modal\nwith passenger cards\n+ document previews\n(image / PDF)
+
+== Confirm Booking ==
+
+Emp -> EMP : Click "Confirm" on a booking\n(from table or review modal)
+EMP -> API : POST /api/BookingTrip/{bookId}/confirm
+API --> EMP : 200 OK
+EMP --> Emp : Toast "Booking confirmed"
+EMP -> EMP : Reload dashboard data
+
+== View Ticket Info ==
+
+Emp -> EMP : Click "View" on a booking
+EMP -> API : GET /api/InfoTickets/ByBooking/{bookId}
+API --> EMP : List of ticket info\n(ticketId, passengerClassId,\nticketPrice, passengersCount)
+EMP --> Emp : Open drawer with\nticket info cards
+
+@enduml
+
+
+' ═══════════════════════════════════════════════════════════
+
+
+@startuml SkyTrip_Sequence_AdminDashboard
+
+title Sequence Diagram — Admin Dashboard Operations
+
+actor "Airline Admin" as Adm
+participant "Admin.html\n(Web Dashboard)" as ADM
+participant "Azure API" as API
+participant "Email Service" as EMAIL
+
+== Dashboard Initialization ==
+
+Adm -> ADM : Login (token from Login.html)
+ADM -> ADM : Read token from localStorage
+ADM -> API : GET /api/UserAccount/me
+API --> ADM : User info (name, role)
+
+ADM -> API : GET /api/FlightSchedules/All
+ADM -> API : GET /api/BookingTrip
+ADM -> API : GET /api/Employee/All
+ADM -> API : GET /api/UserAccount
+ADM -> API : GET /api/Country/All
+ADM -> API : GET /api/Services/All
+ADM -> API : GET /api/FlightSchedules/Cities
+API --> ADM : All dashboard data
+ADM --> Adm : Render dashboard\n(stats: Flights, Employees,\nBookings, Admins)
+
+== Create Flight Schedule ==
+
+Adm -> ADM : Click "+ Add Flight"
+ADM --> Adm : Open flight editor drawer\n(empty form)
+Adm -> ADM : Fill fields\n(cities, date, times, base price)
+Adm -> ADM : Click "Create flight"
+ADM -> API : POST /api/FlightSchedules\n{departureCity, arrivalCity,\ndepartureTime, arrivalTime,\nflightDate, basePrice}
+API --> ADM : Created flight ID
+ADM --> Adm : Toast "Flight created successfully"
+ADM -> ADM : Reload dashboard data
+
+== Edit Flight Schedule ==
+
+Adm -> ADM : Click "Edit" on a flight row
+ADM --> Adm : Open flight editor drawer\n(pre-filled)
+Adm -> ADM : Modify fields & click "Save changes"
+ADM -> API : PUT /api/FlightSchedules/{id}\n{updated fields}
+API --> ADM : 200 OK
+ADM --> Adm : Toast "Flight updated successfully"
+
+== Delete Flight Schedule ==
+
+Adm -> ADM : Click "Delete" on a flight row
+ADM --> Adm : Browser confirm dialog
+Adm -> ADM : Confirm deletion
+ADM -> API : DELETE /api/FlightSchedules/{id}
+API --> ADM : 200 OK
+ADM --> Adm : Toast "Flight deleted"
+ADM -> ADM : Reload dashboard data
+
+== Review Booking ==
+
+Adm -> ADM : Switch to Bookings tab
+ADM --> Adm : Display bookings table\n(filterable: All / Pending / Confirmed)
+Adm -> ADM : Click "Review" on a booking
+ADM -> API : GET /api/bookings/{bookId}/passengers
+API --> ADM : Passenger data + document previews
+ADM --> Adm : Open review modal\nwith passenger cards
+
+== Confirm Booking & Send Email ==
+
+Adm -> ADM : Click "Confirm" on a booking
+ADM -> ADM : Lookup client email\nfrom UserAccount data
+ADM -> API : POST /api/BookingTrip/{bookId}/confirm
+API --> ADM : 200 OK
+ADM -> API : POST /api/email/send\n{to: clientEmail,\nsubject: "Booking Confirmed",\nhtmlBody: confirmation template}
+API --> EMAIL : Send email
+ADM --> Adm : Toast "Booking confirmed\nand email sent"
+
+== Delete Booking & Send Email ==
+
+Adm -> ADM : Click "Delete" on a booking
+ADM --> Adm : Browser confirm dialog
+Adm -> ADM : Confirm deletion
+ADM -> ADM : Lookup client email\nfrom UserAccount data
+ADM -> API : DELETE /api/BookingTrip/{bookId}
+API --> ADM : 200 OK
+ADM -> API : POST /api/email/send\n{to: clientEmail,\nsubject: "Booking Cancellation Notice",\nhtmlBody: cancellation template}
+API --> EMAIL : Send email
+ADM --> Adm : Toast "Booking deleted\nand email sent"
+
+== Manage Roles & Access ==
+
+Adm -> ADM : Switch to "Roles & Access" tab
+ADM --> Adm : Display users table\n(filterable: All / Admins /\nEmployees / Clients)
+Adm -> ADM : Click "Assign role" on a user
+ADM --> Adm : Open role assignment modal
+Adm -> ADM : Select role\n(Client / Employee / Admin)
+Adm -> ADM : Click "Save role"
+ADM -> API : PUT /api/UserAccount/{id}/assign-role\n{roleID: 1|2|3}
+API --> ADM : 200 OK
+ADM --> Adm : Toast "Role assigned successfully"
+ADM -> ADM : Reload dashboard data
+
+@enduml

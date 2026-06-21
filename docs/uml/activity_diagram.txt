@@ -1,0 +1,574 @@
+@startuml SkyTrip_Activity_MainBookingFlow
+
+title Activity Diagram — SkyTrip Main Booking Flow
+
+start
+
+:App Launch;
+
+partition "Authentication" {
+  if (User logged in?) then (yes)
+    :Load cached user data;
+  else (no)
+    :Show Auth Screen;
+    if (Has account?) then (yes)
+      :Enter email & password;
+      :POST /api/Login/login;
+      if (Login successful?) then (yes)
+        :Store token & user IDs\nin UserProvider;
+        :Load profile from API;
+      else (no)
+        :Show error message;
+        stop
+      endif
+    else (no)
+      :Fill registration form;
+      :Create account via API;
+      :Auto-login after registration;
+    endif
+  endif
+}
+
+:Show MainScaffold\n(Home Screen);
+
+partition "Navigation Decision" {
+  fork
+    :Home Tab;
+    :View offers &\nrecent searches;
+  fork again
+    :Book Tab;
+    :Start Booking Flow;
+    detach
+  fork again
+    :Tickets Tab;
+    :View paid tickets\n(Flights / Hotels / Vehicles);
+    detach
+  fork again
+    :Profile Tab;
+    :View & edit profile;
+    detach
+  fork again
+    :Side Drawer;
+    split
+      :Hotel Booking;
+      detach
+    split again
+      :Van Rental;
+      detach
+    split again
+      :Settings;
+      detach
+    split again
+      :Contact Us;
+      detach
+    split again
+      :Logout;
+      :Clear user state;
+      stop
+    end split
+  end fork
+}
+
+' ═══════════════════════════════════════════════════════════
+
+partition "Flight Search" #E8F6F8 {
+  :Select trip type\n(One-way / Round-trip / Multi-city);
+
+  :Select departure city;
+  :Select arrival city;
+  :Pick departure date;
+
+  if (Trip type?) then (Round-trip)
+    :Pick return date;
+  elseif (Multi-city) then
+    :Add multiple city legs;
+  else (One-way)
+  endif
+
+  :Set passenger counts\n(Adults / Youth / Children / Infants);
+  :Select travel class\n(Economy / Business / First);
+
+  :Search flights via API;
+
+  if (Flights found?) then (yes)
+    :Display available flights list;
+  else (no)
+    :Show "No flights found";
+    :Offer to modify search;
+    stop
+  endif
+}
+
+partition "Flight Selection" #E8F6F8 {
+  :User taps a flight card;
+  :Show flight details\n(route, times, price breakdown);
+
+  if (User confirms?) then (yes)
+    :POST /api/BookingTrip\n→ get bookId;
+    :POST /api/InfoTickets\n→ get ticketId;
+    :POST /api/TicketFlights\n→ link ticket to flight;
+  else (no)
+    :Go back to results;
+    stop
+  endif
+}
+
+partition "Passenger Information" #FFF3E0 {
+  :Load countries list\nfrom GET /api/Country/All;
+
+  repeat
+    :Fill passenger form\n(name, DOB, gender);
+    :Select document type\n(Passport / National ID);
+    :Upload document photo;
+    :POST /api/bookings/{bookId}/passengers\n(multipart form);
+
+    if (Upload successful?) then (yes)
+      :Passenger saved;
+    else (no)
+      :Show error, retry;
+    endif
+  repeat while (More passengers?) is (yes) not (no)
+}
+
+partition "Extra Services" #F3E5F5 {
+  :Load services from\nGET /api/Services/All;
+  :Display services list\n(meals, wheelchair, assistance, etc.);
+
+  while (Adjusting services?) is (yes)
+    :Increment / decrement quantity;
+    :POST /api/tickets/{ticketId}/services;
+  endwhile (done)
+}
+
+partition "Seat Selection" #E8F5E9 {
+  if (User wants to pick a seat?) then (yes)
+    :Show 12x6 seat grid;
+    :User taps available seat;
+    :Store seat in BookingProvider;
+  else (no)
+    :Skip seat selection;
+  endif
+}
+
+partition "Payment" #FFF9C4 {
+  :Show price breakdown\n- Base fare\n- Taxes (15%)\n- Services total\n- Grand total;
+
+  :User taps "Pay Now";
+  :POST /api/payments/checkout-session\n→ get Stripe URL;
+  :Open Stripe checkout\nin Chrome Custom Tab;
+
+  if (Payment completed?) then (yes)
+    :Deep link: skytrip://payment-success;
+    :Start polling payment status\n(every 1.5s, max 25s);
+
+    while (Status?) is (Pending)
+      :GET /api/payments/my/status/{ticketId};
+    endwhile (Paid)
+
+    :Show success animation\n& booking reference;
+    :Reset BookingProvider;
+  else (no)
+    :Deep link: skytrip://payment-cancel;
+    :Show cancellation screen;
+
+    if (Retry?) then (yes)
+      :Go back to payment;
+    else (no)
+      :Return to home;
+      stop
+    endif
+  endif
+}
+
+partition "Post-Booking" #E0F7FA {
+  :Navigate to Tickets Screen;
+  :Fetch paid tickets\nGET /api/tickets/my/paid;
+  :Display ticket card;
+
+  if (User taps ticket?) then (yes)
+    :Fetch ticket details\nGET /api/tickets/my/{ticketId};
+    :Show Boarding Pass\nwith QR Code;
+  else (no)
+  endif
+}
+
+stop
+
+@enduml
+
+
+' ═══════════════════════════════════════════════════════════
+' HOTEL & VAN RENTAL ACTIVITY DIAGRAMS
+' ═══════════════════════════════════════════════════════════
+
+
+@startuml SkyTrip_Activity_HotelAndVanRental
+
+title Activity Diagram — Hotel Booking & Van Rental Flows
+
+|#E8F6F8|Hotel Booking Flow|
+start
+:Open side drawer →\nTap "Hotel Booking";
+:Enter destination;
+:Pick check-in date;
+:Pick check-out date;
+:Set number of rooms;
+:Set number of guests;
+:Select room type;
+:Tap "Search";
+:Display dummy hotel results;
+
+if (User books a hotel?) then (yes)
+  :Create HotelBookingModel;
+  :Save to SharedPreferences;
+  :Show confirmation;
+  :Visible in Tickets → Hotels tab;
+else (no)
+  :Go back;
+endif
+stop
+
+|#FFF3E0|Van Rental Flow|
+start
+:Open side drawer →\nTap "Van Rental";
+:Enter pickup location;
+:Enter drop-off location;
+:Pick pickup date;
+:Pick return date;
+
+:Select vehicle category\n(All / Economy / SUV / Van / Luxury);
+:Filter and display\nmatching vehicles;
+
+if (User books a vehicle?) then (yes)
+  :Calculate total\n(price x days);
+  :Create BookedVehicleModel;
+  :Save to SharedPreferences;
+  :Show confirmation;
+  :Visible in Tickets → Vehicles tab;
+else (no)
+  :Go back;
+endif
+stop
+
+@enduml
+
+
+' ═══════════════════════════════════════════════════════════
+' SETTINGS & PROFILE ACTIVITY DIAGRAM
+' ═══════════════════════════════════════════════════════════
+
+
+@startuml SkyTrip_Activity_Settings
+
+title Activity Diagram — Settings & Profile Management
+
+start
+
+fork
+  partition "Theme" {
+    :Toggle Light / Dark;
+    :Save to SharedPreferences;
+    :App rebuilds with new theme;
+  }
+fork again
+  partition "Language" {
+    :Select language\n(English / Arabic);
+    :Save to SharedPreferences;
+    :App reloads with new locale;
+  }
+fork again
+  partition "Currency" {
+    :Select currency\n(JOD / USD / EUR / GBP / AED);
+    :Save to SharedPreferences;
+    :All prices recalculated\nvia conversion rates;
+  }
+fork again
+  partition "Profile Photo" {
+    :Tap profile image;
+    if (Source?) then (Camera)
+      :Capture photo;
+    else (Gallery)
+      :Pick from gallery;
+    endif
+    :POST /api/profile/me/image;
+    :Update displayed photo;
+  }
+fork again
+  partition "Profile Info" {
+    :Edit name / phone /\nnationality / passport;
+    :PUT /api/profile/me;
+    :Update UserProvider;
+  }
+end fork
+
+stop
+
+@enduml
+
+
+' ═══════════════════════════════════════════════════════════
+' EMPLOYEE DASHBOARD ACTIVITY DIAGRAM
+' ═══════════════════════════════════════════════════════════
+
+
+@startuml SkyTrip_Activity_EmployeeDashboard
+
+title Activity Diagram — Employee Dashboard (Web Panel)
+
+start
+
+:Employee opens Employee.html;
+
+partition "Authentication" #E8F6F8 {
+  if (Token in localStorage?) then (yes)
+    :Load token;
+    :GET /api/UserAccount/me;
+    if (Token valid?) then (yes)
+      :Store user info;
+    else (no)
+      :Clear token;
+      :Redirect to Login.html;
+      stop
+    endif
+  else (no)
+    :Redirect to Login.html;
+    stop
+  endif
+}
+
+partition "Load Dashboard Data" #E0F7FA {
+  :GET /api/FlightSchedules/All;
+  :GET /api/BookingTrip;
+  :GET /api/Services/All;
+  :GET /api/FlightSchedules/Cities;
+  :Render stats\n(Flights, Bookings, Cities, Ticket Info);
+  :Render default table (Flights);
+}
+
+partition "Navigation" {
+  fork
+    :Flights Tab;
+    detach
+  fork again
+    :Bookings Tab;
+    detach
+  end fork
+}
+
+' ── Flights Branch ──
+
+partition "Flights Management (Update Only)" #FFF3E0 {
+  :Display all flight schedules;
+
+  if (Filter?) then (Today)
+    :Show only today's flights;
+  else (All)
+    :Show all flights;
+  endif
+
+  if (Search?) then (yes)
+    :Filter by search query;
+  else (no)
+  endif
+
+  :Employee clicks "Update"\non a flight row;
+  :Open flight editor drawer\n(pre-filled form);
+  :Modify cities / date /\ntimes / base price;
+
+  if (Validation passes?) then (yes)
+    :PUT /api/FlightSchedules/{id};
+    :Toast "Flight updated";
+    :Reload dashboard;
+  else (no)
+    :Show validation error;
+  endif
+}
+
+' ── Bookings Branch ──
+
+partition "Bookings Management (Review & Confirm)" #F3E5F5 {
+  :Display all bookings;
+
+  if (Filter?) then (Pending)
+    :Show pending bookings;
+  elseif (Confirmed) then
+    :Show confirmed bookings;
+  else (All)
+    :Show all bookings;
+  endif
+
+  split
+    :Click "Review";
+    :GET /api/bookings/{bookId}/passengers;
+    :Open review modal\n(passenger cards +\ndocument image/PDF previews);
+
+    if (Confirm from modal?) then (yes)
+      :POST /api/BookingTrip/{bookId}/confirm;
+      :Toast "Booking confirmed";
+      :Close modal & reload;
+    else (no)
+      :Close modal;
+    endif
+  split again
+    :Click "Confirm"\n(directly from table);
+    :POST /api/BookingTrip/{bookId}/confirm;
+    :Toast "Booking confirmed";
+    :Reload dashboard;
+  end split
+}
+
+stop
+
+@enduml
+
+
+' ═══════════════════════════════════════════════════════════
+' ADMIN DASHBOARD ACTIVITY DIAGRAM
+' ═══════════════════════════════════════════════════════════
+
+
+@startuml SkyTrip_Activity_AdminDashboard
+
+title Activity Diagram — Admin Dashboard (Web Panel)
+
+start
+
+:Admin opens Admin.html;
+
+partition "Authentication" #E8F6F8 {
+  if (Token in localStorage?) then (yes)
+    :Load token;
+    :GET /api/UserAccount/me;
+    :Fallback: GET /api/profile/me;
+    if (Token valid?) then (yes)
+      :Store user info;
+    else (no)
+      :Clear token;
+      :Redirect to Login.html;
+      stop
+    endif
+  else (no)
+    :Redirect to Login.html;
+    stop
+  endif
+}
+
+partition "Load Dashboard Data" #E0F7FA {
+  :GET /api/FlightSchedules/All;
+  :GET /api/BookingTrip;
+  :GET /api/Employee/All;
+  :GET /api/UserAccount;
+  :GET /api/Country/All;
+  :GET /api/Services/All;
+  :GET /api/FlightSchedules/Cities;
+  :Render stats\n(Flights, Employees, Bookings, Admins);
+  :Render default table (Flights);
+}
+
+partition "Navigation" {
+  fork
+    :Flights Tab;
+    detach
+  fork again
+    :Bookings Tab;
+    detach
+  fork again
+    :Roles & Access Tab;
+    detach
+  end fork
+}
+
+' ── Flights Branch ──
+
+partition "Flights — Full CRUD" #FFF3E0 {
+  :Display all flight schedules;
+
+  split
+    :**Create Flight**;
+    :Click "+ Add Flight";
+    :Open empty flight editor drawer;
+    :Fill cities / date / times / price;
+    :POST /api/FlightSchedules;
+    :Toast "Flight created";
+    :Reload dashboard;
+  split again
+    :**Edit Flight**;
+    :Click "Edit" on a flight row;
+    :Open pre-filled editor drawer;
+    :Modify fields;
+    :PUT /api/FlightSchedules/{id};
+    :Toast "Flight updated";
+    :Reload dashboard;
+  split again
+    :**Delete Flight**;
+    :Click "Delete" on a flight row;
+    :Browser confirm dialog;
+    if (Confirmed?) then (yes)
+      :DELETE /api/FlightSchedules/{id};
+      :Toast "Flight deleted";
+      :Reload dashboard;
+    else (no)
+      :Cancel;
+    endif
+  end split
+}
+
+' ── Bookings Branch ──
+
+partition "Bookings — Review, Confirm & Delete" #F3E5F5 {
+  :Display all bookings\n(filterable: All / Pending / Confirmed);
+
+  split
+    :**Review Booking**;
+    :Click "Review";
+    :GET /api/bookings/{bookId}/passengers;
+    :Open modal with summary\n+ passenger cards\n+ document previews;
+
+    if (Confirm from modal?) then (yes)
+      :Lookup client email\nfrom UserAccount data;
+      :POST /api/BookingTrip/{bookId}/confirm;
+      :POST /api/email/send\n(confirmation HTML template);
+      :Toast "Confirmed & email sent";
+    else (no)
+      :Close modal;
+    endif
+  split again
+    :**Confirm Booking**;
+    :Click "Confirm" (from table);
+    :Lookup client email;
+    :POST /api/BookingTrip/{bookId}/confirm;
+    :POST /api/email/send\n(confirmation email);
+    :Toast "Confirmed & email sent";
+  split again
+    :**Delete Booking**;
+    :Click "Delete";
+    :Browser confirm dialog;
+    if (Confirmed?) then (yes)
+      :Lookup client email;
+      :DELETE /api/BookingTrip/{bookId};
+      :POST /api/email/send\n(cancellation HTML template);
+      :Toast "Deleted & email sent";
+    else (no)
+      :Cancel;
+    endif
+  end split
+}
+
+' ── Roles & Access Branch ──
+
+partition "Roles & Access Management" #E8F5E9 {
+  :Display all users table\n(filterable: All / Admins /\nEmployees / Clients);
+
+  :Admin clicks "Assign role"\non a user row;
+  :Open role assignment modal;
+  :Enter User Account ID;
+  :Select role\n(Client / Employee / Admin);
+  :Click "Save role";
+  :PUT /api/UserAccount/{id}/assign-role\n{roleID: 1|2|3};
+  :Toast "Role assigned successfully";
+  :Reload dashboard;
+}
+
+stop
+
+@enduml
