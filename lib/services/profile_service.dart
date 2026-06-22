@@ -41,20 +41,22 @@ class ProfileData {
 
   factory ProfileData.fromJson(Map<String, dynamic> json) {
     return ProfileData(
-      userId:          json['userId']   as int,
-      personId:        json['personId'] as int,
-      clientId:        json['clientId'] as int?,
-      email:           (json['email']     as String? ?? ''),
-      role:            (json['role']      as String? ?? ''),
-      firstName:       (json['firstName'] as String? ?? ''),
-      lastName:        (json['lastName']  as String? ?? ''),
-      secondName:       json['secondName']     as String?,
-      thirdName:        json['thirdName']      as String?,
-      phone:            json['phone']          as String?,
-      gender:           json['gender']         as String?,
-      profileImageUrl:  (json['profileImageUrl'] ?? json['ProfileImageUrl'] ?? json['profile_image_url']) as String?,
-      countryName:      json['countryName']    as String?,
-      countryId:        (json['countryId'] as int? ?? 0),
+      userId: json['userId'] as int,
+      personId: json['personId'] as int,
+      clientId: json['clientId'] as int?,
+      email: (json['email'] as String? ?? ''),
+      role: (json['role'] as String? ?? ''),
+      firstName: (json['firstName'] as String? ?? ''),
+      lastName: (json['lastName'] as String? ?? ''),
+      secondName: json['secondName'] as String?,
+      thirdName: json['thirdName'] as String?,
+      phone: json['phone'] as String?,
+      gender: json['gender'] as String?,
+      profileImageUrl: (json['profileImageUrl'] ??
+          json['ProfileImageUrl'] ??
+          json['profile_image_url']) as String?,
+      countryName: json['countryName'] as String?,
+      countryId: (json['countryId'] as int? ?? 0),
       birthDate: json['birthDate'] != null
           ? DateTime.tryParse(json['birthDate'] as String)
           : null,
@@ -96,10 +98,13 @@ class ProfileService {
     );
     try {
       final body = jsonDecode(res.body) as Map<String, dynamic>?;
-      final raw = (body?['imageUrl'] ?? body?['ImageUrl'] ??
-                   body?['profileImageUrl'] ?? body?['ProfileImageUrl']) as String?;
+      final raw = (body?['imageUrl'] ??
+          body?['ImageUrl'] ??
+          body?['profileImageUrl'] ??
+          body?['ProfileImageUrl']) as String?;
       if (raw == null) return null;
-      return raw.startsWith('http') ? raw
+      return raw.startsWith('http')
+          ? raw
           : 'https://bookingtrip-api-2026-cyh0f4dhfednh3fj.westeurope-01.azurewebsites.net$raw';
     } catch (_) {
       return null;

@@ -45,7 +45,7 @@ void main() async {
   final hotelProvider = HotelBookingProvider();
   await hotelProvider.init();
 
-  runApp( 
+  runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: userProvider),
@@ -130,24 +130,24 @@ class _SkyTripAppState extends State<SkyTripApp> {
         '/home': (context) => const MainScaffold(),
 
         // Booking Flow
-        '/booking':           (context) => const BookingScreen(),
+        '/booking': (context) => const BookingScreen(),
         '/available-flights': (context) => const AvailableFlightsScreen(),
-        '/flight-details':    (context) => const FlightDetailsScreen(),
-        '/passengers-form':   (context) => const PassengersFormScreen(),
-        '/services':          (context) => const ServicesScreen(),
-        '/seat-map':          (context) => const SeatMapScreen(),
-        '/payment':           (context) => const PaymentScreen(),
-        '/payment-success':   (context) => const PaymentSuccessScreen(),
-        '/payment-cancel':    (context) => const PaymentCancelScreen(),
+        '/flight-details': (context) => const FlightDetailsScreen(),
+        '/passengers-form': (context) => const PassengersFormScreen(),
+        '/services': (context) => const ServicesScreen(),
+        '/seat-map': (context) => const SeatMapScreen(),
+        '/payment': (context) => const PaymentScreen(),
+        '/payment-success': (context) => const PaymentSuccessScreen(),
+        '/payment-cancel': (context) => const PaymentCancelScreen(),
 
         // Extras
         '/hotel-booking': (context) => const HotelBookingScreen(),
-        '/van-rental':    (context) => const VanRentalScreen(),
-        '/settings':      (context) => const SettingsScreen(),
-        '/contact-us':    (context) => const ContactUsScreen(),
+        '/van-rental': (context) => const VanRentalScreen(),
+        '/settings': (context) => const SettingsScreen(),
+        '/contact-us': (context) => const ContactUsScreen(),
         '/boarding-pass': (context) => const BoardingPassScreen(),
-        '/sign-up':       (context) => const SignUpScreen(),
-        '/verify-email':  (context) => const EmailVerificationScreen(),
+        '/sign-up': (context) => const SignUpScreen(),
+        '/verify-email': (context) => const EmailVerificationScreen(),
       },
     );
   }

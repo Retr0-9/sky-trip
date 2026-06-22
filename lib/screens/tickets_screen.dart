@@ -718,12 +718,84 @@ class _TicketDetailSheet extends StatefulWidget {
 class _TicketDetailSheetState extends State<_TicketDetailSheet> {
   ApiTicketDetailModel? _detail;
   bool _loading = true;
+  bool _cancelling = false;
   String? _error;
+
+  bool get _isCancelled =>
+      (_detail?.bookingStatus ?? '').toLowerCase().contains('cancel');
+
+  bool get _isConfirmed =>
+      (_detail?.bookingStatus ?? '').toLowerCase().contains('confirm');
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  Future<void> _confirmCancel() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(children: [
+          Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 24),
+          SizedBox(width: 8),
+          Text('Cancel Ticket'),
+        ]),
+        content: const Text(
+          'Are you sure you want to cancel this ticket? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('No, Keep It'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Yes, Cancel'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() => _cancelling = true);
+    try {
+      await BookingService.cancelTicket(
+        ticketId: widget.ticketId,
+        token: widget.token,
+      );
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Ticket cancelled successfully.'),
+        backgroundColor: AppColors.cyan,
+        behavior: SnackBarBehavior.floating,
+      ));
+    } on AuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.message),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Could not cancel ticket. Please try again.'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _cancelling = false);
+    }
   }
 
   Future<void> _load() async {
@@ -806,6 +878,27 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.cyan,
                     foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
+            if (!_isCancelled && !_isConfirmed) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _cancelling ? null : _confirmCancel,
+                  icon: _cancelling
+                      ? const SizedBox(width: 16, height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.error))
+                      : const Icon(Icons.cancel_outlined, size: 18),
+                  label: Text(_cancelling ? 'Cancelling...' : 'Cancel Ticket'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.error,
+                    side: const BorderSide(color: AppColors.error),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),

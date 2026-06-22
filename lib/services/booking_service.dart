@@ -189,4 +189,12 @@ class BookingService {
     final res = await ApiClient.get('/api/tickets/my/$ticketId', token);
     return ApiTicketDetailModel.fromJson(ApiClient.decodeMap(res));
   }
+
+  /// POST /api/tickets/my/{ticketId}/cancel
+  static Future<void> cancelTicket({
+    required int ticketId,
+    required String token,
+  }) async {
+    await ApiClient.post('/api/tickets/my/$ticketId/cancel', {}, token);
+  }
 }
