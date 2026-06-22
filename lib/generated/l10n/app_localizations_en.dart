@@ -135,16 +135,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get bookingAdultSubtext => '12+ years';
+  String get bookingAdultSubtext => '16+ years';
 
   @override
-  String get bookingYouthSubtext => '2–11 years';
+  String get bookingYouthSubtext => '12–16 years';
 
   @override
-  String get bookingChildrenSubtext => 'Under 2';
+  String get bookingChildrenSubtext => '2–11 years';
 
   @override
-  String get bookingInfantsSubtext => 'Lap infant';
+  String get bookingInfantsSubtext => 'Under 2, lap infant';
 
   @override
   String get greetingMorning => 'Good Morning';

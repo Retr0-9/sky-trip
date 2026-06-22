@@ -4,8 +4,6 @@ import '../theme/app_theme.dart';
 import '../providers/user_provider.dart';
 import 'package:skytrip/services/auth_service.dart';
 
-enum _AuthMode { signIn, signUp }
-
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
 
@@ -15,18 +13,11 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen>
     with SingleTickerProviderStateMixin {
-  _AuthMode _mode = _AuthMode.signIn;
-  bool _obscurePassword  = true;
-  bool _obscureConfirm   = true;
-  bool _isLoading        = false;
-  bool _isStaffMode      = false;
+  bool _obscurePassword = true;
+  bool _isLoading       = false;
 
-  final _emailCtrl     = TextEditingController();
-  final _passwordCtrl  = TextEditingController();
-  final _confirmCtrl   = TextEditingController();
-  final _firstNameCtrl = TextEditingController();
-  final _lastNameCtrl  = TextEditingController();
-  final _staffIdCtrl   = TextEditingController();
+  final _emailCtrl    = TextEditingController();
+  final _passwordCtrl = TextEditingController();
 
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
@@ -48,20 +39,7 @@ class _AuthScreenState extends State<AuthScreen>
     _animCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
-    _confirmCtrl.dispose();
-    _firstNameCtrl.dispose();
-    _lastNameCtrl.dispose();
-    _staffIdCtrl.dispose();
     super.dispose();
-  }
-
-  void _switchMode(_AuthMode mode) {
-    setState(() {
-      _mode = mode;
-      _isStaffMode = false;
-    });
-    _animCtrl.reset();
-    _animCtrl.forward();
   }
 
   void _showError(String message) {
@@ -79,22 +57,12 @@ class _AuthScreenState extends State<AuthScreen>
     final email    = _emailCtrl.text.trim();
     final password = _passwordCtrl.text;
 
-    if (_isStaffMode) {
-      if (email.isEmpty || password.isEmpty) {
-        _showError('Enter your email and password.');
-        return;
-      }
-    } else if (_mode == _AuthMode.signIn) {
-      if (email.isEmpty || !email.contains('@')) {
-        _showError('Enter a valid email address.');
-        return;
-      }
-      if (password.length < 6) {
-        _showError('Password must be at least 6 characters.');
-        return;
-      }
-    } else {
-      Navigator.pushNamed(context, '/sign-up');
+    if (email.isEmpty || !email.contains('@')) {
+      _showError('Enter a valid email address.');
+      return;
+    }
+    if (password.length < 6) {
+      _showError('Password must be at least 6 characters.');
       return;
     }
 
@@ -153,7 +121,7 @@ class _AuthScreenState extends State<AuthScreen>
                       _buildCard(),
                       const SizedBox(height: 16),
                       const Text(
-                        'v1.0.5',
+                        'v1.2.4',
                         style: TextStyle(color: Colors.grey, fontSize: 12),
                       ),
                     ],
@@ -176,7 +144,7 @@ class _AuthScreenState extends State<AuthScreen>
         borderRadius: AppRadius.xl,
         boxShadow: [
           BoxShadow(
-            color: AppColors.cyanDark.withOpacity(0.12),
+            color: AppColors.cyanDark.withValues(alpha: 0.12),
             blurRadius: 40,
             offset: const Offset(0, 12),
           ),
@@ -189,11 +157,7 @@ class _AuthScreenState extends State<AuthScreen>
           _buildLogo(),
           const SizedBox(height: 24),
           Text(
-            _isStaffMode
-                ? 'Staff Login'
-                : _mode == _AuthMode.signIn
-                    ? 'Welcome Back'
-                    : 'Create Account',
+            'Welcome Back',
             style: AppTextStyles.displayMedium.copyWith(
               fontSize: 24,
               color: theme.textTheme.bodyLarge?.color,
@@ -201,48 +165,18 @@ class _AuthScreenState extends State<AuthScreen>
           ),
           const SizedBox(height: 6),
           Text(
-            _isStaffMode
-                ? 'Sign in with your staff credentials'
-                : _mode == _AuthMode.signIn
-                    ? 'Sign in to continue your journey'
-                    : 'Join SkyTrip today',
+            'Sign in to continue your journey',
             style: AppTextStyles.bodyMedium.copyWith(color: theme.textTheme.bodySmall?.color),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 28),
-
-          if (_mode == _AuthMode.signUp && !_isStaffMode) ...[
-            _buildNameRow(),
-            const SizedBox(height: 14),
-          ],
           _buildEmailField(),
           const SizedBox(height: 14),
-
-          if (_isStaffMode) ...[
-            _buildStaffIdField(),
-            const SizedBox(height: 14),
-          ],
-
           _buildPasswordField(),
-          const SizedBox(height: 14),
-
-          if (_mode == _AuthMode.signUp && !_isStaffMode) ...[
-            _buildConfirmPasswordField(),
-            const SizedBox(height: 14),
-          ],
-
-          const SizedBox(height: 6),
-          _buildSubmitButton(),
-
           const SizedBox(height: 20),
-          if (!_isStaffMode) _buildToggleRow(),
-
-          if (!_isStaffMode) ...[
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-          ],
-          _buildStaffLink(),
+          _buildSubmitButton(),
+          const SizedBox(height: 20),
+          _buildToggleRow(),
         ],
       ),
     );
@@ -260,7 +194,7 @@ class _AuthScreenState extends State<AuthScreen>
         borderRadius: AppRadius.lg,
         boxShadow: [
           BoxShadow(
-            color: AppColors.cyan.withOpacity(0.35),
+            color: AppColors.cyan.withValues(alpha: 0.35),
             blurRadius: 16, offset: const Offset(0, 6),
           ),
         ],
@@ -269,40 +203,12 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  Widget _buildNameRow() {
-    return Row(children: [
-      Expanded(
-        child: _AuthField(
-          controller: _firstNameCtrl,
-          icon: Icons.person_outline,
-          hint: 'First name',
-        ),
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: _AuthField(
-          controller: _lastNameCtrl,
-          icon: Icons.person_outline,
-          hint: 'Last name',
-        ),
-      ),
-    ]);
-  }
-
   Widget _buildEmailField() {
     return _AuthField(
       controller: _emailCtrl,
       icon: Icons.email_outlined,
       hint: 'you@example.com',
       keyboardType: TextInputType.emailAddress,
-    );
-  }
-
-  Widget _buildStaffIdField() {
-    return _AuthField(
-      controller: _staffIdCtrl,
-      icon: Icons.badge_outlined,
-      hint: 'Staff ID',
     );
   }
 
@@ -322,30 +228,8 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  Widget _buildConfirmPasswordField() {
-    return _AuthField(
-      controller: _confirmCtrl,
-      icon: Icons.lock_outline,
-      hint: 'Confirm password',
-      obscureText: _obscureConfirm,
-      suffix: IconButton(
-        icon: Icon(
-          _obscureConfirm ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-          color: AppColors.textHint, size: 20,
-        ),
-        onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
-      ),
-    );
-  }
-
   Widget _buildSubmitButton() {
     final theme = Theme.of(context);
-    final label = _isStaffMode
-        ? 'Login as Staff'
-        : _mode == _AuthMode.signIn
-            ? 'Sign In'
-            : 'Create Account';
-
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
@@ -362,65 +246,25 @@ class _AuthScreenState extends State<AuthScreen>
                 height: 20, width: 20,
                 child: CircularProgressIndicator(
                     color: Colors.white, strokeWidth: 2.5))
-            : Text(label,
-                style: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.w600)),
+            : const Text('Sign In',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
       ),
     );
   }
 
   Widget _buildToggleRow() {
-    final question = _mode == _AuthMode.signIn
-        ? "Don't have an account?"
-        : 'Already have an account?';
-    final action = _mode == _AuthMode.signIn ? 'Sign Up' : 'Sign In';
     return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Text(question, style: AppTextStyles.bodySmall),
+      const Text("Don't have an account?", style: AppTextStyles.bodySmall),
       const SizedBox(width: 4),
       GestureDetector(
-        onTap: () {
-          if (_mode == _AuthMode.signIn) {
-            Navigator.pushNamed(context, '/sign-up');
-          } else {
-            _switchMode(_AuthMode.signIn);
-          }
-        },
-        child: Text(action,
-            style: const TextStyle(
+        onTap: () => Navigator.pushNamed(context, '/sign-up'),
+        child: const Text('Sign Up',
+            style: TextStyle(
                 color: AppColors.cyan,
                 fontWeight: FontWeight.w600,
                 fontSize: 12)),
       ),
     ]);
-  }
-
-  Widget _buildStaffLink() {
-    if (_isStaffMode) {
-      return GestureDetector(
-        onTap: () {
-          setState(() => _isStaffMode = false);
-          _animCtrl.reset();
-          _animCtrl.forward();
-        },
-        child: const Text('← Back to regular login',
-            style: TextStyle(
-                color: AppColors.cyan,
-                fontWeight: FontWeight.w500,
-                fontSize: 13)),
-      );
-    }
-    return GestureDetector(
-      onTap: () {
-        setState(() => _isStaffMode = true);
-        _animCtrl.reset();
-        _animCtrl.forward();
-      },
-      child: const Text('Login as Staff',
-          style: TextStyle(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-              fontSize: 13)),
-    );
   }
 }
 
@@ -445,7 +289,6 @@ class _AuthField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return Container(
       decoration: BoxDecoration(
         color: theme.inputDecorationTheme.fillColor ??
@@ -456,11 +299,9 @@ class _AuthField extends StatelessWidget {
       child: Row(
         children: [
           const SizedBox(width: 14),
-          Icon(
-            icon,
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
-            size: 20,
-          ),
+          Icon(icon,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
@@ -477,8 +318,7 @@ class _AuthField extends StatelessWidget {
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
                 filled: false,
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
               ),
             ),
           ),

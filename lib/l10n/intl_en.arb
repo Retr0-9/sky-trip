@@ -52,10 +52,10 @@
       "count": {"type": "int"}
     }
   },
-  "bookingAdultSubtext": "12+ years",
-  "bookingYouthSubtext": "2–11 years",
-  "bookingChildrenSubtext": "Under 2",
-  "bookingInfantsSubtext": "Lap infant",
+  "bookingAdultSubtext": "16+ years",
+  "bookingYouthSubtext": "12–16 years",
+  "bookingChildrenSubtext": "2–11 years",
+  "bookingInfantsSubtext": "Under 2, lap infant",
   "greetingMorning": "Good Morning",
   "greetingAfternoon": "Good Afternoon",
   "greetingEvening": "Good Evening",

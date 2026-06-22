@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 /// Thrown when the server rejects credentials or returns an error.
@@ -95,17 +96,22 @@ class AuthService {
             }),
           )
           .timeout(const Duration(seconds: 20));
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('[register] network error: $e\n$st');
       throw const AuthException('Could not reach the server. Check your connection.');
     }
+
+    debugPrint('[register] status: ${response.statusCode}');
+    debugPrint('[register] body: ${response.body}');
 
     if (response.statusCode == 200 || response.statusCode == 201) return;
 
     String msg = 'Registration failed. Please try again.';
     try {
       final body = jsonDecode(response.body);
+      debugPrint('[register] parsed error body: $body');
       if (body is Map) {
-        msg = (body['detail'] ?? body['title'] ?? body['message'] ?? msg).toString();
+        msg = (body['detail'] ?? body['title'] ?? body['message'] ?? body['errors'] ?? msg).toString();
       } else if (body is String && body.isNotEmpty) {
         msg = body;
       }

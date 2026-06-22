@@ -53,10 +53,10 @@
       "count": {"type": "int"}
     }
   },
-  "bookingAdultSubtext": "12 سنة أو أكثر",
-  "bookingYouthSubtext": "2–11 سنة",
-  "bookingChildrenSubtext": "أقل من سنتين",
-  "bookingInfantsSubtext": "رضيع في حضن الأم",
+  "bookingAdultSubtext": "16 سنة أو أكثر",
+  "bookingYouthSubtext": "12–16 سنة",
+  "bookingChildrenSubtext": "2–11 سنة",
+  "bookingInfantsSubtext": "أقل من سنتين، رضيع",
   "greetingMorning": "صباح الخير",
   "greetingAfternoon": "مساء الخير",
   "greetingEvening": "مساء الخير",

@@ -195,15 +195,19 @@ class _BookingScreenState extends State<BookingScreen> {
     int a = _adults, y = _youth, c = _children, inf = _infants;
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => StatefulBuilder(builder: (ctx, setS) {
-        // ── Dynamic: subtitle text color ──
         final cs = Theme.of(ctx).colorScheme;
+        const maxPax = 4;
+        final paxTotal = a + y + c;
+        final canAddPax = paxTotal < maxPax;
+        final maxInf = a;
 
-        Widget row(String label, String sub, int val, VoidCallback dec,
-                VoidCallback inc) =>
+        Widget row(String label, String sub, int val,
+                VoidCallback? dec, VoidCallback? inc) =>
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 24),
               child: Row(children: [
@@ -215,8 +219,7 @@ class _BookingScreenState extends State<BookingScreen> {
                           style: const TextStyle(fontWeight: FontWeight.w600)),
                       Text(sub,
                           style: TextStyle(
-                              color: cs
-                                  .onSurfaceVariant, // was: Colors.grey.shade500
+                              color: cs.onSurfaceVariant,
                               fontSize: 12)),
                     ],
                   ),
@@ -224,74 +227,70 @@ class _BookingScreenState extends State<BookingScreen> {
                 IconButton(
                     onPressed: dec,
                     icon: const Icon(Icons.remove_circle_outline),
-                    color: AppColors.cyan),
+                    color: dec != null ? AppColors.cyan : cs.onSurfaceVariant),
                 Text('$val',
                     style: const TextStyle(
                         fontSize: 16, fontWeight: FontWeight.w600)),
                 IconButton(
                     onPressed: inc,
                     icon: const Icon(Icons.add_circle_outline),
-                    color: AppColors.cyan),
+                    color: inc != null ? AppColors.cyan : cs.onSurfaceVariant),
               ]),
             );
 
-        return Column(mainAxisSize: MainAxisSize.min, children: [
-          const SizedBox(height: 16),
-          Text(AppLocalizations.of(ctx)!.bookingPassengers,
-              style:
-                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const Divider(height: 24),
-          row(AppLocalizations.of(ctx)!.bookingAdults,
-              AppLocalizations.of(ctx)!.bookingAdultSubtext, a, () {
-            if (a > 1) setS(() => a--);
-          }, () {
-            setS(() => a++);
-          }),
-          row(AppLocalizations.of(ctx)!.bookingYouth,
-              AppLocalizations.of(ctx)!.bookingYouthSubtext, y, () {
-            if (y > 0) setS(() => y--);
-          }, () {
-            setS(() => y++);
-          }),
-          row(AppLocalizations.of(ctx)!.bookingChildren,
-              AppLocalizations.of(ctx)!.bookingChildrenSubtext, c, () {
-            if (c > 0) setS(() => c--);
-          }, () {
-            setS(() => c++);
-          }),
-          row(AppLocalizations.of(ctx)!.bookingInfants,
-              AppLocalizations.of(ctx)!.bookingInfantsSubtext, inf, () {
-            if (inf > 0) setS(() => inf--);
-          }, () {
-            setS(() => inf++);
-          }),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.cyan,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const SizedBox(height: 16),
+            Text(AppLocalizations.of(ctx)!.bookingPassengers,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text('Max $maxPax passengers (excl. infants)',
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+            ),
+            const Divider(height: 24),
+            row(AppLocalizations.of(ctx)!.bookingAdults, '16+ years', a,
+                a > 1 ? () => setS(() { a--; if (inf > a) { inf = a; } }) : null,
+                canAddPax ? () => setS(() => a++) : null),
+            row(AppLocalizations.of(ctx)!.bookingYouth, '12–16 years', y,
+                y > 0 ? () => setS(() => y--) : null,
+                canAddPax ? () => setS(() => y++) : null),
+            row(AppLocalizations.of(ctx)!.bookingChildren, '2–11 years', c,
+                c > 0 ? () => setS(() => c--) : null,
+                canAddPax ? () => setS(() => c++) : null),
+            row(AppLocalizations.of(ctx)!.bookingInfants, 'Under 2, lap infant', inf,
+                inf > 0 ? () => setS(() => inf--) : null,
+                inf < maxInf ? () => setS(() => inf++) : null),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.cyan,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _adults = a;
+                      _youth = y;
+                      _children = c;
+                      _infants = inf;
+                    });
+                    Navigator.pop(ctx);
+                  },
+                  child: Text(AppLocalizations.of(ctx)!.dialogConfirm),
                 ),
-                onPressed: () {
-                  setState(() {
-                    _adults = a;
-                    _youth = y;
-                    _children = c;
-                    _infants = inf;
-                  });
-                  Navigator.pop(ctx);
-                },
-                child: Text(AppLocalizations.of(ctx)!.dialogConfirm),
               ),
             ),
-          ),
-          const SizedBox(height: 8),
-        ]);
+            const SizedBox(height: 8),
+          ]),
+        );
       }),
     );
   }
@@ -300,6 +299,7 @@ class _BookingScreenState extends State<BookingScreen> {
   void _showClassSelector() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),

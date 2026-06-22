@@ -335,25 +335,25 @@ abstract class AppLocalizations {
   /// No description provided for @bookingAdultSubtext.
   ///
   /// In en, this message translates to:
-  /// **'12+ years'**
+  /// **'16+ years'**
   String get bookingAdultSubtext;
 
   /// No description provided for @bookingYouthSubtext.
   ///
   /// In en, this message translates to:
-  /// **'2–11 years'**
+  /// **'12–16 years'**
   String get bookingYouthSubtext;
 
   /// No description provided for @bookingChildrenSubtext.
   ///
   /// In en, this message translates to:
-  /// **'Under 2'**
+  /// **'2–11 years'**
   String get bookingChildrenSubtext;
 
   /// No description provided for @bookingInfantsSubtext.
   ///
   /// In en, this message translates to:
-  /// **'Lap infant'**
+  /// **'Under 2, lap infant'**
   String get bookingInfantsSubtext;
 
   /// No description provided for @greetingMorning.
