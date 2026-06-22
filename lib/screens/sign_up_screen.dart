@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
-import '../providers/user_provider.dart';
 import '../services/auth_service.dart';
 import '../services/country_service.dart';
 import '../models/country_model.dart';
@@ -142,22 +140,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
         expirationDate: _expiryDate!,
       );
 
-      final result = await AuthService.login(email, password);
       if (!mounted) return;
-
-      final user = context.read<UserProvider>();
-      user.login(
-        firstName: firstName,
-        lastName: lastName,
-        email: result.email,
-        token: result.token,
-        userId: result.userId,
-        personId: result.personId,
-        clientId: result.clientId,
-        role: result.role,
-      );
-      user.loadProfile();
-      Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
+      Navigator.pushReplacementNamed(
+          context, '/verify-email', arguments: email);
     } on AuthException catch (e) {
       _showError(e.message);
     } catch (_) {

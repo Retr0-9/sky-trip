@@ -24,6 +24,7 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
   // ── Route args ───────────────────────────────────────────────
   FlightScheduleModel? _schedule;
   BookingSearchModel?  _search;
+  MultiCityItinerary?  _itinerary;
   bool _argsLoaded = false;
 
   // ── Passenger navigation ──────────────────────────────────────
@@ -64,9 +65,10 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
     super.didChangeDependencies();
     if (_argsLoaded) return;
     final args = ModalRoute.of(context)?.settings.arguments as Map?;
-    _schedule = args?['schedule'] as FlightScheduleModel?;
-    _search   = args?['search']   as BookingSearchModel?;
-    _data     = List.generate(_total, (_) => {});
+    _schedule  = args?['schedule']  as FlightScheduleModel?;
+    _search    = args?['search']    as BookingSearchModel?;
+    _itinerary = args?['itinerary'] as MultiCityItinerary?;
+    _data      = List.generate(_total, (_) => {});
     _argsLoaded = true;
     _loadCountries();
   }
@@ -335,7 +337,7 @@ class _PassengersFormScreenState extends State<PassengersFormScreen> {
 
       if (!mounted) return;
       Navigator.pushNamed(context, '/services',
-          arguments: {'schedule': _schedule, 'search': _search});
+          arguments: {'schedule': _schedule, 'search': _search, if (_itinerary != null) 'itinerary': _itinerary});
     } on AuthException catch (e) {
       _snack(e.message, isError: true);
     } catch (_) {

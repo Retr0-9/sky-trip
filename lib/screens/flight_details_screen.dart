@@ -21,17 +21,26 @@ class FlightDetailsScreen extends StatefulWidget {
 class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
   FlightScheduleModel? _schedule;
   BookingSearchModel?  _search;
+  MultiCityItinerary?  _itinerary;
   bool _confirming = false;
   bool _loaded     = false;
+
+  bool get _isMultiCity => _itinerary != null && _itinerary!.segments.length > 1;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_loaded) return;
     final args = ModalRoute.of(context)?.settings.arguments as Map?;
-    _schedule = args?['schedule'] as FlightScheduleModel?;
-    _search   = args?['search']   as BookingSearchModel?;
-    _loaded   = true;
+    _schedule  = args?['schedule']  as FlightScheduleModel?;
+    _search    = args?['search']    as BookingSearchModel?;
+    _itinerary = args?['itinerary'] as MultiCityItinerary?;
+    _loaded    = true;
+  }
+
+  double get _totalBasePrice {
+    if (_isMultiCity) return _itinerary!.totalPrice;
+    return _schedule?.basePrice ?? 0.0;
   }
 
   Future<void> _confirm() async {
@@ -43,7 +52,6 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
     final token   = user.token;
 
     try {
-      // Step 1 — create booking trip
       final bookId = await BookingService.createBookingTrip(
         clientId:   user.clientId,
         tripTypeId: booking.tripTypeId ?? 1,
@@ -51,28 +59,38 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
       );
       booking.setBookId(bookId);
 
-      // Step 2 — create info ticket
       final passengers = _search?.totalPassengers ?? 1;
       final ticketId = await BookingService.createInfoTicket(
         bookId:           bookId,
         passengerClassId: booking.selectedClassId ?? 1,
-        ticketPrice:      _schedule!.basePrice * passengers,
+        ticketPrice:      _totalBasePrice * passengers,
         passengersCount:  passengers,
         token:            token,
       );
       booking.setTicketId(ticketId);
 
-      // Step 3 — link ticket to flight schedule
-      await BookingService.createTicketFlight(
-        ticketId:         ticketId,
-        flightScheduleId: _schedule!.flightScheduleId,
-        flightType:       'Outbound',
-        token:            token,
-      );
+      if (_isMultiCity) {
+        for (int i = 0; i < _itinerary!.segments.length; i++) {
+          final seg = _itinerary!.segments[i];
+          await BookingService.createTicketFlight(
+            ticketId:         ticketId,
+            flightScheduleId: seg.flightScheduleId,
+            flightType:       'Leg',
+            token:            token,
+          );
+        }
+      } else {
+        await BookingService.createTicketFlight(
+          ticketId:         ticketId,
+          flightScheduleId: _schedule!.flightScheduleId,
+          flightType:       'Outbound',
+          token:            token,
+        );
+      }
 
       if (!mounted) return;
       Navigator.pushNamed(context, '/passengers-form',
-          arguments: {'schedule': _schedule, 'search': _search});
+          arguments: {'schedule': _schedule, 'search': _search, if (_itinerary != null) 'itinerary': _itinerary});
     } on AuthException catch (e) {
       _snack(e.message, isError: true);
     } catch (_) {
@@ -96,18 +114,11 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
     final passengers = _search?.totalPassengers ?? 1;
     final user = context.watch<UserProvider>();
 
-    // Values with safe fallbacks
-    final depCity   = s?.departureCity  ?? '—';
-    final arrCity   = s?.arrivalCity    ?? '—';
-    final depTime   = s?.departureDisplay ?? '—';
-    final arrTime   = s?.arrivalDisplay   ?? '—';
-    final price     = s?.basePrice        ?? 0.0;
+    final price = _totalBasePrice;
     final convertedPrice = user.convertPrice(price);
     final baseFare  = convertedPrice * passengers;
     final taxes     = baseFare * 0.15;
     final total     = baseFare + taxes;
-
-   
 
     return GradientBackground(
       child: Scaffold(
@@ -117,7 +128,12 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
           Expanded(
             child: SingleChildScrollView(
               child: Column(children: [
-                _buildFlightSummary(depCity, arrCity, depTime, arrTime, s),
+                if (_isMultiCity)
+                  _buildMultiCitySummary()
+                else
+                  _buildFlightSummary(
+                    s?.departureCity ?? '—', s?.arrivalCity ?? '—',
+                    s?.departureDisplay ?? '—', s?.arrivalDisplay ?? '—', s),
                 const SizedBox(height: 8),
                 _buildFareBreakdown(passengers, convertedPrice, baseFare, taxes, total, user.currency),
                 const SizedBox(height: 8),
@@ -131,6 +147,86 @@ class _FlightDetailsScreenState extends State<FlightDetailsScreen> {
           _buildBottomBar(),
         ]),
       ),
+    );
+  }
+
+  Widget _buildMultiCitySummary() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final travelClass = context.watch<BookingProvider>().search?.travelClass ?? 'Economy';
+    final segments = _itinerary!.segments;
+
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cyanLight,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.cyan.withValues(alpha: 0.3)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(
+            width: 50, height: 50,
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.connecting_airports, color: AppColors.cyan),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Multi-City Trip',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text('${segments.length} legs · $travelClass',
+                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+            ]),
+          ),
+        ]),
+        const SizedBox(height: 16),
+        ...segments.asMap().entries.map((entry) {
+          final i = entry.key;
+          final seg = entry.value;
+          return Column(children: [
+            if (i > 0) Divider(height: 20, color: AppColors.cyan.withValues(alpha: 0.3)),
+            Row(children: [
+              Container(
+                width: 28, height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.cyan.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text('${i + 1}',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.cyanDark)),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text('Leg ${i + 1}',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.cyanDark)),
+              const SizedBox(width: 8),
+              Text(_fmtDate(seg.flightDate),
+                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            ]),
+            const SizedBox(height: 12),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(seg.departureDisplay,
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                Text(seg.departureCity,
+                    style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              ]),
+              const Icon(Icons.arrow_forward, color: AppColors.cyan, size: 20),
+              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Text(seg.arrivalDisplay,
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                Text(seg.arrivalCity,
+                    style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              ]),
+            ]),
+          ]);
+        }),
+      ]),
     );
   }
 

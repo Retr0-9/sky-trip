@@ -10,6 +10,13 @@ class AuthException implements Exception {
   String toString() => message;
 }
 
+/// Thrown when login is attempted on an unverified email.
+class EmailNotVerifiedException extends AuthException {
+  final String email;
+  const EmailNotVerifiedException(this.email)
+      : super('Please verify your email before logging in.');
+}
+
 /// The data returned by a successful login.
 class LoginResult {
   final String token;
@@ -130,11 +137,86 @@ class AuthService {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return LoginResult.fromJson(json);
     } else if (response.statusCode == 401) {
-      // Server returns plain-text "Invalid credentials"
       throw const AuthException('Invalid email or password.');
+    } else if (response.statusCode == 403) {
+      try {
+        final body = jsonDecode(response.body);
+        if (body is Map && body['error'] == 'email_not_verified') {
+          throw EmailNotVerifiedException(
+            (body['email'] ?? email).toString(),
+          );
+        }
+      } catch (e) {
+        if (e is EmailNotVerifiedException) rethrow;
+      }
+      throw const AuthException('Access denied. Please contact support.');
     } else {
       throw AuthException(
           'Server error (${response.statusCode}). Please try again.');
     }
+  }
+
+  /// Calls POST /api/Auth/verify-email.
+  static Future<void> verifyEmail(String email, String code) async {
+    final uri = Uri.parse('$_base/api/Auth/verify-email');
+    final http.Response response;
+    try {
+      response = await http
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email, 'code': code}),
+          )
+          .timeout(const Duration(seconds: 15));
+    } catch (_) {
+      throw const AuthException(
+          'Could not reach the server. Check your connection.');
+    }
+
+    if (response.statusCode == 200) return;
+
+    String msg = 'Verification failed. Please try again.';
+    try {
+      final body = jsonDecode(response.body);
+      if (body is Map) {
+        msg = (body['detail'] ?? body['title'] ?? body['message'] ?? msg)
+            .toString();
+      } else if (body is String && body.isNotEmpty) {
+        msg = body;
+      }
+    } catch (_) {}
+    throw AuthException(msg);
+  }
+
+  /// Calls POST /api/Auth/resend-code.
+  static Future<void> resendCode(String email) async {
+    final uri = Uri.parse('$_base/api/Auth/resend-code');
+    final http.Response response;
+    try {
+      response = await http
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email}),
+          )
+          .timeout(const Duration(seconds: 15));
+    } catch (_) {
+      throw const AuthException(
+          'Could not reach the server. Check your connection.');
+    }
+
+    if (response.statusCode == 200) return;
+
+    String msg = 'Could not resend code. Please try again.';
+    try {
+      final body = jsonDecode(response.body);
+      if (body is Map) {
+        msg = (body['detail'] ?? body['title'] ?? body['message'] ?? msg)
+            .toString();
+      } else if (body is String && body.isNotEmpty) {
+        msg = body;
+      }
+    } catch (_) {}
+    throw AuthException(msg);
   }
 }

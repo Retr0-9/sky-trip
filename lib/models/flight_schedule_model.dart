@@ -1,3 +1,21 @@
+/// A multi-city itinerary: multiple flight segments forming one trip.
+class MultiCityItinerary {
+  final List<FlightScheduleModel> segments;
+  final double totalPrice;
+
+  const MultiCityItinerary({
+    required this.segments,
+    required this.totalPrice,
+  });
+
+  String get summary => segments
+      .map((s) => '${s.departureCity} → ${s.arrivalCity}')
+      .join('  •  ');
+
+  String get routeShort =>
+      '${segments.first.departureCity} → ${segments.last.arrivalCity}';
+}
+
 /// Returned by all FlightSchedules search endpoints.
 class FlightScheduleModel {
   final int flightScheduleId;

@@ -20,6 +20,7 @@ class ServicesScreen extends StatefulWidget {
 class _ServicesScreenState extends State<ServicesScreen> {
   FlightScheduleModel? _schedule;
   BookingSearchModel?  _search;
+  MultiCityItinerary?  _itinerary;
   bool _loaded = false;
 
   List<ServiceModel> _services = [];
@@ -33,8 +34,9 @@ class _ServicesScreenState extends State<ServicesScreen> {
     super.didChangeDependencies();
     if (_loaded) return;
     final args = ModalRoute.of(context)?.settings.arguments as Map?;
-    _schedule = args?['schedule'] as FlightScheduleModel?;
-    _search   = args?['search']   as BookingSearchModel?;
+    _schedule  = args?['schedule']  as FlightScheduleModel?;
+    _search    = args?['search']    as BookingSearchModel?;
+    _itinerary = args?['itinerary'] as MultiCityItinerary?;
     _loaded = true;
     _fetchServices();
   }
@@ -80,7 +82,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
       }
       if (!mounted) return;
       Navigator.pushNamed(context, '/payment',
-          arguments: {'schedule': _schedule, 'search': _search});
+          arguments: {'schedule': _schedule, 'search': _search, if (_itinerary != null) 'itinerary': _itinerary});
     } on AuthException catch (e) {
       _snack(e.message, isError: true);
     } catch (_) {

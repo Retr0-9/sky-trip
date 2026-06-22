@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:skytrip/generated/l10n/app_localizations.dart';
 import '../models/booking_search_model.dart';
 import '../models/flight_schedule_model.dart';
+// MultiCityItinerary is exported from flight_schedule_model.dart
 import '../models/passenger_class_model.dart';
 import '../models/trip_type_model.dart';
 import '../providers/booking_provider.dart';
@@ -382,7 +383,12 @@ class _BookingScreenState extends State<BookingScreen> {
       },
     );
     if (picked == null) return;
-    setState(() => _legs[legIndex][isFrom ? 'from' : 'to'] = picked);
+    setState(() {
+      _legs[legIndex][isFrom ? 'from' : 'to'] = picked;
+      if (!isFrom && legIndex < _legs.length - 1) {
+        _legs[legIndex + 1]['from'] = picked;
+      }
+    });
   }
 
   Future<void> _pickLegDate(int legIndex) async {
@@ -447,36 +453,83 @@ class _BookingScreenState extends State<BookingScreen> {
     );
 
     try {
-      List<FlightScheduleModel> results;
       if (_isMultiCity) {
-        final legs = _legs.map((l) => {
+        final legMaps = _legs.map((l) => {
           'from': l['from'] as String,
           'to':   l['to']   as String,
           'date': (l['date'] as DateTime).toIso8601String().substring(0, 10),
         }).toList();
-        results = await FlightService.searchMultiCity(legs, token);
-      } else if (_isRoundTrip) {
-        results = await FlightService.searchRoundTrip(
-            _fromCity, _toCity, _departureDate!, _returnDate!, token);
-      } else {
-        results = await FlightService.searchOneWay(
-            _fromCity, _toCity, _departureDate!, token);
-      }
+        var itineraries = await FlightService.searchMultiCityGrouped(legMaps, token);
 
-      bool isFallback = false;
-      if (results.isEmpty) {
-        try {
-          results = await FlightService.getAllFlights(token);
-          isFallback = results.isNotEmpty;
-        } catch (_) {
-          // Keep results empty — show the normal "no results" state
+        bool isFallback = false;
+        if (itineraries.isEmpty) {
+          try {
+            final all = await FlightService.getAllFlights(token);
+            final builtLegs = <List<FlightScheduleModel>>[];
+            for (final leg in _legs) {
+              final from = (leg['from'] as String).toLowerCase();
+              final to = (leg['to'] as String).toLowerCase();
+              final matching = all.where((f) =>
+                  f.departureCity.toLowerCase() == from &&
+                  f.arrivalCity.toLowerCase() == to).toList();
+              builtLegs.add(matching);
+            }
+            if (builtLegs.every((l) => l.isNotEmpty)) {
+              itineraries = [MultiCityItinerary(
+                segments: builtLegs.map((l) => l.first).toList(),
+                totalPrice: builtLegs.map((l) => l.first.basePrice).fold(0, (a, b) => a + b),
+              )];
+              isFallback = true;
+            }
+          } catch (_) {}
         }
-      }
 
-      if (!mounted) return;
-      context.read<BookingProvider>().setSearch(search);
-      Navigator.pushNamed(context, '/available-flights',
-          arguments: {'search': search, 'flights': results, 'isFallback': isFallback});
+        if (!mounted) return;
+        context.read<BookingProvider>().setSearch(search);
+        Navigator.pushNamed(context, '/available-flights',
+            arguments: {
+              'search': search,
+              'itineraries': itineraries,
+              'isFallback': isFallback,
+            });
+      } else {
+        List<FlightScheduleModel> results;
+        if (_isRoundTrip) {
+          results = await FlightService.searchRoundTrip(
+              _fromCity, _toCity, _departureDate!, _returnDate!, token);
+        } else {
+          results = await FlightService.searchOneWay(
+              _fromCity, _toCity, _departureDate!, token);
+        }
+
+        bool isFallback = false;
+        if (results.isEmpty) {
+          try {
+            final all = await FlightService.getAllFlights(token);
+            final from = _fromCity.toLowerCase();
+            final to = _toCity.toLowerCase();
+            results = all.where((f) =>
+                f.departureCity.toLowerCase() == from &&
+                f.arrivalCity.toLowerCase() == to).toList();
+            if (_isRoundTrip) {
+              final returnFlights = all.where((f) =>
+                  f.departureCity.toLowerCase() == to &&
+                  f.arrivalCity.toLowerCase() == from).toList();
+              results = [...results, ...returnFlights];
+            }
+            isFallback = results.isNotEmpty;
+          } catch (_) {}
+        }
+
+        if (!mounted) return;
+        context.read<BookingProvider>().setSearch(search);
+        Navigator.pushNamed(context, '/available-flights',
+            arguments: {
+              'search': search,
+              'flights': results,
+              'isFallback': isFallback,
+            });
+      }
     } on AuthException catch (e) {
       _snack(e.message);
     } catch (_) {

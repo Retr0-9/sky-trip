@@ -1,0 +1,199 @@
+SKYTRIP — Flight Booking Mobile Application
+Presentation Content (5 Minutes)
+================================================
+
+SLIDE 1 — TITLE SLIDE
+─────────────────────
+Title: SkyTrip
+Subtitle: A Cross-Platform Flight Booking Application
+Details:
+  - Built with Flutter & ASP.NET Core
+  - Presented by: [Your Names Here]
+  - Date: [Presentation Date]
+  - University: [University Name]
+Background suggestion: Gradient from sky blue to white, airplane icon or silhouette
+
+
+SLIDE 2 — PROJECT OVERVIEW
+───────────────────────────
+Title: What is SkyTrip?
+Bullet Points:
+  - A mobile flight booking application inspired by Royal Jordanian Airlines
+  - Cross-platform: runs on Android, iOS, Web, and Desktop from a single Flutter codebase
+  - Connected to a live REST API hosted on Microsoft Azure
+  - Supports the full booking lifecycle: search, book, pay, and receive a boarding pass
+  - Three user roles: Client (mobile app), Employee (web dashboard), Admin (web dashboard)
+  - Bilingual: supports English and Arabic with full RTL layout
+
+
+SLIDE 3 — SYSTEM ARCHITECTURE
+──────────────────────────────
+Title: System Architecture
+Diagram description (draw a simple 3-layer diagram):
+
+  [Flutter Mobile App]  ←→  [ASP.NET Core REST API (Azure)]  ←→  [SQL Server Database]
+         ↕                            ↕
+  [Flutter Web Dashboards]     [Stripe Payment Gateway]
+                                      ↕
+                               [Email Service]
+
+Key Points:
+  - Frontend: Flutter with Provider state management
+  - Backend: ASP.NET Core Web API hosted on Azure App Service
+  - Database: SQL Server with Entity Framework Core
+  - Payments: Stripe Checkout integration
+  - Email: Automated booking confirmation and cancellation emails
+
+
+SLIDE 4 — KEY FEATURES (CLIENT APP)
+────────────────────────────────────
+Title: Client App Features
+Bullet Points:
+  - User Registration with Email Verification (6-digit OTP)
+  - Flight Search: One-way, Round-trip, and Multi-city
+  - Full Booking Flow: search → select flight → add passengers (with passport/ID upload) → choose services → select seat → pay via Stripe
+  - Digital Boarding Pass with QR Code
+  - Multi-currency Support: JOD, USD, EUR, GBP, AED with live conversion
+  - Dark Mode and Light Mode themes
+  - Hotel Booking and Van Rental sections (Coming Soon)
+
+
+SLIDE 5 — KEY FEATURES (ADMIN & EMPLOYEE)
+──────────────────────────────────────────
+Title: Admin & Employee Web Dashboards
+Two columns:
+
+  Employee Dashboard:
+    - View and update flight schedules
+    - Review bookings with passenger documents (passport/ID preview)
+    - Confirm bookings
+
+  Admin Dashboard (all Employee features plus):
+    - Full flight management: Create, Edit, Delete
+    - Delete bookings with automated cancellation emails to clients
+    - Confirm bookings with automated confirmation emails
+    - User and role management: assign Admin, Employee, or Client roles
+    - Dashboard statistics: flights, employees, bookings, admins count
+
+
+SLIDE 6 — BOOKING FLOW
+───────────────────────
+Title: Booking Flow (Step by Step)
+Show as a horizontal flow diagram with arrows:
+
+  Search Flights → Select Flight → Confirm & Create Booking → Add Passengers (with document upload) → Select Extra Services → Select Seat → Pay via Stripe → Receive Boarding Pass with QR Code
+
+Key Technical Points:
+  - Each step creates records on the backend via API calls
+  - Passenger documents (passport/ID photos) uploaded as multipart form data
+  - Payment handled via Stripe Checkout Sessions with deep-link callbacks
+  - Payment status polled every 1.5 seconds until confirmed
+
+
+SLIDE 7 — TECHNOLOGY STACK
+──────────────────────────
+Title: Technology Stack
+Show as a table or categorized list:
+
+  Category          | Technology
+  ──────────────────|──────────────────────────
+  Mobile Frontend   | Flutter (Dart)
+  State Management  | Provider (ChangeNotifier)
+  Web Dashboards    | HTML, CSS, Vanilla JavaScript
+  Backend API       | ASP.NET Core Web API (C#)
+  Database          | SQL Server + Entity Framework Core
+  Cloud Hosting     | Microsoft Azure App Service
+  Payment Gateway   | Stripe Checkout
+  Authentication    | JWT Bearer Tokens
+  Email             | SMTP via ASP.NET email service
+  Localization      | Flutter intl (ARB files) — English & Arabic
+  Local Storage     | SharedPreferences
+
+
+SLIDE 8 — DATABASE DESIGN (BRIEF)
+─────────────────────────────────
+Title: Core Database Entities
+Show a simplified ER diagram or list:
+
+  - UserAccount (email, password, role, emailVerified)
+  - Person (firstName, lastName, phone, gender, birthDate)
+  - Client → Person
+  - Employee → Person
+  - FlightSchedule (departureCity, arrivalCity, times, date, basePrice)
+  - BookingTrip (clientId, tripTypeId, bookingStatus, bookingReference)
+  - InfoTickets (bookId, passengerClassId, ticketPrice, passengersCount)
+  - Passenger (names, gender, documentationType, documentFile)
+  - Services (name, fees)
+  - Country (countryId, countryName)
+
+
+SLIDE 9 — LIVE DEMO / SCREENSHOTS
+──────────────────────────────────
+Title: App Screenshots
+Show 4-5 screenshots side by side (phone mockup frames):
+
+  1. Home Screen (with greeting and offers)
+  2. Flight Search Form
+  3. Available Flights Results
+  4. Boarding Pass with QR Code
+  5. Admin Dashboard (web)
+
+Note: If doing a live demo instead, demonstrate:
+  - Register → verify email → login
+  - Search a flight → select → add passenger → pay
+  - Show the admin dashboard confirming the booking
+
+
+SLIDE 10 — CHALLENGES & SOLUTIONS
+──────────────────────────────────
+Title: Challenges We Faced
+
+  Challenge 1: Multi-city flight search
+    - Problem: Backend returns a flat list of segments, not grouped by legs
+    - Solution: Frontend groups flights by departure/arrival to match each leg
+
+  Challenge 2: Payment integration on mobile
+    - Problem: Stripe doesn't have a native Flutter SDK
+    - Solution: Used Stripe Checkout Sessions via API + Chrome Custom Tabs + deep link callbacks for payment status
+
+  Challenge 3: Cross-platform consistency
+    - Problem: Maintaining consistent UI across Android, iOS, and Web
+    - Solution: Flutter's single codebase with adaptive theme system (light/dark mode, RTL support)
+
+
+SLIDE 11 — FUTURE WORK
+───────────────────────
+Title: Future Enhancements
+Bullet Points:
+  - Functional seat map with real aircraft configurations and dynamic pricing
+  - Hotel booking integration with a live hotel API
+  - Van rental integration with a live rental API
+  - Push notifications for flight updates and booking status changes
+  - Loyalty program with miles tracking and redemption
+  - In-app customer support chat
+
+
+SLIDE 12 — THANK YOU
+────────────────────
+Title: Thank You
+Subtitle: Questions?
+Details:
+  - GitHub: [repository link if applicable]
+  - Contact: [your emails]
+Background suggestion: Same gradient as slide 1, airplane icon
+
+
+================================================
+PRESENTATION TIPS (5 MINUTES)
+================================================
+  - Slide 1: 15 seconds (introduce yourselves)
+  - Slide 2: 30 seconds (what the app does)
+  - Slide 3: 30 seconds (architecture overview)
+  - Slides 4-5: 45 seconds (features — don't read every bullet, highlight 2-3 per slide)
+  - Slide 6: 30 seconds (walk through the flow quickly)
+  - Slide 7: 20 seconds (glance at stack, don't read the table)
+  - Slide 8: 20 seconds (mention key entities only)
+  - Slide 9: 60 seconds (this is the highlight — show the app or screenshots)
+  - Slide 10: 30 seconds (pick your best challenge story)
+  - Slide 11: 15 seconds (quick mention of future plans)
+  - Slide 12: 5 seconds (thank you, open for questions)

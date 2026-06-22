@@ -50,7 +50,7 @@ class FlightService {
     return _parseList(res.body);
   }
 
-  /// POST /api/FlightSchedules/multicity
+  /// POST /api/FlightSchedules/multicity — returns flat segments
   static Future<List<FlightScheduleModel>> searchMultiCity(
     List<Map<String, String>> legs,
     String token,
@@ -69,6 +69,54 @@ class FlightService {
       token,
     );
     return _parseList(res.body);
+  }
+
+  /// POST /api/FlightSchedules/multicity — returns grouped itineraries
+  static Future<List<MultiCityItinerary>> searchMultiCityGrouped(
+    List<Map<String, String>> legs,
+    String token,
+  ) async {
+    final res = await ApiClient.post(
+      '/api/FlightSchedules/multicity',
+      {
+        'legs': legs.map((l) => {
+          'from': l['from'],
+          'to':   l['to'],
+          'date': l['date'],
+        }).toList(),
+        'maxOptionsPerLeg': 5,
+        'maxItineraries':   10,
+      },
+      token,
+    );
+    return _parseItineraries(res.body);
+  }
+
+  static List<MultiCityItinerary> _parseItineraries(String body) {
+    final decoded = jsonDecode(body);
+
+    if (decoded is Map && decoded['itineraries'] is List) {
+      final itineraries = decoded['itineraries'] as List;
+      return itineraries.map((it) {
+        final segments = (it['segments'] as List?) ?? [];
+        final itTotal = (it['totalPrice'] as num?)?.toDouble() ?? 0;
+        final flights = segments.map((seg) {
+          final m = Map<String, dynamic>.from(seg as Map);
+          m['totalPrice'] ??= itTotal;
+          return FlightScheduleModel.fromJson(m);
+        }).toList();
+        return MultiCityItinerary(segments: flights, totalPrice: itTotal);
+      }).toList();
+    }
+
+    if (decoded is List && decoded.isNotEmpty) {
+      final flights = decoded
+          .map((j) => FlightScheduleModel.fromJson(j as Map<String, dynamic>))
+          .toList();
+      return [MultiCityItinerary(segments: flights, totalPrice: flights.fold(0, (s, f) => s + f.basePrice))];
+    }
+
+    return [];
   }
 
   /// GET /api/FlightSchedules/All — fallback list when a search returns no matches

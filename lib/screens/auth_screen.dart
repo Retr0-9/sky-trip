@@ -124,6 +124,8 @@ class _AuthScreenState extends State<AuthScreen>
 
       user.loadProfile();
       Navigator.pushReplacementNamed(context, '/home');
+    } on EmailNotVerifiedException catch (e) {
+      Navigator.pushNamed(context, '/verify-email', arguments: e.email);
     } on AuthException catch (e) {
       _showError(e.message);
     } catch (_) {

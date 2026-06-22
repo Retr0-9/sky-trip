@@ -166,11 +166,11 @@ class _TicketsScreenState extends State<TicketsScreen>
     );
   }
 
-  // Groups a ticket into upcoming / completed / cancelled
   String _group(ApiTicketModel t) {
     final s = (t.bookingStatus ?? '').toLowerCase();
     if (s == 'completed') return 'completed';
-    if (s == 'cancelled') return 'cancelled';
+    if (s == 'cancelled' || s == 'canceled') return 'cancelled';
+    if (s == 'confirmed' || s.contains('confirm')) return 'confirmed';
     return 'upcoming';
   }
 
@@ -180,6 +180,7 @@ class _TicketsScreenState extends State<TicketsScreen>
       return _buildEmpty(context, Icons.flight_takeoff, l10n.ticketsNoUpcoming);
     }
 
+    final confirmed = tickets.where((t) => _group(t) == 'confirmed').toList();
     final upcoming  = tickets.where((t) => _group(t) == 'upcoming').toList();
     final completed = tickets.where((t) => _group(t) == 'completed').toList();
     final cancelled = tickets.where((t) => _group(t) == 'cancelled').toList();
@@ -187,8 +188,14 @@ class _TicketsScreenState extends State<TicketsScreen>
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       children: [
+        if (confirmed.isNotEmpty) ...[
+          _sectionHeader(context, 'Confirmed', Icons.check_circle, Colors.green, confirmed.length),
+          const SizedBox(height: 10),
+          ...confirmed.map((t) => _bookingCard(context, t)),
+          const SizedBox(height: 16),
+        ],
         if (upcoming.isNotEmpty) ...[
-          _sectionHeader(context, 'Upcoming', Icons.flight_takeoff, AppColors.cyan, upcoming.length),
+          _sectionHeader(context, 'Pending', Icons.hourglass_bottom, Colors.orange, upcoming.length),
           const SizedBox(height: 10),
           ...upcoming.map((t) => _bookingCard(context, t)),
           const SizedBox(height: 16),
@@ -230,8 +237,10 @@ class _TicketsScreenState extends State<TicketsScreen>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final group  = _group(t);
-    final statusColor = group == 'completed' ? Colors.green
-        : group == 'cancelled' ? Colors.red : AppColors.cyan;
+    final statusColor = group == 'confirmed' ? Colors.green
+        : group == 'completed' ? Colors.green
+        : group == 'cancelled' ? Colors.red
+        : Colors.orange;
     final ps = t.paymentStatus ?? '';
 
     // Format booking date
@@ -810,30 +819,56 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
   }
 
   Widget _statusRow(ColorScheme cs) {
-    final status = _detail?.paymentStatus ?? '';
-    final isPaid = status.toLowerCase() == 'paid';
-    return Row(children: [
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isPaid ? Colors.green.withValues(alpha: 0.12) : Colors.orange.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(isPaid ? Icons.check_circle : Icons.hourglass_bottom,
-              size: 14, color: isPaid ? Colors.green : Colors.orange),
-          const SizedBox(width: 6),
-          Text(status.isEmpty ? 'Pending' : status,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
-                  color: isPaid ? Colors.green : Colors.orange)),
-        ]),
-      ),
-      if ((_detail?.bookingReference ?? '').isNotEmpty) ...[
-        const SizedBox(width: 12),
-        Text('Ref: ${_detail!.bookingReference}',
-            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+    final booking = (_detail?.bookingStatus ?? '').toLowerCase();
+    final payment = (_detail?.paymentStatus ?? '').toLowerCase();
+    final isConfirmed = booking == 'confirmed' || booking.contains('confirm');
+    final isPaid = payment == 'paid';
+
+    final badges = <Widget>[];
+
+    // Booking status badge
+    final bookingColor = isConfirmed ? Colors.green : Colors.orange;
+    final bookingLabel = isConfirmed ? 'Confirmed' : (_detail?.bookingStatus ?? 'Pending');
+    badges.add(_statusBadge(
+      icon: isConfirmed ? Icons.check_circle : Icons.hourglass_bottom,
+      label: bookingLabel,
+      color: bookingColor,
+    ));
+
+    // Payment status badge
+    final payColor = isPaid ? Colors.green : Colors.orange;
+    final payLabel = isPaid ? 'Paid' : (_detail?.paymentStatus ?? 'Pending');
+    badges.add(_statusBadge(
+      icon: isPaid ? Icons.payment : Icons.hourglass_bottom,
+      label: payLabel,
+      color: payColor,
+    ));
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        ...badges,
+        if ((_detail?.bookingReference ?? '').isNotEmpty)
+          Text('Ref: ${_detail!.bookingReference}',
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
       ],
-    ]);
+    );
+  }
+
+  Widget _statusBadge({required IconData icon, required String label, required Color color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 6),
+        Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+      ]),
+    );
   }
 
   Widget _sectionTitle(String title, IconData icon) => Row(children: [

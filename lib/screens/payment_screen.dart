@@ -23,7 +23,10 @@ class _PaymentScreenState extends State<PaymentScreen>
     with WidgetsBindingObserver {
   FlightScheduleModel? _schedule;
   BookingSearchModel?  _search;
+  MultiCityItinerary?  _itinerary;
   bool _loaded = false;
+
+  bool get _isMultiCity => _itinerary != null && _itinerary!.segments.length > 1;
 
   bool _launching  = false;
   bool _polling    = false;
@@ -42,8 +45,9 @@ class _PaymentScreenState extends State<PaymentScreen>
     super.didChangeDependencies();
     if (_loaded) return;
     final args = ModalRoute.of(context)?.settings.arguments as Map?;
-    _schedule = args?['schedule'] as FlightScheduleModel?;
-    _search   = args?['search']   as BookingSearchModel?;
+    _schedule  = args?['schedule']  as FlightScheduleModel?;
+    _search    = args?['search']    as BookingSearchModel?;
+    _itinerary = args?['itinerary'] as MultiCityItinerary?;
     _loaded = true;
   }
 
@@ -193,7 +197,7 @@ class _PaymentScreenState extends State<PaymentScreen>
     final user       = context.watch<UserProvider>();
     final passengers = _search?.totalPassengers ?? booking.passengerCount;
     final schedule   = _schedule ?? booking.selectedSchedule;
-    final price      = schedule?.basePrice ?? 0.0;
+    final price      = _isMultiCity ? _itinerary!.totalPrice : (schedule?.basePrice ?? 0.0);
     final convertedPrice = user.convertPrice(price);
     final baseFare   = convertedPrice * passengers;
     final taxes      = baseFare * 0.15;
@@ -244,12 +248,27 @@ class _PaymentScreenState extends State<PaymentScreen>
         const Text('Booking Summary',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 14),
-        _summaryRow(Icons.flight_takeoff,
-            '${s?.departureCity ?? '--'} → ${s?.arrivalCity ?? '--'}',
-            '${s?.departureDisplay ?? '--'} → ${s?.arrivalDisplay ?? '--'}'),
-        const SizedBox(height: 10),
-        _summaryRow(Icons.calendar_today, 'Date',
-            s != null ? _fmtDate(s.flightDate) : '--'),
+        if (_isMultiCity)
+          ..._itinerary!.segments.asMap().entries.map((entry) {
+            final i = entry.key;
+            final seg = entry.value;
+            return Padding(
+              padding: EdgeInsets.only(bottom: i < _itinerary!.segments.length - 1 ? 10 : 0),
+              child: _summaryRow(
+                Icons.flight_takeoff,
+                'Leg ${i + 1}: ${seg.departureCity} → ${seg.arrivalCity}',
+                '${_fmtDate(seg.flightDate)}  ${seg.departureDisplay}',
+              ),
+            );
+          })
+        else ...[
+          _summaryRow(Icons.flight_takeoff,
+              '${s?.departureCity ?? '--'} → ${s?.arrivalCity ?? '--'}',
+              '${s?.departureDisplay ?? '--'} → ${s?.arrivalDisplay ?? '--'}'),
+          const SizedBox(height: 10),
+          _summaryRow(Icons.calendar_today, 'Date',
+              s != null ? _fmtDate(s.flightDate) : '--'),
+        ],
         const SizedBox(height: 10),
         _summaryRow(Icons.people, 'Passengers', '$passengers pax'),
         const SizedBox(height: 10),
