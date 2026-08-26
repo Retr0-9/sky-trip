@@ -1,49 +1,76 @@
-# SkyTrip - Flight Booking App
+# SkyTrip ✈️
 
-A Flutter mobile app for booking flights, hotels, and van rentals.
+SkyTrip is a full-stack flight booking platform consisting of a Flutter mobile app, a web frontend, and an ASP.NET backend. It covers the complete booking lifecycle — from search and payment to document approval and e-ticket issuance.
 
-## Phase 1 Status: App Skeleton ✅
+## Features
 
-### Current Implementation
-- ✅ 14 screen files (empty placeholders)
-- ✅ Bottom navigation (Home, Book, Tickets, Profile)
-- ✅ Side drawer (Hotel, Van Rental, Settings, Contact Us, Logout)
-- ✅ Booking flow navigation configured
-- ✅ All routes defined
+- 🔍 Flight search and booking
+- 💳 Stripe payment integration (hybrid deep-link + polling flow)
+- 📄 Document upload and approval workflow
+- 🎫 QR-based digital boarding passes
+- 📧 Automated email notifications (via Resend)
+- 🧾 PDF ticket generation
+- 🔐 User authentication
 
-### Folder Structure
+## Booking Lifecycle
+
+Bookings move through a well-defined state machine:
+
 ```
-lib/
- ├─ screens/          (14 placeholder screens)
- ├─ widgets/          (MainScaffold with nav)
- └─ main.dart         (App entry point)
+DRAFT → PENDING_PAYMENT → PAID → PENDING_REVIEW → APPROVED → TICKET_ISSUED
 ```
 
-## How to Run
+## Tech Stack
 
-1. Ensure Flutter SDK is installed
-2. Run: `flutter pub get`
-3. Run: `flutter run`
+| Layer            | Technology                          |
+|-------------------|--------------------------------------|
+| Mobile App         | Flutter / Dart (Provider state mgmt) |
+| Web Frontend        | HTML, CSS, JavaScript               |
+| Backend API         | ASP.NET                             |
+| Hosting (Web)       | Firebase                            |
+| Hosting (Backend)   | Azure                                |
+| Payments            | Stripe                              |
+| Email               | Resend                              |
 
-## Navigation Flow
+## Project Structure
 
-**Booking Flow:**
-Home → Booking → Available Flights → Flight Details → Passengers Form → Services → [Random Seat → Payment] OR [Choose Seat → Seat Map → Payment] → Home/Tickets
+```
+skytrip/
+├── lib/             # Flutter mobile application
+├── web/             # Web frontend (HTML/CSS/JS)
+├── swagger.spec     # ASP.NET backend API
+└── docs/            # design docs
+```
 
-**Bottom Nav:**
-- Home
-- Book (starts booking flow)
-- Tickets
-- Profile
+## Getting Started
 
-**Drawer:**
-- Book a Hotel
-- Van Rental
-- Settings
-- Contact Us
-- Logout
+### Prerequisites
 
-## Next Steps
-- Phase 2: Add layout skeletons to each screen
-- Phase 3: Build reusable widgets
-- Phase 4: Wire up dummy data
+- Flutter SDK (latest stable)
+- .NET SDK
+- Node.js (for web tooling, if applicable)
+- Firebase CLI
+
+### Mobile App
+
+```bash
+cd lib
+flutter pub get
+flutter run main.dart
+```
+
+### Web Frontend
+
+```bash
+cd web
+firebase serve
+```
+
+## Team
+
+- **Frontend (Web & Mobile):** [Talal Ali & Tasneem Hashlmoon]
+- **Backend:** [Ali Rami Alaidi]
+
+## License
+
+This project was developed as a graduation project and is not currently licensed for commercial use.
